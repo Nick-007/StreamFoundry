@@ -27,4 +27,4 @@ logs/
 # Temporary / build artifacts
 .tmp/
 dist/
-build/
+build/local.settings.json
