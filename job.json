@@ -1,0 +1,6 @@
+{
+  "id": "transcode",
+  "poolInfo": {
+    "poolId": "gpu-ffmpeg-cmaf"
+  }
+}

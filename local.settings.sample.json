@@ -1,0 +1,33 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "RAW_CONTAINER": "raw-videos",
+    "MEZZ_CONTAINER": "mezzanine",
+    "HLS_CONTAINER": "hls",
+    "DASH_CONTAINER": "dash",
+    "LOGS_CONTAINER": "logs",
+    "PROCESSED_CONTAINER": "processed",
+    "JOB_QUEUE": "transcode-jobs",
+    "FFMPEG_PATH": "ffmpeg",
+    "SHAKA_PACKAGER_PATH": "packager",
+    "SEG_DUR_SEC": "4",
+    "PACKAGER_SEG_DUR_SEC": "4",
+    "LADDER_PROFILE": "efficient",
+    "VIDEO_CODEC": "h264_nvenc",
+    "NVENC_PRESET": "p5",
+    "NVENC_RC": "vbr_hq",
+    "NVENC_LOOKAHEAD": "32",
+    "NVENC_AQ": "1",
+    "SET_BT709_TAGS": "true",
+    "AUDIO_MAIN_KBPS": "128",
+    "ENABLE_AUDIO_LOW": "false",
+    "ENABLE_CAPTIONS": "true",
+    "ENABLE_TRICKPLAY": "true",
+    "TRICKPLAY_FACTOR": "4",
+    "THUMB_INTERVAL_SEC": "4",
+    "QC_STRICT": "true",
+    "DRM_PLACEHOLDERS": "true"
+  }
+}

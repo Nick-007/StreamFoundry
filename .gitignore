@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# VS Code & OS junk
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Azure Functions / local secrets
+local.settings.json       # do NOT commit secrets
+bin/
+obj/
+
+# Azurite state
+_azurite/
+
+# Transcoding pipeline outputs (ephemeral)
+raw-videos/
+mezzanine/
+hls/
+dash/
+processed/
+logs/
+
+# Temporary / build artifacts
+.tmp/
+dist/
+build/

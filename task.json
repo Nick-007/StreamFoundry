@@ -1,0 +1,62 @@
+{
+  "id": "bbb-encode",
+  "commandLine": "/bin/bash -lc \"echo starting && /usr/local/bin/run_transcode.sh\"",
+  "environmentSettings": [
+    {
+      "name": "RAW_URL",
+      "value": "https://<account>.blob.core.windows.net/raw-videos/bbb.mp4?<SAS>"
+    },
+    {
+      "name": "DEST_BASE",
+      "value": "https://<account>.blob.core.windows.net"
+    },
+    {
+      "name": "DEST_SAS",
+      "value": "<SAS-with-write>"
+    },
+    {
+      "name": "STEM",
+      "value": "bbb"
+    },
+    {
+      "name": "SEG_DUR_SEC",
+      "value": "4"
+    },
+    {
+      "name": "BT709_TAGS",
+      "value": "true"
+    },
+    {
+      "name": "AUDIO_MAIN_KBPS",
+      "value": "128"
+    },
+    {
+      "name": "VIDEO_CODEC",
+      "value": "h264_nvenc"
+    },
+    {
+      "name": "NVENC_PRESET",
+      "value": "p5"
+    },
+    {
+      "name": "NVENC_RC",
+      "value": "vbr_hq"
+    },
+    {
+      "name": "NVENC_LOOKAHEAD",
+      "value": "32"
+    },
+    {
+      "name": "NVENC_AQ",
+      "value": "1"
+    },
+    {
+      "name": "LADDER",
+      "value": "240:300k/360k/600k,360:650k/780k/1300k,480:900k/1000k/1800k,720:2500k/2800k/5000k,1080:4200k/4600k/8000k"
+    }
+  ],
+  "containerSettings": {
+    "imageName": "<acrName>.azurecr.io/streamfoundry:gpu",
+    "containerRunOptions": "--rm"
+  }
+}
