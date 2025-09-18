@@ -21,26 +21,76 @@ def _get_int(x: str, d: int) -> int:
 
 def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: str, bufsize: str, fps: float, seg_dur: int):
     gop = max(1, int(round(fps * seg_dur)))
-    enc = get("VIDEO_CODEC", "h264_nvenc")
+    enc = get("VIDEO_CODEC", "h264_nvenc").strip().lower()
     bt709 = _get_bool("SET_BT709_TAGS")
     nv_preset = get("NVENC_PRESET", "p5")
     nv_rc = get("NVENC_RC", "vbr_hq")
     nv_look = get("NVENC_LOOKAHEAD", "32")
     nv_aq = "1" if _get_bool("NVENC_AQ") else "0"
-    common = (f'-vf "scale=-2:{height}" ' +
-              f'-pix_fmt yuv420p ' +
-              (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 ' if bt709 else '') +
-              f'-g {gop} -keyint_min {gop} -sc_threshold 0 -bf 3 -coder cabac ')
+
+    # Common flags
+    common = (
+        f'-vf "scale=-2:{height}" '
+        f'-pix_fmt yuv420p '
+        + (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 ' if bt709 else '')
+        + f'-g {gop} -keyint_min {gop} -sc_threshold 0 -bf 3 -coder cabac '
+    )
+
+    # Decide encoder & build encoder-specific options
+    # NOTE: NVENC-only flags (-rc, -rc-lookahead, -spatial_aq, -temporal_aq) are NOT valid for libx264/videotoolbox.
     if enc == "h264_nvenc":
-        v_opts = (f'-c:v h264_nvenc -preset {nv_preset} -rc {nv_rc} ' +
-                  f'-spatial_aq {nv_aq} -temporal_aq 1 -rc-lookahead {nv_look} ' +
-                  f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} -profile:v high -level 4.1 ')
+        # NVENC path (keeps -rc and AQ/lookahead)
+        v_opts = (
+            f'-c:v h264_nvenc -preset {nv_preset} -rc {nv_rc} '
+            f'-spatial_aq {nv_aq} -temporal_aq 1 -rc-lookahead {nv_look} '
+            f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} -profile:v high -level 4.1 '
+        )
+    elif enc in ("h264_videotoolbox", "hevc_videotoolbox"):
+        # Apple VideoToolbox: bitrate-based RC; NO -rc/-aq/-lookahead flags
+        vcodec = enc  # keep user-selected vt encoder
+        v_opts = (
+            f'-c:v {vcodec} '
+            f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
+            f'-profile:v high -level 4.1 '
+        )
+    elif enc == "libx264":
+        # Software x264: bitrate + VBV (or swap to CRF if you prefer)
+        v_opts = (
+            f'-c:v libx264 -preset medium -tune film '
+            f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
+            f'-profile:v high -level 4.1 '
+        )
     else:
-        v_opts = (f'-c:v libx264 -preset medium -tune film ' +
-                  f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} -profile:v high -level 4.1 ')
-    v_cmd = (f'{ffmpeg_path()} -y -i "{input_path}" -map 0:v:0 ' + common + v_opts + f'-movflags +faststart -f mp4 "{out_mp4}"')
+        # Fallback to libx264 if unknown encoder is configured
+        v_opts = (
+            f'-c:v libx264 -preset medium -tune film '
+            f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
+            f'-profile:v high -level 4.1 '
+        )
+
+    # Build full command
+    v_cmd = (
+        f'{ffmpeg_path()} -y -i "{input_path}" -map 0:v:0 '
+        + common + v_opts +
+        f'-movflags +faststart -f mp4 "{out_mp4}"'
+    )
+
+    # Defensive sanitizer: if final command is not using NVENC, strip any stray NVENC-only tokens
+    if "-c:v h264_nvenc" not in v_cmd:
+        # remove patterns: "-rc <mode>", "-rc-lookahead <N>", "-spatial_aq <0/1>", "-temporal_aq <0/1>"
+        def _strip_pair(cmd: str, flag: str) -> str:
+            # remove "<flag> VALUE" safely
+            import re
+            return re.sub(rf'(?:\s+{flag}\s+\S+)', '', cmd)
+        v_cmd = _strip_pair(v_cmd, "-rc")
+        v_cmd = _strip_pair(v_cmd, "-rc-lookahead")
+        v_cmd = _strip_pair(v_cmd, "-spatial_aq")
+        v_cmd = _strip_pair(v_cmd, "-temporal_aq")
+
     rc, out, err = _run(v_cmd)
-    if rc != 0: raise CmdError(f"FFmpeg video transcode failed ({height}p): {err}")
+    if rc != 0:
+        raise CmdError(f"FFmpeg video transcode failed ({height}p): {err}")
+
 
 def _ffmpeg_audio(input_path: str, out_mp4: str):
     a_cmd = (f'{ffmpeg_path()} -y -i "{input_path}" -map 0:a:0 '

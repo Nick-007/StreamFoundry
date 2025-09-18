@@ -1,0 +1,30 @@
+Found Python version 3.13.7 (python3).
+Selected out-of-process host.
+
+                  %%%%%%
+                 %%%%%%
+            @   %%%%%%    @
+          @@   %%%%%%      @@
+       @@@    %%%%%%%%%%%    @@@
+     @@      %%%%%%%%%%        @@
+       @@         %%%%       @@
+         @@      %%%       @@
+           @@    %%      @@
+                %%
+                %
+
+
+Azure Functions Core Tools
+Core Tools Version:       4.2.2+78afd8b84c8e31f0ddac570ba9e8128eefbd3d4a (64-bit)
+Function Runtime Version: 4.1041.200.25360
+
+[2025-09-18T16:34:45.646Z] Worker process started and initialized.
+
+Functions:
+
+	queue_ingestor: queueTrigger
+
+[2025-09-18T16:34:50.605Z] Host lock lease acquired by instance ID '000000000000000000000000B63CF147'.
+[2025-09-18T16:35:00.098Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=5cee6130-f87a-4687-a4b6-d97447f9e9dc)
+[2025-09-18T16:35:00.103Z] Trigger Details: MessageId: 4be2b054-abbd-4b89-8eba-0de84e567484, DequeueCount: 1, InsertedOn: 2025-09-18T16:34:59.000+00:00
+[2025-09-18T16:35:00.230Z] WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
