@@ -319,3 +319,23 @@ This scales Spot nodes with queue pressure while keeping 1 dedicated node for st
 - Use **Managed Identity** to fetch SAS for task env vars.  
 - Lock down Storage with **Private Endpoints** and allow Batch nodes via **Private Link** or VNet rules.  
 - Restrict ACR pull with scoped tokens; rotate secrets regularly.
+
+## Quickstart (Local)
+
+```bash
+# 1) Install deps for the seed script
+python -m pip install -r infra/local/requirements.txt
+
+# 2) (optional) copy env template and tweak
+cp infra/local/.env.example infra/local/.env
+
+# 3) Create containers & queue (names read from local.settings.json)
+bash infra/local/seed-storage.sh
+# or
+pwsh infra/local/seed-storage.ps1
+# or
+python infra/local/seed-storage.py
+
+# 4) Smoke tests (when your Functions host is running)
+bash scripts/dev/curl-health.sh
+bash scripts/dev/curl-submit.sh

@@ -1,10 +1,13 @@
 {
   "version": "2.0",
-  "queues": {
-    "maxDequeueCount": 3,
-    "visibilityTimeout": "00:02:00",
-    "batchSize": 1,
-    "newBatchThreshold": 0
+  "extensions": {
+    "queues": {
+      "maxDequeueCount": 3,
+      "visibilityTimeout": "00:02:00",
+      "maxPollingInterval": "00:00:10",
+      "batchSize": 1,
+      "newBatchThreshold": 0
+    }
   },
   "logging": {
     "applicationInsights": {
@@ -13,8 +16,11 @@
       }
     },
     "logLevel": {
-      "default": "Warning",
-      "Function.queue_ingestor": "Information"
+      "default": "Information",
+      "Host.Startup": "Trace",
+      "Host.Results": "Information",
+      "Function.queue_ingestor": "Trace",
+      "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "Trace"
     }
   },
   "extensionBundle": {

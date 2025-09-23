@@ -9,12 +9,13 @@ __pycache__/
 Thumbs.db
 
 # Azure Functions / local secrets
-local.settings.json       # do NOT commit secrets
+local.settings.json
 bin/
 obj/
 
 # Azurite state
 _azurite/
+.azurite/
 
 # Transcoding pipeline outputs (ephemeral)
 raw-videos/
