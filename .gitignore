@@ -12,6 +12,7 @@ Thumbs.db
 local.settings.json
 bin/
 obj/
+.func.log
 
 # Azurite state
 _azurite/

@@ -4,27 +4,40 @@
     "queues": {
       "maxDequeueCount": 3,
       "visibilityTimeout": "00:02:00",
-      "maxPollingInterval": "00:00:10",
+      "maxPollingInterval": "00:01:00",
       "batchSize": 1,
       "newBatchThreshold": 0
+    },
+    "blobs": {
+      "maxDegreeOfParallelism": 1,
+      "pollingInterval": "00:01:00"
     }
   },
   "logging": {
     "applicationInsights": {
+      "enableLiveMetrics": true,
       "samplingSettings": {
-        "isEnabled": true
+        "isEnabled": false
       }
     },
     "logLevel": {
-      "default": "Information",
-      "Host.Startup": "Trace",
+      "queue_ingestor": "Information",
+      "Function": "Information",
+      "Function.queue_ingestor": "Information",
       "Host.Results": "Information",
-      "Function.queue_ingestor": "Trace",
-      "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "Trace"
-    }
+      "Host.Triggers.Queue": "Warning",
+      "Azure.Storage": "Warning",
+      "Azure.Storage.Queues": "Warning",
+      "Azure.Core": "Warning",
+      "Worker": "Warning",
+      "Microsoft": "Warning",
+      "Default": "Warning"
+    },
+    "fileLoggingMode": "always"
   },
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.*, 5.0.0)"
+    "version": "[4.26.2, 4.26.2]",
+    "downloadPath": "$HOME/.azure-functions-extension-bundles"
   }
 }

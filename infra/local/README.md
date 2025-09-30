@@ -26,6 +26,7 @@ They read names from your `local.settings.json` so your team shares the same tru
 
 1. `python -m pip install -r infra/local/requirements.txt`
 2. `cp infra/local/.env.example infra/local/.env` and edit as needed
+
 3. Seed storage:
    - `bash infra/local/seed-storage.sh` **or**
    - `pwsh infra/local/seed-storage.ps1` **or**

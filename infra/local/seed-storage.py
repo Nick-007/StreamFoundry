@@ -1,104 +1,79 @@
 #!/usr/bin/env python3
-"""
-Idempotent seeding for local Storage **queues** (no blob containers).
-- Safe to re-run: existing queues are skipped.
-- Defaults to queue: transcode-jobs
-- Connection string sources (first found wins):
-    1) env AzureWebJobsStorage
-    2) env AZURE_STORAGE_CONNECTION_STRING
-    3) ./local.settings.json -> Values.AzureWebJobsStorage
-Usage:
-    python infra/local/seed-storage.py
-    python infra/local/seed-storage.py --queue transcode-jobs another-queue
-"""
-
-import argparse
-import json
-import os
-import sys
+import json, sys, io
 from pathlib import Path
+from datetime import datetime
 
+from azure.storage.queue import QueueServiceClient
+from azure.storage.blob import BlobServiceClient
+
+# ---- config (ONLY from local.settings.json) ----
+SETTINGS_PATH = Path("local.settings.json")
 try:
-    from azure.core.exceptions import ResourceExistsError
-    from azure.storage.queue import QueueClient
+    cfg = json.loads(SETTINGS_PATH.read_text())
+    CONN = cfg["Values"]["AzureWebJobsStorage"]
 except Exception as e:
-    print("ERROR: Azure SDK not found. Install deps first:\n"
-          "  python -m pip install azure-storage-queue azure-core",
-          file=sys.stderr)
-    raise
+    print(f"[ERR] cannot read AzureWebJobsStorage from {SETTINGS_PATH}: {e}")
+    sys.exit(2)
 
-DEFAULT_QUEUES = ["transcode-jobs"]
+# Known/real resources in your app:
+QUEUE_NAME = "transcode-jobs"
+# List your BlobTrigger containers here; add more if your app uses them.
+# (We saw 'raw-videos' in your logs; do not include any azure-webjobs-* internals.)
+BLOBTRIGGER_CONTAINERS = ["raw-videos"]
 
-def load_conn_from_local_settings(path: Path) -> str | None:
-    if not path.exists():
-        return None
+# Seed blob name + content
+SEED_BLOB_NAME = "__seed__.keep"
+SEED_CONTENT = b"# seed blob to force BlobTrigger registration\n"
+SEED_METADATA = {"seed": "true", "created": datetime.utcnow().isoformat()}
+
+def ensure_queue():
+    qs = QueueServiceClient.from_connection_string(CONN)
+    q = qs.get_queue_client(QUEUE_NAME)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return data.get("Values", {}).get("AzureWebJobsStorage")
-    except Exception as e:
-        print(f"WARNING: Failed to parse {path}: {e}", file=sys.stderr)
-        return None
+        q.get_queue_properties()
+        print(f"[ok] queue exists: {QUEUE_NAME}")
+    except Exception:
+        print(f"[i] creating queue: {QUEUE_NAME}")
+        q.create_queue()
+        print(f"[ok] created queue: {QUEUE_NAME}")
 
-def resolve_connection_string(explicit: str | None = None) -> str:
-    # explicit arg overrides everything
-    if explicit:
-        return explicit
-
-    # env vars
-    env_conn = os.getenv("AzureWebJobsStorage") or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    if env_conn:
-        return env_conn
-
-    # local.settings.json in CWD
-    cwd_settings = Path("local.settings.json")
-    conn = load_conn_from_local_settings(cwd_settings)
-    if conn:
-        return conn
-
-    # try project root if script is run from nested dir
-    here = Path(__file__).resolve()
-    candidate = here.parents[2] / "local.settings.json" if len(here.parents) >= 2 else None
-    if candidate and candidate.exists():
-        conn = load_conn_from_local_settings(candidate)
-        if conn:
-            return conn
-
-    raise SystemExit(
-        "Could not resolve Azure Storage connection string.\n"
-        "Set env AzureWebJobsStorage (or AZURE_STORAGE_CONNECTION_STRING), "
-        "or ensure local.settings.json is present with Values.AzureWebJobsStorage."
-    )
-
-def ensure_queue(conn_str: str, name: str) -> None:
-    qc = QueueClient.from_connection_string(conn_str, name)
+def ensure_blobtrigger_container(name: str):
+    bs = BlobServiceClient.from_connection_string(CONN)
+    cc = bs.get_container_client(name)
+    # Create container if missing (idempotent)
     try:
-        created = qc.create_queue()
-        print(f"[seed] created queue: {name}" if created else f"[seed] queue already exists: {name}")
-    except ResourceExistsError:
-        print(f"[seed] queue already exists: {name}")
+        cc.get_container_properties()
+        print(f"[ok] container exists: {name}")
+    except Exception:
+        print(f"[i] creating container: {name}")
+        cc.create_container()
+        print(f"[ok] created container: {name}")
+
+    # If container is empty, upload a seed blob to kick BlobTrigger registration
+    has_any = False
+    try:
+        for _ in cc.list_blobs(name_starts_with=""):
+            has_any = True
+            break
     except Exception as e:
-        # Don’t fail the whole script for one queue; report and continue
-        print(f"[seed] ERROR creating queue '{name}': {e}", file=sys.stderr)
+        print(f"[WARN] list_blobs failed on {name}: {e}")
 
-def main():
-    ap = argparse.ArgumentParser(description="Idempotent seeding for Azure Storage queues (local/staging).")
-    ap.add_argument("--connection-string", "-c", help="Explicit Azure Storage connection string.")
-    ap.add_argument("--queue", "-q", action="append", default=[],
-                    help="Queue name to create (repeatable). Default: transcode-jobs")
-    args = ap.parse_args()
-
-    conn = resolve_connection_string(args.connection_string)
-
-    # Build final queue list (unique, preserve order)
-    queues = args.queue if args.queue else DEFAULT_QUEUES
-    seen = set()
-    ordered = [q for q in queues if not (q in seen or seen.add(q))]
-
-    print(f"[seed] using connection: {'(from --connection-string)' if args.connection_string else 'auto-resolved'}")
-    for q in ordered:
-        ensure_queue(conn, q)
-
-    print("[seed] done.")
+    if not has_any:
+        print(f"[i] {name} is empty -> uploading seed blob: {SEED_BLOB_NAME}")
+        bc = cc.get_blob_client(SEED_BLOB_NAME)
+        # Upload is idempotent: if already present, just leave it
+        try:
+            if not bc.exists():
+                bc.upload_blob(io.BytesIO(SEED_CONTENT), overwrite=False, metadata=SEED_METADATA)
+                print(f"[ok] uploaded seed blob {SEED_BLOB_NAME} in {name}")
+            else:
+                print(f"[ok] seed blob already present in {name}")
+        except Exception as e:
+            print(f"[ERR] failed to upload seed blob to {name}: {e}")
 
 if __name__ == "__main__":
-    main()
+    print("[seed] using AzureWebJobsStorage from local.settings.json")
+    ensure_queue()
+    for cname in BLOBTRIGGER_CONTAINERS:
+        ensure_blobtrigger_container(cname)
+    print("[seed] done.")
