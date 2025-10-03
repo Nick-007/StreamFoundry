@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict, Any
 
 from .config import get
 from .storage import upload_bytes
@@ -13,6 +13,63 @@ from .storage import upload_bytes
 def _ts() -> str:
     return _dt.datetime.now().strftime("%Y%m%dT%H%M%SZ")
 
+def make_slogger(
+    *,
+    text_log: Optional[Callable[[str], None]] = None,
+    job_log: Optional[Callable[[str, str, Any], None]] = None,
+    ctx: Optional[Dict[str, Any]] = None,
+):
+    """
+    Returns slog(event, msg=None, **fields) and slog_exc(event, exc, **fields)
+    - text_log: e.g., logging.info
+    - job_log:  e.g., shared.logger.log_job
+    - ctx:      static fields to attach to every structured record (job_id, stem, etc.)
+    try:
+        ...
+    except Exception as e:
+        slog_exc("transcode", e, stage="video", rung="240p")
+        raise
+    """
+    ctx = dict(ctx or {})
+
+    def _merge(a: Dict[str, Any] | None, b: Dict[str, Any] | None) -> Dict[str, Any]:
+        out = {}
+        if a: out.update(a)
+        if b: out.update(b)
+        return out
+
+    def slog(event: str, msg: Optional[str] = None, **fields):
+        # 1) human text
+        if text_log:
+            if msg is None and fields:
+                # build a compact key=val summary for readability
+                kv = " ".join(f"{k}={v}" for k, v in fields.items())
+                text_log(f"[{event}] {kv}")
+            else:
+                text_log(f"[{event}] {msg or ''}".rstrip())
+
+        # 2) structured
+        jl = job_log or log_job
+        if jl:
+            try:
+                jl(event, msg or "", **_merge(ctx, fields))
+            except Exception:
+                # never let logging crash the worker
+                pass
+
+    def slog_exc(event: str, exc: BaseException, **fields):
+        # text
+        if text_log:
+            text_log(f"[{event}] EXC: {exc}")
+        # structured
+        try:
+            log_exception(event, str(exc), **_merge(ctx, fields))
+        except Exception:
+            pass
+
+    return slog, slog_exc
+
+# ---------- existing backwards-compatible job logger (discrete blobs) ----------
 def log_job(video_name: str, content: str):
     """
     Backwards-compatible: writes a single timestamped blob per call.

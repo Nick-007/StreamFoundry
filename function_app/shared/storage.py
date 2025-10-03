@@ -43,7 +43,7 @@ def acquire_lock_with_break(key: str, ttl: int | None = None) -> dict | None:
     we break it and retry once.
     """
     svc = _svc()
-    container = _locks_container() if "_locks_container" in globals() else get("LOCKS_CONTAINER", "locks")
+    container = _locks_container() if "_locks_container" in globals() else _get("LOCKS_CONTAINER", "locks")
     ensure_containers([container])
     bn = _lock_blob_name(key) if "_lock_blob_name" in globals() else key  # reuse your naming
 
@@ -295,25 +295,67 @@ def release_lock(lock: Dict[str, Any]) -> None:
         # best-effort
         pass
 
-def upload_tree_routed(dist_dir: str, stem: str, hls_container: str, dash_container: str) -> None:
+def upload_tree_routed(
+    dist_dir: str,
+    stem: str,
+    hls_container: str,
+    dash_container: str,
+    *,
+    strategy: str = "if-missing",           # "if-missing" or "idempotent"
+    log=None
+) -> dict:
     """
-    Upload dist_dir/hls/** to hls_container and dist_dir/dash/** to dash_container.
-    Blob names become "{stem}/<relative_path_inside_subdir>".
+    Route uploads:
+      - dist/hls/**  -> hls_container/<stem>/**
+      - dist/dash/** -> dash_container/<stem>/**
+    Skips everything else.
+
+    strategy:
+      - "if-missing": only upload if the target blob does NOT exist
+      - "idempotent": call your existing upload_file(..) which may do etag/hash checks
+
+    Returns simple stats: {"hls": {"uploaded": n, "skipped": m}, "dash": {...}}
     """
+    def _log(msg: str):
+        try:
+            (log or print)(msg)
+        except Exception:
+            pass
+
     root = Path(dist_dir)
-    hls_root, dash_root = root / "hls", root / "dash"
+    if not root.exists():
+        raise FileNotFoundError(f"dist_dir missing: {dist_dir}")
 
-    if hls_root.exists():
-        ensure_containers([hls_container])
-        for p in hls_root.rglob("*"):
-            if p.is_file():
-                rel = p.relative_to(hls_root).as_posix()
-                upload_file(hls_container, f"{stem}/{rel}", str(p))
+    stats = {"hls": {"uploaded": 0, "skipped": 0}, "dash": {"uploaded": 0, "skipped": 0}}
 
-    if dash_root.exists():
-        ensure_containers([dash_container])
-        for p in dash_root.rglob("*"):
-            if p.is_file():
-                rel = p.relative_to(dash_root).as_posix()
-                upload_file(dash_container, f"{stem}/{rel}", str(p))
+    def _route_and_upload(subdir: str, container: str, key: str):
+        basedir = root / subdir
+        if not basedir.exists():
+            _log(f"[upload] skip {subdir}/ (missing)")
+            return
+        for p in basedir.rglob("*"):
+            if not p.is_file():
+                continue
+            rel = p.relative_to(basedir).as_posix()           # e.g. segments/xxx.m4s
+            blob = f"{stem}/{rel}"                             # <stem>/segments/xxx.m4s
+
+            if strategy == "if-missing":
+                if blob_exists(container, blob):
+                    stats[key]["skipped"] += 1
+                    continue
+                upload_file(container, blob, str(p))           # your existing helper
+                stats[key]["uploaded"] += 1
+            else:  # "idempotent" (use your existing hash/etag aware uploader)
+                changed = upload_file(container, blob, str(p)) # assume it no-ops if same
+                if changed:
+                    stats[key]["uploaded"] += 1
+                else:
+                    stats[key]["skipped"] += 1
+
+    _route_and_upload("hls",  hls_container,  "hls")
+    _route_and_upload("dash", dash_container, "dash")
+
+    _log(f"[upload] hls uploaded={stats['hls']['uploaded']} skipped={stats['hls']['skipped']} | "
+         f"dash uploaded={stats['dash']['uploaded']} skipped={stats['dash']['skipped']}")
+    return stats
 # -------------------- Shaka Packager helpers --------------------
