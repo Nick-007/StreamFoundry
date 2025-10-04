@@ -382,7 +382,7 @@ def queue_ingestor(msg: func.QueueMessage, context: func.Context):
             stem=job_id,
             hls_container=HLS,
             dash_container=DASH,
-            strategy="if-missing",     # or "idempotent" to use your hash/etag logic
+            strategy="idempotent",     # or "idempotent" to use your hash/etag logic
             log=log
         )
         log(f"[upload] routed took={int(time.time()-t0)}s")

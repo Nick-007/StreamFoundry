@@ -338,7 +338,7 @@ def upload_tree_routed(
                 continue
             rel = p.relative_to(basedir).as_posix()           # e.g. segments/xxx.m4s
             blob = f"{stem}/{rel}"                             # <stem>/segments/xxx.m4s
-
+            skipval = (strategy == "idempotent")
             if strategy == "if-missing":
                 if blob_exists(container, blob):
                     stats[key]["skipped"] += 1
@@ -346,7 +346,7 @@ def upload_tree_routed(
                 upload_file(container, blob, str(p))           # your existing helper
                 stats[key]["uploaded"] += 1
             else:  # "idempotent" (use your existing hash/etag aware uploader)
-                changed = upload_file(container, blob, str(p)) # assume it no-ops if same
+                changed = upload_file(container, blob, str(p), skip_if_same=skipval) # assume it no-ops if same
                 if changed:
                     stats[key]["uploaded"] += 1
                 else:

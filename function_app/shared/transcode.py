@@ -148,6 +148,10 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
         f'-pix_fmt yuv420p '
         + (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 ' if bt709 else '')
         + f'-g {gop} -keyint_min {gop} -sc_threshold 0 -bf 3 -coder cabac '
+        f'-video_track_timescale 90000 '                                  # <— new
+        f'-force_key_frames "expr:gte(t,n_forced*{seg_dur})" '             # <— new
+        # optional but helps keep timestamps monotonic and clean for VFR sources:
+        f'-fps_mode vfr '
     )
 
     def _opts_for(codec: str) -> str:
