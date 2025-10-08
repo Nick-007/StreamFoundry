@@ -1,13 +1,281 @@
 import time, subprocess, shlex, re, os, shutil, signal
 from pathlib import Path
 from typing import Callable, Optional, Tuple, List, Dict
-
+from math import floor, ceil
 from .config import get
 from .errors import CmdError
 from .tools import ffmpeg_path
 from .qc import ffprobe_inspect, analyze_media
 
 _PROCS = set()
+
+_SEG_RE = re.compile(r'.*_(\d+)\.m4s$')
+
+def _highest_segment_index(dir_path: str, base_prefix: str) -> int:
+    """
+    Return highest N among {base_prefix}{N}.m4s in dir_path, or 0 if none exist.
+    """
+    p = Path(dir_path)
+    if not p.exists():
+        return 0
+    hi = 0
+    for f in p.glob(f"{base_prefix}*.m4s"):
+        m = _SEG_RE.match(f.name)
+        if m:
+            try:
+                hi = max(hi, int(m.group(1)))
+            except Exception:
+                pass
+    return hi
+
+def _sec_from_segments(n: int, seg_dur: int) -> float:
+    """
+    Translate segment count -> media seconds.
+    """
+    return float(n * seg_dur)
+
+# in function_app/shared/transcode.py (replace your existing derive_k)
+from fractions import Fraction
+
+def derive_k(*args, fps: float | None = None, seg_dur: int | None = None, **kwargs) -> int:
+    """
+    Derive GOP/keyint ~= fps * seg_dur, aligned to segment boundaries.
+    Back-compat:
+      - accepts legacy positional: (fps, seg_dur)
+      - accepts legacy kwargs: frame_rate=..., segment_duration=...
+    """
+
+    # ---- harvest fps ----
+    if fps is None:
+        # legacy positional: derive_k(29.97, 4)
+        if len(args) >= 1:
+            try:
+                fps = float(args[0])
+            except Exception:
+                fps = None
+    if fps is None:
+        # legacy kw: frame_rate=...
+        fr = kwargs.get("frame_rate")
+        if fr is not None:
+            try:
+                fps = float(fr)
+            except Exception:
+                fps = None
+    if fps is None:
+        # final fallback
+        try:
+            # if you have shared.config.get available
+            from ..shared.config import get as _get  # adjust import if needed
+            fps = float(_get("DEFAULT_FPS", "24"))
+        except Exception:
+            fps = 24.0
+
+    # stabilize common NTSC floats like 29.97/59.94
+    try:
+        fps = float(Fraction(fps).limit_denominator(1001))
+    except Exception:
+        fps = float(fps)
+
+    # ---- harvest seg_dur ----
+    if seg_dur is None:
+        if len(args) >= 2:
+            try:
+                seg_dur = int(args[1])
+            except Exception:
+                seg_dur = None
+    if seg_dur is None:
+        seg_dur = kwargs.get("segment_duration") or kwargs.get("seg_duration") or kwargs.get("seg")
+        if seg_dur is not None:
+            try:
+                seg_dur = int(seg_dur)
+            except Exception:
+                seg_dur = None
+    if seg_dur is None:
+        try:
+            from ..shared.config import get as _get
+            seg_dur = int(_get("SEG_DUR_SEC", "4"))
+        except Exception:
+            seg_dur = 4
+
+    # ---- compute & clamp ----
+    k = int(round(fps * seg_dur))
+    # clamp defensively (avoid absurd GOPs)
+    if k < 2:
+        k = 2
+    elif k > 300:
+        k = 300
+    return k
+
+# --- DROP-IN: resumable CMAF VIDEO rung (add; do not replace your MP4 path) ---
+def _ffmpeg_video_to_cmaf_segments(
+    input_path: str,
+    out_dir: str,
+    label: str,
+    height: int,
+    bv: str,
+    maxrate: str,
+    bufsize: str,
+    fps: float,
+    seg_dur: int,
+    total_duration_sec: float,
+    budget_sec: float,
+    rate_media_per_wall: float | None = None,
+    log=None,
+) -> dict:
+    """
+    Produce CMAF video segments for a single rung, with:
+      - resume (start_number = last+1)
+      - time-budget cap (encode only K segments this run)
+      - fixed cut-points using -force_key_frames
+    Returns dict describing the rung’s init + pattern.
+    """
+    def _log(s): (log or print)(s)
+
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+    # How many already done? Where do we resume?
+    base = f"video_{label}_"
+    n_done  = _highest_segment_index(out_dir, base)            # last existing $Number$
+    resumeN = n_done + 1
+    # How many *new* segments to do now?
+    K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
+    if K <= 0:
+        _log(f"[video:{label}] nothing to do (n_done={n_done})")
+        return {
+            "label": label,
+            "init": str(Path(out_dir)/f"video_{label}_init.mp4"),
+            "pattern": f"video_{label}_$Number$.m4s",
+            "kind": "video",
+            "resumeN": resumeN,
+            "K": 0,
+        }
+
+    # Time slice to encode for this run (seek to the exact segment boundary)
+    t0   = n_done * seg_dur
+    span = K * seg_dur
+
+    # Encoder settings
+    gop     = max(1, int(round(fps * seg_dur)))
+    enc     = get("VIDEO_CODEC", "libx264").strip().lower()
+    bt709   = _get_bool("SET_BT709_TAGS")
+
+    vf = f'scale=-2:{height}'
+    force_kf = f'-force_key_frames "expr:gte(t,n_forced*{seg_dur})" '
+
+    common = (
+        f'-pix_fmt yuv420p '
+        + (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 ' if bt709 else '')
+        + f'-g {gop} -keyint_min {gop} -sc_threshold 0 '
+        + force_kf
+    )
+
+    if enc == "h264_nvenc":
+        vcodec = (
+            f'-c:v h264_nvenc -preset {get("NVENC_PRESET","p5")} -rc {get("NVENC_RC","vbr_hq")} '
+            f'-rc-lookahead {get("NVENC_LOOKAHEAD","32")} '
+            f'-spatial_aq {"1" if _get_bool("NVENC_AQ") else "0"} -temporal_aq 1 '
+        )
+    elif enc in ("h264_videotoolbox", "hevc_videotoolbox"):
+        vcodec = f'-c:v {enc} '
+    else:
+        vcodec = '-c:v libx264 -preset medium -tune film '
+
+    init_name  = f'video_{label}_init.mp4'
+    media_pat  = f'video_{label}_$Number$.m4s'
+
+    # DASH muxer writes CMAF segments; we ignore the .mpd file produced here
+    dash_opts = (
+        f'-f dash -use_timeline 1 -use_template 1 '
+        f'-seg_duration {seg_dur} -min_seg_duration {seg_dur} '
+        f'-single_file 0 -remove_at_exit 0 -window_size 0 -extra_window_size 0 '
+        f'-init_seg_name {init_name} -media_seg_name {media_pat} '
+        f'-hls_playlist 0 '
+        f'-start_number {resumeN} '
+    )
+
+    v_cmd = (
+        f'{ffmpeg_path()} -hide_banner -nostdin -y '
+        f'-ss {t0} -i "{input_path}" -map 0:v:0 '
+        f'-vf "{vf}" {common} {vcodec} '
+        f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
+        f'-profile:v high -level 4.1 '
+        f'{dash_opts} '
+        f'-t {span} '
+        f'"{Path(out_dir)/f"video_{label}.mpd"}"'
+    )
+
+    _log(f"[video:{label}] resumeN={resumeN} K={K} t0={t0}s span={span}s → {out_dir}")
+    rc = _run_stream(v_cmd, on_line=_log, on_progress=None, cwd=out_dir, idle_timeout_sec=600)
+    if rc != 0:
+        raise CmdError(f"FFmpeg CMAF video rung failed ({label}): rc={rc}")
+
+    return {
+        "label": label,
+        "init": str(Path(out_dir)/init_name),
+        "pattern": media_pat,
+        "kind": "video",
+        "resumeN": resumeN,
+        "K": K,
+    }
+
+
+# --- DROP-IN: resumable CMAF AUDIO (add; separate from your MP4 audio) --------
+def _ffmpeg_audio_to_cmaf_segments(
+    input_path: str,
+    out_dir: str,
+    seg_dur: int,
+    total_duration_sec: float,
+    budget_sec: float,
+    rate_media_per_wall: float | None = None,
+    log=None,
+) -> dict:
+    def _log(s): (log or print)(s)
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+    n_done  = _highest_segment_index(out_dir, "audio_")
+    resumeN = n_done + 1
+    K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
+    if K <= 0:
+        _log(f"[audio] nothing to do (n_done={n_done})")
+        return {
+            "label": "audio",
+            "init": str(Path(out_dir)/"audio_init.m4a"),
+            "pattern": "audio_$Number$.m4s",
+            "kind": "audio",
+            "resumeN": resumeN,
+            "K": 0,
+        }
+
+    t0   = n_done * seg_dur
+    span = K * seg_dur
+
+    a_cmd = (
+        f'{ffmpeg_path()} -hide_banner -nostdin -y '
+        f'-ss {t0} -i "{input_path}" -map 0:a:0? '
+        f'-c:a aac -b:a {get("AUDIO_BITRATE","128k")} -ac 2 -ar 48000 '
+        f'-f dash -use_timeline 1 -use_template 1 '
+        f'-seg_duration {seg_dur} -min_seg_duration {seg_dur} '
+        f'-single_file 0 -remove_at_exit 0 -window_size 0 -extra_window_size 0 '
+        f'-init_seg_name audio_init.m4a -media_seg_name audio_$Number$.m4s '
+        f'-hls_playlist 0 '
+        f'-start_number {resumeN} '
+        f'-t {span} '
+        f'"{Path(out_dir)/"audio.mpd"}"'
+    )
+
+    _log(f"[audio] resumeN={resumeN} K={K} t0={t0}s span={span}s → {out_dir}")
+    rc = _run_stream(a_cmd, on_line=_log, on_progress=None, cwd=out_dir, idle_timeout_sec=600)
+    if rc != 0:
+        raise CmdError(f"FFmpeg CMAF audio failed: rc={rc}")
+
+    return {
+        "label": "audio",
+        "init": str(Path(out_dir)/"audio_init.m4a"),
+        "pattern": "audio_$Number$.m4s",
+        "kind": "audio",
+        "resumeN": resumeN,
+        "K": K,
+    }
 
 def _popen(cmd: str, *, cwd: str | None = None, text: bool = True, bufsize: int = 1, **popen_kwargs):
     kwargs = dict(cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=text, bufsize=bufsize)
@@ -136,7 +404,7 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
     Path(out_mp4).parent.mkdir(parents=True, exist_ok=True)
 
     gop = max(1, int(round(fps * seg_dur)))
-    enc = get("VIDEO_CODEC", "h264_nvenc").strip().lower()
+    enc = get("VIDEO_CODEC", "libx264").strip().lower()
     bt709 = _get_bool("SET_BT709_TAGS")
     nv_preset = get("NVENC_PRESET", "p5")
     nv_rc     = get("NVENC_RC", "vbr_hq")

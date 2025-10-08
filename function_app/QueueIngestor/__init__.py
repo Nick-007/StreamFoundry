@@ -1,256 +1,210 @@
-import os
-import json
-import ast
-import hashlib
-import time
-import threading
-from pathlib import Path
-from typing import Optional, Callable, List, Dict
+# function_app/QueueIngestor/__init__.py
+from __future__ import annotations
 
-import requests
+import os, json, time, hashlib, threading, logging
+from pathlib import Path
+from typing import Optional, Dict, Any
+
 import azure.functions as func
 from azure.storage.queue import QueueClient
+from azure.core.exceptions import ResourceNotFoundError
 
+# ---------- Function App (v2 decorators) ----------
 from .. import app
+
+# ---------- shared helpers (your existing modules) ----------
 from ..shared.config import get
 from ..shared.logger import (
-    log_job as _log_job,
-    log_exception as _log_exception,
+    log_job as _log_job_base,
+    log_exception as _log_exception_base,
     StreamLogger,
     bridge_logger,
-    make_slogger
-)
-from ..shared.qc import (
-    ensure_media_tools,
-    ffprobe_validate
-)
-from ..shared.mezz import (
-    upload_mezz_and_manifest,
-    ensure_intermediates_from_mezz
-)
-from ..shared.transcode import (
-    transcode_to_cmaf_ladder,
-    package_with_shaka_ladder,
-    _resolve_packager,
-    CmdError,
-    kill_all_children,
-)
-from ..shared.verify import (
-    verify_transcode_outputs,
-    verify_dash,
-    verify_hls,
 )
 from ..shared.storage import (
-    ensure_containers,
-    blob_client,
-    blob_exists,
-    upload_tree_routed,
-    upload_bytes,
+    blob_client, blob_exists, upload_bytes,
     acquire_lock_with_break,
-    renew_lock,
-    release_lock,
+)
+from ..shared.qc import ffprobe_validate, _safe_json
+from ..shared.transcode import (
+    _ffmpeg_audio_to_cmaf_segments,
+    _ffmpeg_video_to_cmaf_segments,
+    derive_k,
 )
 
-import logging
-LOGGER = logging.getLogger("Function.queue_ingestor")  # ← matches host.json
-
-# ---------- tiny bridges to your blob logger ----------
-def log_job(scope: str, msg: object = "", **kwargs):
-    s = "" if msg is None else (msg if isinstance(msg, str) else str(msg))
-    if kwargs:
-        kv = ", ".join(f"{k}={v}" for k, v in kwargs.items())
-        s = f"{s} | {kv}" if s else kv
-    return _log_job(scope, s)
-
-def log_exception(scope: str, msg: object = "", **kwargs):
-    s = "" if msg is None else (msg if isinstance(msg, str) else str(msg))
-    if kwargs:
-        kv = ", ".join(f"{k}={v}" for k, v in kwargs.items())
-        s = f"{s} | {kv}" if s else kv
-    return _log_exception(scope, s)
-
-# ---------- config ----------
-RAW        = get("RAW_CONTAINER", "raw-videos")
-MEZZ       = get("MEZZ_CONTAINER", "mezzanine")
-HLS        = get("HLS_CONTAINER", "hls")
-DASH       = get("DASH_CONTAINER", "dash")
-LOGS       = get("LOGS_CONTAINER", "logs")
-PROCESSED  = get("PROCESSED_CONTAINER", "processed")
-LOCKS      = get("LOCKS_CONTAINER", "locks")
-JOB_QUEUE  = get("JOB_QUEUE", "transcode-jobs")
-
-# ---------- errors ----------
-class BadMessageError(Exception): ...
-class ConfigError(Exception): ...
-
-# ---------- poison helpers ----------
-def _queue_client(name: str) -> QueueClient:
-    conn = os.getenv("AzureWebJobsStorage") or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    return QueueClient.from_connection_string(conn, name)
-
-def send_to_poison(msg: func.QueueMessage, *, queue_name: str, reason: str, details: dict | None = None):
-    poison = f"{queue_name}-poison"
-    qc = _queue_client(poison)
-    try: qc.create_queue()
-    except Exception: pass
+# Containers / Queues
+IN       = get("INPUT_CONTAINER", "incoming")
+HLS      = get("HLS_CONTAINER",   "hls")
+DASH     = get("DASH_CONTAINER",  "dash")
+MEZZ     = get("MEZZ_CONTAINER",  "mezzanine")
+LOGS     = get("LOGS_CONTAINER",  "logs")
+INGEST_Q = get("JOB_QUEUE",    "transcode-jobs")   # queue this function listens to
+PKG_Q    = get("PACKAGING_QUEUE", "packaging-jobs")
+PKG_CONN = get("AzureWebJobsStorage")
+# -----------------------------
+# Thin wrappers to your blob logger (so we can call safely)
+# -----------------------------
+def _log_job(topic: str, msg: str, **kv):
     try:
-        body = msg.get_body().decode("utf-8", errors="ignore")
+        return _log_job_base.__wrapped__(topic, msg, **kv)  # type: ignore[attr-defined]
     except Exception:
-        body = "<unreadable>"
-    payload = {
-        "reason": reason,
-        "details": details or {},
-        "original": {
-            "id": getattr(msg, "id", None),
-            "dequeue_count": getattr(msg, "dequeue_count", None),
-            "insertion_time": getattr(msg, "insertion_time", None).isoformat() if getattr(msg, "insertion_time", None) else None,
-            "body": body,
-        },
-        "moved_at": int(time.time())
-    }
-    qc.send_message(json.dumps(payload))
+        return _log_job_base(topic, msg, **kv)
 
-# ---------- message parsing ----------
-def _safe_json(raw: str, *, allow_plain: bool = True, max_log_chars: int = 500):
-    s = (raw or "").strip()
-    if not s:
-        raise BadMessageError("empty queue message body")
+def _log_exception(topic: str, msg: str, **kv):
     try:
-        return json.loads(s)
-    except json.JSONDecodeError:
-        pass
-    try:
-        val = ast.literal_eval(s)
-        if isinstance(val, (dict, list)):
-            return val
-        if isinstance(val, str) and allow_plain:
-            return {"input": val}
+        return _log_exception_base.__wrapped__(topic, msg, **kv)  # type: ignore[attr-defined]
     except Exception:
-        pass
-    if allow_plain:
-        return {"input": s}
-    preview = (s[:max_log_chars] + "…") if len(s) > max_log_chars else s
-    raise BadMessageError(f"invalid JSON payload: {preview}")
+        return _log_exception_base(topic, msg, **kv)
 
-def _normalize(p: dict):
-    raw_key = p.get("raw_key") or p.get("blobName") or p.get("key") or p.get("blob") or p.get("input")
-    if not raw_key:
-        raise BadMessageError("Missing required field: raw_key/blobName/key/blob/input")
-    job_id   = p.get("job_id") or p.get("jobId") or p.get("id") or Path(raw_key).stem
-    container= p.get("container") or RAW
-    captions = p.get("captions") or []
-    return {"raw_key": raw_key, "job_id": job_id, "container": container, "captions": captions}
-
-# ---------- captions ----------
-def _pull_caption(item, tmpdir):
-    src  = item.get("source")
-    lang = (item.get("lang") or "en").lower()
-    if not src:
+# -----------------------------
+# Lease heartbeat (renew until stop)
+# -----------------------------
+def _start_heartbeat(lock_handle, ttl: int, stop_evt: threading.Event, log):
+    lease = lock_handle.get("lease") if isinstance(lock_handle, dict) else None
+    if lease is None or not hasattr(lease, "renew"):
         return None
-    out = os.path.join(tmpdir, f"caption_{lang}.vtt")
-    try:
-        if src.startswith(("http://","https://")):
-            r = requests.get(src, timeout=15); r.raise_for_status()
-            with open(out, "wb") as f: f.write(r.content)
-            return {"lang": lang, "path": out}
-        if "/" in src:
-            c, b = src.split("/", 1)
-            bc2 = blob_client(c, b)
-            with open(out, "wb") as f: f.write(bc2.download_blob().readall())
-            return {"lang": lang, "path": out}
-        log_job("captions", "Unrecognized caption source; skipping", source=src, lang=lang)
-    except Exception as e:
-        log_job("captions", f"Skip caption '{src}' ({lang}): {e}")
-    return None
-
-# ---------- flexible call shims ----------
-def _call_transcode(fn, *, input_path, work_dir, segment_duration=None,
-                    job_id=None, stem=None, captions=None, log=None):
-    trials = (
-        dict(input_path=input_path, workdir=work_dir, segment_duration=segment_duration,
-             job_id=job_id, stem=stem, captions=captions, log=log),
-        dict(input=input_path, workdir=work_dir, segdur=segment_duration,
-             job_id=job_id, stem=stem, captions=captions, log=log),
-        ("positional", (input_path, work_dir)),
-    )
-    last = None
-    for t in trials:
-        try:
-            if isinstance(t, dict): return fn(**t)
-            _, args = t;           return fn(*args)
-        except TypeError as e:
-            last = e; continue
-    raise last
-
-def _call_package(fn, *, renditions, audio_mp4, out_dash, out_hls, text_tracks=None, log=None):
-    return fn(renditions=renditions, audio_mp4=audio_mp4, out_dash=out_dash,
-              out_hls=out_hls, text_tracks=text_tracks, log=log)
-
-# ---------- heartbeat ----------
-def _start_heartbeat(lock_handle, ttl: int, stop_evt: threading.Event, log: Optional[Callable[[str], None]] = None):
     interval = max(5, ttl // 2)
+
     def _beat():
         while not stop_evt.wait(interval):
             try:
-                renew_lock(lock_handle, ttl=ttl)
-                (log or LOGGER.info)(f"[lock] renewed {lock_handle.get('blob','?')}")
+                lease.renew()
+                _log_job("lock", f"renewed {lock_handle.get('blob','?')}")
+                log(f"[lock] renewed {lock_handle.get('blob','?')}")
             except Exception as e:
-                (log or LOGGER.debug)(f"[lock] renew failed: {e}")
+                _log_exception("lock", f"renew failed: {e}")
+                log(f"[lock] renew failed: {e}")
+
     t = threading.Thread(target=_beat, name="lock-heartbeat", daemon=True)
     t.start()
     return t
 
-# ---------- Function ----------
-@app.queue_trigger(arg_name="msg", queue_name=JOB_QUEUE, connection="AzureWebJobsStorage")
-def queue_ingestor(msg: func.QueueMessage, context: func.Context):
-    if not LOGGER.handlers:
-        _h = logging.StreamHandler()
-        _h.setFormatter(logging.Formatter("%(asctime)sZ %(levelname)s %(name)s | %(message)s"))
-        LOGGER.addHandler(_h)
-    LOGGER.setLevel(logging.DEBUG)
-
-    raw = msg.get_body().decode("utf-8", errors="replace")
-    log_job("queue", "Dequeued", length=len(raw), sample=raw[:256])
-
-    # Parse or poison
+# -----------------------------
+# Enqueue packaging job (if ready)
+# -----------------------------
+def _enqueue_packaging_if_ready(*, stem: str, dist_dir: str, log):
+    if not PKG_CONN:
+        raise RuntimeError("AzureWebJobsStorage app setting is missing")
+    body = json.dumps({"stem": stem, "dist_dir": dist_dir, "ts": int(time.time())}, separators=(",", ":"))
     try:
-        payload = _safe_json(raw)
-        payload = _normalize(payload)
-    except BadMessageError as e:
-        log_exception("queue", f"Bad message: {e}")
-        send_to_poison(msg, queue_name=JOB_QUEUE, reason="invalid_message", details={"error": str(e)})
-        return
+        QueueClient.from_connection_string(PKG_CONN, PKG_Q).send_message(body)
+        log(f"[queue] packaging enqueued for {stem} → {PKG_Q}")
+    except ResourceNotFoundError:
+        # Let this fail loudly; infra is seed-owned
+        raise RuntimeError(f"Queue '{PKG_Q}' not found. Run seed script.")
 
-    raw_key   = payload["raw_key"]
-    job_id    = payload["job_id"]
-    in_cont   = payload["container"]
-    captions  = payload["captions"]
-    stem      = Path(raw_key).stem
+# -----------------------------
+# One CMAF “rung” per invocation (audio once, then least-complete video)
+# -----------------------------
+def _process_one_rung_cmaf(
+    *,
+    input_path: str,
+    work_dir: str,
+    stem: str,
+    meta: Dict[str, Any],
+    seg_dur: int,
+    log,
+    rung_budget_sec: Optional[int] = None,
+) -> Dict[str, Any]:
+    rung_budget_sec = rung_budget_sec or int(get("RUNG_BUDGET_SEC", "1400"))  # < host timeout
+    t0 = time.time()
+    # --- derive duration early (from ffprobe meta) ---
+    # try 'duration_sec' first; fall back to 'duration'
+    duration_sec = float(meta.get("duration_sec") or meta.get("duration") or 0.0)
 
-    slog, slog_exc = make_slogger(
-        text_log=LOGGER.info,
-        job_log=_log_job,
-        ctx={"job_id": job_id, "stem": stem}
+    # Audio first (idempotent)
+    audio_dir = Path(work_dir) / "cmaf" / "audio"
+    audio_init = audio_dir / "audio_init.m4a"
+    if not audio_init.exists():
+        log("[audio] begin (CMAF)")
+        # budget for audio: whatever remains from rung_budget_sec
+        budget_left = max(60, rung_budget_sec - int(time.time() - t0))
+        _ffmpeg_audio_to_cmaf_segments(
+            input_path=input_path,
+            out_dir=str(audio_dir),
+            seg_dur=seg_dur,
+            total_duration_sec=duration_sec,
+            budget_sec=budget_left,
+            log=log
+        )
+        log("[audio] end (CMAF)")
+        return {"kind": "audio", "label": "stereo", "K": None}
+
+    # Ladder (same as your MP4 ladder, now CMAF’d)
+    ladder = [
+        {"name":"240p",  "height":240,  "bv":"300k",  "maxrate":"360k",  "bufsize":"600k"},
+        {"name":"360p",  "height":360,  "bv":"650k",  "maxrate":"780k",  "bufsize":"1300k"},
+        {"name":"480p",  "height":480,  "bv":"900k",  "maxrate":"1000k", "bufsize":"1800k"},
+        {"name":"720p",  "height":720,  "bv":"2500k", "maxrate":"2800k", "bufsize":"5000k"},
+        {"name":"1080p", "height":1080, "bv":"4200k", "maxrate":"4600k", "bufsize":"8000k"},
+    ]
+
+    fps = float(meta.get("fps") or 24.0)
+    K = derive_k(fps=fps, seg_dur=seg_dur)
+
+    def rung_progress(label: str) -> int:
+        vdir = Path(work_dir) / "cmaf" / "video" / label
+        if not vdir.exists():
+            return 0
+        return len(list(vdir.glob(f"video_{label}_*.m4s")))
+
+    target = sorted(ladder, key=lambda r: rung_progress(r["name"]))[0]
+    label = target["name"]
+    vdir  = Path(work_dir) / "cmaf" / "video" / label
+    vdir.mkdir(parents=True, exist_ok=True)
+
+    budget_left = max(60, rung_budget_sec - int(time.time() - t0))
+    log(f"[video:{label}] begin → {vdir} (budget~{budget_left}s)")
+    _ffmpeg_video_to_cmaf_segments(
+        input_path=input_path,
+        out_dir=str(vdir),
+        label=label,
+        height=int(target["height"]),
+        bv=target["bv"],
+        maxrate=target["maxrate"],
+        bufsize=target["bufsize"],
+        fps=fps,
+        seg_dur=seg_dur,
+        total_duration_sec=duration_sec,  # <-- add (mirrors audio)
+        budget_sec=budget_left,
+        log=log
     )
-    log = LOGGER.info
+    log(f"[video:{label}] end")
+    return {"kind": "video", "label": label, "K": K}
 
-    if not PROCESSED:
-        raise ConfigError("Missing PROCESSED_CONTAINER configuration")
-    ensure_containers([HLS, DASH, LOGS, PROCESSED])
+# -----------------------------
+# Queue Trigger (v2 DECORATOR MODEL)
+# -----------------------------
+@app.function_name(name="queue_ingestor")
+@app.queue_trigger(arg_name="msg",
+                   queue_name=INGEST_Q,
+                   connection="AzureWebJobsStorage")
+def queue_ingestor(msg: func.QueueMessage) -> None:
+    # Console logger picked up by Functions host
+    pylog = logging.getLogger("Function.queue_ingestor").info
 
-    # Early packager presence check — poison if missing
-    try:
-        _resolve_packager(log=log)
-    except CmdError as e:
-        log_exception("package", f"Packager missing: {e}")
-        send_to_poison(msg, queue_name=JOB_QUEUE, reason="shaka_packager_missing", details={"error": str(e)})
-        return
-
-    lock = None
-    hb_stop = threading.Event()
+    # Stream logger to blobs (bridged), created once we know dist_dir
     sl: Optional[StreamLogger] = None
+    log = pylog  # will be bridged once StreamLogger starts
+
+    # Heartbeat control
+    hb_stop: Optional[threading.Event] = None
+    hb_thr:  Optional[threading.Thread] = None
+    lock     = None
+
+    # Minimal job id: first 8 chars of the message id (or time-based)
+    job_id = (msg.id or hex(int(time.time()))[2:])[:8]
 
     try:
+        raw = msg.get_body().decode("utf-8")
+        payload = _safe_json(raw)
+
+        in_cont  = payload.get("in_cont")  or IN
+        raw_key  = payload.get("blob")     or payload.get("key")
+        stem     = payload.get("stem")     or Path(raw_key or "").stem
+
+        if not raw_key:
+            raise ValueError("payload must contain 'blob' (path inside input container)")
+
         if not blob_exists(in_cont, raw_key):
             raise FileNotFoundError(f"Input blob not found: {in_cont}/{raw_key}")
 
@@ -259,25 +213,29 @@ def queue_ingestor(msg: func.QueueMessage, context: func.Context):
         lock_key = f"{in_cont}/{raw_key}"
         lock = acquire_lock_with_break(lock_key, ttl=ttl)
         if not lock:
-            log_job("lock", "busy or healthy lease present; skipping", key=lock_key)
+            _log_job("lock", "busy or healthy lease present; skipping", key=lock_key)
+            pylog(f"[lock] busy/healthy lease; skip {lock_key}")
             return
+
+        hb_stop = threading.Event()
+        hb_thr  = _start_heartbeat(lock, ttl, hb_stop, log=pylog)
 
         # Workspace
         tmp_root = get("TMP_DIR", "/tmp/ingestor")
-        work_dir = os.path.join(tmp_root, stem, "work"); os.makedirs(work_dir, exist_ok=True)
-        dist_dir = os.path.join(tmp_root, stem, "dist"); os.makedirs(dist_dir, exist_ok=True)
+        work_dir = os.path.join(tmp_root, stem, "work");  os.makedirs(work_dir, exist_ok=True)
+        dist_dir = os.path.join(tmp_root, stem, "dist");  os.makedirs(dist_dir, exist_ok=True)
         inp_dir  = os.path.join(tmp_root, stem, "input"); os.makedirs(inp_dir,  exist_ok=True)
         inp_path = os.path.join(inp_dir, os.path.basename(raw_key))
 
-        # Live stream log to Blob + bridge callable
-        sl = StreamLogger(job_id=stem, dist_dir=dist_dir, container=LOGS)
-        sl.start(interval_sec=20)
-        log = bridge_logger(LOGGER, sl)  # ← use this everywhere
+        # Start StreamLogger now that we know dist_dir, bridge to console
+        try:
+            sl = StreamLogger(job_id=stem, dist_dir=dist_dir, container=LOGS)
+            sl.start(interval_sec=20)
+            log = bridge_logger(pylog, sl)   # use this everywhere
+        except Exception:
+            log = pylog
 
-        # Heartbeat
-        _ = _start_heartbeat(lock, ttl, hb_stop, log=log)
-
-        # Download input
+        # Download input (overwrite ok)
         t0 = time.time()
         bc_in = blob_client(in_cont, raw_key)
         with open(inp_path, "wb") as f:
@@ -287,137 +245,48 @@ def queue_ingestor(msg: func.QueueMessage, context: func.Context):
         # QC (tools, smoke, probe, analyze) — strict
         meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
 
-        # Optional captions
-        t0 = time.time()
-        text_tracks = []
-        for item in (captions or []):
-            c = _pull_caption(item, work_dir)
-            if c: text_tracks.append(c)
-        log(f"[captions] count={len(text_tracks)} took={int(time.time()-t0)}s")
-        log_job("captions", "prepared", count=len(text_tracks))
-
-        # ---- Decide whether to skip transcode (restore from mezz) ----
-        audio_mp4 = str(Path(work_dir) / "audio.mp4")
-        labels = ["240p","360p","480p","720p","1080p"]  # or derive from your ladder
-        expected_videos = [str(Path(work_dir) / f"video_{lab[:-1]}.mp4") for lab in labels]
-        need = [audio_mp4] + expected_videos
-        missing = [p for p in need if not os.path.exists(p)]
-
-        skip_transcode = str(get("SKIP_TRANSCODE_IF_MEZZ", "true")).lower() in ("1","true","yes","on")
-        restored_from_mezz = False
-        did_transcode = False
-
-        if skip_transcode and missing:
-            log("[mezz] attempting restore of intermediates")
-            if ensure_intermediates_from_mezz(stem=stem, work_dir=work_dir, log=log):
-                missing = [p for p in need if not os.path.exists(p)]
-                if not missing:
-                    restored_from_mezz = True
-                    log("[transcode] using restored intermediates; skipping transcode")
-                    # reconstruct renditions from disk
-                    renditions = []
-                    for lab in labels:
-                        v = str(Path(work_dir) / f"video_{lab[:-1]}.mp4")
-                        if os.path.exists(v):
-                            renditions.append({"name": lab, "video": v})
-                else:
-                    log(f"[mezz] partial restore; still missing {len(missing)} → will transcode")
-                    audio_mp4, renditions, meta_in = transcode_to_cmaf_ladder(inp_path, work_dir, log=log)
-                    did_transcode = True
-            else:
-                log("[mezz] restore unavailable → transcode")
-                audio_mp4, renditions, meta_in = transcode_to_cmaf_ladder(inp_path, work_dir, log=log)
-                did_transcode = True
-        else:
-            # either not skipping, or nothing missing → run transcode
-            audio_mp4, renditions, meta_in = transcode_to_cmaf_ladder(inp_path, work_dir, log=log)
-            did_transcode = True
-
-        # ---- Mezz upload (conditional) ----
-        # If we transcoded, upload mezz + manifest as before.
-        # If we restored, skip upload unless manifest is missing in mezz (first-run safety).
-        mezz_manifest = None
-        mezz_manifest_blob = f"{stem}/manifest.json"
-        if did_transcode:
-            mezz_manifest = upload_mezz_and_manifest(stem=stem, work_dir=work_dir, log=log)
-            log(f"[mezz] uploaded files={len(mezz_manifest.get('files', []))}")
-        else:
-            if not blob_exists(MEZZ, mezz_manifest_blob):
-                log("[mezz] restored but manifest missing in container → uploading manifest and listing")
-                mezz_manifest = upload_mezz_and_manifest(stem=stem, work_dir=work_dir, log=log)
-                log(f"[mezz] uploaded files={len(mezz_manifest.get('files', []))}")
-            else:
-                log("[mezz] restored; manifest exists → skipping mezz re-upload")
-
-        # Verify transcode outputs (fast)
-        verify_transcode_outputs(audio_mp4, renditions, meta_in, log=log, re_probe_outputs=False)
-
-        # Packaging (skip if manifests already there)
-        pkg_root = Path(dist_dir)
-        dash_path = pkg_root / "dash" / "stream.mpd"
-        hls_path  = pkg_root / "hls"  / "master.m3u8"
-
-        if dash_path.exists() and hls_path.exists():
-            log("[package] already done; skipping")
-        else:
-            _call_package(
-                package_with_shaka_ladder,
-                renditions=renditions,
-                audio_mp4=audio_mp4,
-                out_dash=str(dash_path),
-                out_hls=str(hls_path),
-                text_tracks=text_tracks,
-                log=log,
-            )
-
-        # Verify HLS & DASH
-        verify_dash(str(dash_path), log=log)
-        verify_hls(str(hls_path), log=log)
-        log_job("package", "ok", out=str(dist_dir))
-
-        # Upload routed (hls → HLS, dash → DASH) — skip if present
-        t0 = time.time()
-        upload_tree_routed(
-            dist_dir=str(dist_dir),
-            stem=job_id,
-            hls_container=HLS,
-            dash_container=DASH,
-            strategy="idempotent",     # or "idempotent" to use your hash/etag logic
-            log=log
+        # One CMAF rung per invocation
+        seg_dur = int(get("SEG_DUR_SEC", "4"))
+        r = _process_one_rung_cmaf(
+            input_path=inp_path,
+            work_dir=work_dir,
+            stem=stem,
+            meta=meta_in,
+            seg_dur=seg_dur,
+            log=log,
         )
-        log(f"[upload] routed took={int(time.time()-t0)}s")
+        log(f"[rung] done kind={r.get('kind')} label={r.get('label','-')} K={r.get('K','-')}")
 
-        # Publish simple manifest
-        version = hashlib.sha1(str(time.time()).encode("utf-8")).hexdigest()[:8]
-        manifest = {
-            "id": stem,
-            "version": version,
-            "hls": f"{HLS}/{stem}/master.m3u8",
-            "dash": f"{DASH}/{stem}/stream.mpd",
-            "captions": [{"lang": t["lang"], "path": f"{HLS}/{stem}/{os.path.basename(t['path'])}"} for t in (text_tracks or [])]
-        }
-        upload_bytes(PROCESSED, f"{stem}/manifest.json", json.dumps(manifest, indent=2).encode("utf-8"), "application/json")
-        upload_bytes(PROCESSED, f"{stem}/latest.json", json.dumps({"version": version, "updatedAt": int(time.time())}).encode("utf-8"), "application/json")
+        # Enqueue packaging (parallel; packager checks readiness)
+        _enqueue_packaging_if_ready(stem=stem, dist_dir=dist_dir, log=log)
 
-        log("[queue] success")
+        log("[queue] success (rung completed; more work will resume on next dequeue)")
 
-    except BadMessageError as e:
-        log_exception("queue", f"Bad message: {e}")
-        send_to_poison(msg, queue_name=JOB_QUEUE, reason="invalid_message", details={"error": str(e)})
-        return
-    except CmdError as e:
-        log_exception("queue", f"Command failed: {e}")
-        raise
     except Exception as e:
-        log_exception("queue", f"Unhandled error: {e}")
+        _log_exception("queue", f"Unhandled error: {e}")
+        pylog(f"Unhandled error: {e}")
         raise
     finally:
-        try: hb_stop.set()
-        except Exception: pass
+        # stop heartbeat
         try:
-            if lock is not None: release_lock(lock)
-        except Exception: pass
+            if hb_stop:
+                hb_stop.set()
+            if hb_thr:
+                hb_thr.join(timeout=2.0)
+        except Exception:
+            pass
+        # release lease (best-effort)
         try:
-            if sl: sl.close()
-        except Exception: pass
-        kill_all_children()
+            if lock and isinstance(lock, dict) and lock.get("lease"):
+                try:
+                    lock["lease"].release()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        # stop stream logger
+        try:
+            if sl: sl.stop(flush=True)
+        except Exception:
+            pass
+        pylog("[queue] function complete")

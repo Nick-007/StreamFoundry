@@ -6,7 +6,8 @@
       "visibilityTimeout": "00:02:00",
       "maxPollingInterval": "00:01:00",
       "batchSize": 1,
-      "newBatchThreshold": 0
+      "newBatchThreshold": 0,
+      "messageEncoding": "none"
     },
     "blobs": {
       "maxDegreeOfParallelism": 1,

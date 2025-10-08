@@ -19,3 +19,4 @@ def get(key: str, default=None):
     if not _cache:
         _cache.update(_load_local_settings())
     return _cache.get(key, default)
+

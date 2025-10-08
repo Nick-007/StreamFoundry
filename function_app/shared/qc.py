@@ -1,8 +1,9 @@
 from __future__ import annotations
 import json, subprocess, shlex, time
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from .tools import ffmpeg_path, ffprobe_path
 from .errors import CmdError
+from .logger import log_exception as _log_exception
 from pathlib import Path
 
 def _run_json(cmd: str) -> Dict:
@@ -11,6 +12,31 @@ def _run_json(cmd: str) -> Dict:
     if p.returncode != 0:
         raise RuntimeError(f"ffprobe failed: {err.strip()}")
     return json.loads(out)
+
+# -----------------------------
+# Safe JSON
+# -----------------------------
+def _safe_json(raw: str, *, allow_plain: bool = True, max_log_chars: int = 500):
+    s = (raw or "").strip()
+    if not s:
+        raise BadMessageError("empty queue message body")
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    try:
+        val = ast.literal_eval(s)
+        if isinstance(val, (dict, list)):
+            return val
+        if isinstance(val, str) and allow_plain:
+            return {"input": val}
+    except Exception:
+        pass
+    if allow_plain:
+        return {"input": s}
+    preview = (s[:max_log_chars] + "…") if len(s) > max_log_chars else s
+    raise BadMessageError(f"invalid JSON payload: {preview}")
+
 
 def parse_fps(avg_frame_rate: str) -> float:
     if not avg_frame_rate or avg_frame_rate == "0/0": return 30.0

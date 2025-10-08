@@ -18,1977 +18,691 @@ Azure Functions Core Tools
 Core Tools Version:       4.2.2+78afd8b84c8e31f0ddac570ba9e8128eefbd3d4a (64-bit)
 Function Runtime Version: 4.1041.200.25360
 
-[2025-09-22T23:59:59.452Z] Building host: version spec: , startup suppressed: 'False', configuration suppressed: 'False', startup operation id: '4b14b33f-27e0-41a1-9805-de84f0c22273'
-[2025-09-23T00:00:00.186Z] Reading host configuration file '/home/nickg/StreamFoundry/host.json'
-[2025-09-23T00:00:00.188Z] Host configuration file read:
-[2025-09-23T00:00:00.188Z] {
-[2025-09-23T00:00:00.188Z]   "version": "2.0",
-[2025-09-23T00:00:00.188Z]   "extensions": {
-[2025-09-23T00:00:00.188Z]     "queues": {
-[2025-09-23T00:00:00.188Z]       "maxDequeueCount": 3,
-[2025-09-23T00:00:00.188Z]       "visibilityTimeout": "00:02:00",
-[2025-09-23T00:00:00.188Z]       "maxPollingInterval": "00:00:10",
-[2025-09-23T00:00:00.188Z]       "batchSize": 1,
-[2025-09-23T00:00:00.188Z]       "newBatchThreshold": 0
-[2025-09-23T00:00:00.189Z]     }
-[2025-09-23T00:00:00.189Z]   },
-[2025-09-23T00:00:00.189Z]   "logging": {
-[2025-09-23T00:00:00.189Z]     "applicationInsights": {
-[2025-09-23T00:00:00.189Z]       "samplingSettings": {
-[2025-09-23T00:00:00.189Z]         "isEnabled": true
-[2025-09-23T00:00:00.189Z]       }
-[2025-09-23T00:00:00.189Z]     },
-[2025-09-23T00:00:00.189Z]     "logLevel": {
-[2025-09-23T00:00:00.189Z]       "default": "Information",
-[2025-09-23T00:00:00.189Z]       "Host.Startup": "Trace",
-[2025-09-23T00:00:00.189Z]       "Host.Results": "Information",
-[2025-09-23T00:00:00.189Z]       "Function.queue_ingestor": "Trace",
-[2025-09-23T00:00:00.189Z]       "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "Trace"
-[2025-09-23T00:00:00.189Z]     }
-[2025-09-23T00:00:00.189Z]   },
-[2025-09-23T00:00:00.189Z]   "extensionBundle": {
-[2025-09-23T00:00:00.189Z]     "id": "Microsoft.Azure.Functions.ExtensionBundle",
-[2025-09-23T00:00:00.189Z]     "version": "[4.*, 5.0.0)"
-[2025-09-23T00:00:00.189Z]   }
-[2025-09-23T00:00:00.189Z] }
-[2025-09-23T00:00:00.241Z] Looking for extension bundle Microsoft.Azure.Functions.ExtensionBundle at /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle
-[2025-09-23T00:00:00.242Z] Applying platform release channel configuration LATEST. Bundle version 4.25.1 will be used
-[2025-09-23T00:00:00.243Z] Found a matching extension bundle at /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.25.1
-[2025-09-23T00:00:00.330Z] Loading functions metadata
-[2025-09-23T00:00:00.333Z] Worker indexing is enabled
-[2025-09-23T00:00:00.347Z] Fetching metadata for workerRuntime: python
-[2025-09-23T00:00:00.347Z] Reading functions metadata (Worker)
-[2025-09-23T00:00:01.033Z]  INFO: Starting Azure Functions Python Worker.
-[2025-09-23T00:00:01.034Z]  INFO: Worker ID: 323a9bc8-d8f0-4686-903c-db4babef2420, Request ID: 5da191f6-c5e1-45dc-be80-89509ada9115, Host Address: 127.0.0.1:36057
-[2025-09-23T00:00:01.538Z]  INFO: Using allowed directories for shared memory: ['/dev/shm'] from App Setting: FUNCTIONS_UNIX_SHARED_MEMORY_DIRECTORIES
-[2025-09-23T00:00:01.665Z]  INFO: Successfully opened gRPC channel to 127.0.0.1:36057 
-[2025-09-23T00:00:01.665Z]  INFO: Detaching console logging.
-[2025-09-23T00:00:05.614Z] Switched to gRPC logging.
-[2025-09-23T00:00:05.659Z] Received WorkerInitRequest, python version 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0], worker version 4.38.0, request ID 5da191f6-c5e1-45dc-be80-89509ada9115. App Settings state: PYTHON_THREADPOOL_THREAD_COUNT: 1000 | PYTHON_ENABLE_WORKER_EXTENSIONS: False. To enable debug level logging, please refer to https://aka.ms/python-enable-debug-logging
-[2025-09-23T00:00:06.282Z] Received WorkerMetadataRequest, request ID 5da191f6-c5e1-45dc-be80-89509ada9115, function_path: /home/nickg/StreamFoundry/function_app.py
-[2025-09-23T00:00:06.809Z] Indexed function app and found 3 functions
-[2025-09-23T00:00:06.810Z] Successfully processed FunctionMetadataRequest for functions: Function Name: blob_enqueuer, Function Binding: [('blobTrigger', 'input_blob', '')] Function Name: queue_ingestor, Function Binding: [('blobTrigger', 'input_blob', ''), ('queueTrigger', 'msg', '')] Function Name: submit_job, Function Binding: [('blobTrigger', 'input_blob', ''), ('queueTrigger', 'msg', ''), ('httpTrigger', 'req', ''), ('http', '$return', '')]. Deferred bindings enabled: False.
-[2025-09-23T00:00:06.910Z] 3 functions found (Worker)
-[2025-09-23T00:00:06.933Z] 3 functions loaded
-[2025-09-23T00:00:06.937Z] Looking for extension bundle Microsoft.Azure.Functions.ExtensionBundle at /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle
-[2025-09-23T00:00:06.937Z] Applying platform release channel configuration LATEST. Bundle version 4.25.1 will be used
-[2025-09-23T00:00:06.942Z] Found a matching extension bundle at /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.25.1
-[2025-09-23T00:00:06.942Z] Fetching information on versions of extension bundle Microsoft.Azure.Functions.ExtensionBundle available on https://cdn.functions.azure.com/public/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/index.json
-[2025-09-23T00:00:07.383Z] Applying platform release channel configuration LATEST. Bundle version 4.25.1 will be used
-[2025-09-23T00:00:07.384Z] Skipping bundle download since it already exists at path /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.25.1
-[2025-09-23T00:00:07.387Z] Loading extension bundle from /home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.25.1/bin
-[2025-09-23T00:00:07.388Z] Script Startup resetting load context with base path: '/home/nickg/.azure-functions-core-tools/Functions/ExtensionBundles/Microsoft.Azure.Functions.ExtensionBundle/4.25.1/bin'.
-[2025-09-23T00:00:07.413Z] Loading startup extension 'AzureStorageBlobs'
-[2025-09-23T00:00:07.516Z] Loaded extension 'AzureStorageBlobs' (5.3.4.0)
-[2025-09-23T00:00:07.564Z] Loading startup extension 'AzureStorageQueues'
-[2025-09-23T00:00:07.570Z] Loaded extension 'AzureStorageQueues' (5.3.4.0)
-[2025-09-23T00:00:07.581Z] Reading host configuration file '/home/nickg/StreamFoundry/host.json'
-[2025-09-23T00:00:07.581Z] Host configuration file read:
-[2025-09-23T00:00:07.581Z] {
-[2025-09-23T00:00:07.581Z]   "version": "2.0",
-[2025-09-23T00:00:07.581Z]   "extensions": {
-[2025-09-23T00:00:07.581Z]     "queues": {
-[2025-09-23T00:00:07.581Z]       "maxDequeueCount": 3,
-[2025-09-23T00:00:07.581Z]       "visibilityTimeout": "00:02:00",
-[2025-09-23T00:00:07.581Z]       "maxPollingInterval": "00:00:10",
-[2025-09-23T00:00:07.581Z]       "batchSize": 1,
-[2025-09-23T00:00:07.581Z]       "newBatchThreshold": 0
-[2025-09-23T00:00:07.581Z]     }
-[2025-09-23T00:00:07.581Z]   },
-[2025-09-23T00:00:07.581Z]   "logging": {
-[2025-09-23T00:00:07.581Z]     "applicationInsights": {
-[2025-09-23T00:00:07.582Z]       "samplingSettings": {
-[2025-09-23T00:00:07.582Z]         "isEnabled": true
-[2025-09-23T00:00:07.582Z]       }
-[2025-09-23T00:00:07.582Z]     },
-[2025-09-23T00:00:07.582Z]     "logLevel": {
-[2025-09-23T00:00:07.582Z]       "default": "Information",
-[2025-09-23T00:00:07.582Z]       "Host.Startup": "Trace",
-[2025-09-23T00:00:07.582Z]       "Host.Results": "Information",
-[2025-09-23T00:00:07.582Z]       "Function.queue_ingestor": "Trace",
-[2025-09-23T00:00:07.582Z]       "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "Trace"
-[2025-09-23T00:00:07.582Z]     }
-[2025-09-23T00:00:07.582Z]   },
-[2025-09-23T00:00:07.582Z]   "extensionBundle": {
-[2025-09-23T00:00:07.582Z]     "id": "Microsoft.Azure.Functions.ExtensionBundle",
-[2025-09-23T00:00:07.582Z]     "version": "[4.*, 5.0.0)"
-[2025-09-23T00:00:07.582Z]   }
-[2025-09-23T00:00:07.582Z] }
-[2025-09-23T00:00:07.760Z] Starting host metrics provider.
-[2025-09-23T00:00:08.019Z] Initializing Warmup Extension.
-[2025-09-23T00:00:08.042Z] Resolved secret storage provider BlobStorageSecretsRepository
-[2025-09-23T00:00:08.143Z] Request [6ef4a155-fc18-4178-9579-42d921bc9c49] GET http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-secrets?restype=container
-[2025-09-23T00:00:08.143Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:08.143Z] Accept:application/xml
-[2025-09-23T00:00:08.143Z] x-ms-client-request-id:6ef4a155-fc18-4178-9579-42d921bc9c49
-[2025-09-23T00:00:08.143Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:08.143Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:08.143Z] x-ms-date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.143Z] Authorization:REDACTED
-[2025-09-23T00:00:08.144Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:08.185Z] Response [6ef4a155-fc18-4178-9579-42d921bc9c49] 200 OK (00.0s)
-[2025-09-23T00:00:08.185Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:08.185Z] ETag:"0x260D376DE743E40"
-[2025-09-23T00:00:08.185Z] x-ms-lease-state:available
-[2025-09-23T00:00:08.185Z] x-ms-lease-status:unlocked
-[2025-09-23T00:00:08.185Z] x-ms-client-request-id:6ef4a155-fc18-4178-9579-42d921bc9c49
-[2025-09-23T00:00:08.185Z] x-ms-request-id:cc68a0be-ba18-43e6-aa25-234a82f86c76
-[2025-09-23T00:00:08.185Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:08.185Z] x-ms-has-immutability-policy:false
-[2025-09-23T00:00:08.185Z] x-ms-has-legal-hold:false
-[2025-09-23T00:00:08.185Z] Date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.185Z] Connection:keep-alive
-[2025-09-23T00:00:08.185Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:08.185Z] Last-Modified:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.185Z] Content-Length:0
-[2025-09-23T00:00:08.185Z] 
-[2025-09-23T00:00:08.224Z] Request [c5dd8b29-ec51-42cc-8fbd-032663718c85] HEAD http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-secrets/nbg-52972058/host.json
-[2025-09-23T00:00:08.224Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:08.224Z] Accept:application/xml
-[2025-09-23T00:00:08.224Z] x-ms-client-request-id:c5dd8b29-ec51-42cc-8fbd-032663718c85
-[2025-09-23T00:00:08.224Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:08.224Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:08.224Z] x-ms-date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.224Z] Authorization:REDACTED
-[2025-09-23T00:00:08.224Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:08.245Z] Response [c5dd8b29-ec51-42cc-8fbd-032663718c85] 200 OK (00.0s)
-[2025-09-23T00:00:08.246Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:08.246Z] x-ms-creation-time:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.246Z] x-ms-blob-type:BlockBlob
-[2025-09-23T00:00:08.246Z] x-ms-lease-state:available
-[2025-09-23T00:00:08.246Z] x-ms-lease-status:unlocked
-[2025-09-23T00:00:08.246Z] ETag:"0x224197F9167F140"
-[2025-09-23T00:00:08.246Z] x-ms-client-request-id:c5dd8b29-ec51-42cc-8fbd-032663718c85
-[2025-09-23T00:00:08.246Z] x-ms-request-id:a937eca8-0b25-43f0-b693-0f5ea68ae401
-[2025-09-23T00:00:08.246Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:08.246Z] Date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.246Z] Accept-Ranges:bytes
-[2025-09-23T00:00:08.246Z] x-ms-server-encrypted:true
-[2025-09-23T00:00:08.246Z] x-ms-access-tier:Hot
-[2025-09-23T00:00:08.246Z] x-ms-access-tier-inferred:true
-[2025-09-23T00:00:08.246Z] x-ms-access-tier-change-time:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.246Z] Connection:keep-alive
-[2025-09-23T00:00:08.248Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:08.248Z] Last-Modified:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.248Z] Content-Length:604
-[2025-09-23T00:00:08.248Z] Content-Type:application/octet-stream
-[2025-09-23T00:00:08.248Z] Content-MD5:Cs3yQTTi9uNJeXWtJ0NJag==
-[2025-09-23T00:00:08.248Z] 
-[2025-09-23T00:00:08.290Z] Request [8e45fb06-addf-4aff-a4cf-6f66b5f5e4f2] GET http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-secrets/nbg-52972058/host.json
-[2025-09-23T00:00:08.291Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:08.291Z] Accept:application/xml
-[2025-09-23T00:00:08.291Z] x-ms-client-request-id:8e45fb06-addf-4aff-a4cf-6f66b5f5e4f2
-[2025-09-23T00:00:08.291Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:08.291Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:08.291Z] x-ms-date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.291Z] Authorization:REDACTED
-[2025-09-23T00:00:08.291Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:08.302Z] Response [8e45fb06-addf-4aff-a4cf-6f66b5f5e4f2] 200 OK (00.0s)
-[2025-09-23T00:00:08.302Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:08.302Z] x-ms-creation-time:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.302Z] ETag:"0x224197F9167F140"
-[2025-09-23T00:00:08.302Z] x-ms-blob-type:BlockBlob
-[2025-09-23T00:00:08.302Z] x-ms-lease-state:available
-[2025-09-23T00:00:08.302Z] x-ms-lease-status:unlocked
-[2025-09-23T00:00:08.302Z] x-ms-client-request-id:8e45fb06-addf-4aff-a4cf-6f66b5f5e4f2
-[2025-09-23T00:00:08.302Z] x-ms-request-id:1f4768b4-3b44-4363-814c-e0091f0dad93
-[2025-09-23T00:00:08.302Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:08.303Z] Accept-Ranges:bytes
-[2025-09-23T00:00:08.303Z] Date:Tue, 23 Sep 2025 00:00:08 GMT
-[2025-09-23T00:00:08.303Z] x-ms-server-encrypted:true
-[2025-09-23T00:00:08.303Z] x-ms-blob-content-md5:Cs3yQTTi9uNJeXWtJ0NJag==
-[2025-09-23T00:00:08.303Z] Connection:keep-alive
-[2025-09-23T00:00:08.303Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:08.303Z] Last-Modified:Sat, 20 Sep 2025 07:59:14 GMT
-[2025-09-23T00:00:08.303Z] Content-Length:604
-[2025-09-23T00:00:08.303Z] Content-Type:application/octet-stream
-[2025-09-23T00:00:08.303Z] Content-MD5:Cs3yQTTi9uNJeXWtJ0NJag==
-[2025-09-23T00:00:08.303Z] 
-[2025-09-23T00:00:08.379Z] registered http endpoint = http://localhost:7071/runtime/webhooks/blobs
-[2025-09-23T00:00:08.474Z] Initializing Host. OperationId: '4b14b33f-27e0-41a1-9805-de84f0c22273'.
-[2025-09-23T00:00:08.486Z] Host initialization: ConsecutiveErrors=0, StartupCount=1, OperationId=4b14b33f-27e0-41a1-9805-de84f0c22273
-[2025-09-23T00:00:08.499Z] {
-[2025-09-23T00:00:08.499Z]   "OriginalFunctionWorkerRuntime": "python",
-[2025-09-23T00:00:08.499Z]   "FunctionsWorkerRuntime": "python",
-[2025-09-23T00:00:08.499Z]   "OriginalFunctionWorkerRuntimeVersion": "3.12",
-[2025-09-23T00:00:08.499Z]   "FunctionsWorkerRuntimeVersion": "3.12",
-[2025-09-23T00:00:08.499Z]   "FunctionsExtensionVesion": null,
-[2025-09-23T00:00:08.499Z]   "HostDirectory": "/home/nickg/StreamFoundry",
-[2025-09-23T00:00:08.499Z]   "InStandbyMode": false,
-[2025-09-23T00:00:08.499Z]   "HasBeenSpecialized": false,
-[2025-09-23T00:00:08.499Z]   "UsePlaceholderDotNetIsolated": false,
-[2025-09-23T00:00:08.499Z]   "WebSiteSku": null,
-[2025-09-23T00:00:08.499Z]   "FeatureFlags": null,
-[2025-09-23T00:00:08.499Z]   "HostingConfig": {},
-[2025-09-23T00:00:08.499Z]   "HISMode": "Disabled"
-[2025-09-23T00:00:08.499Z] }
-[2025-09-23T00:00:08.551Z] LoggerFilterOptions
-[2025-09-23T00:00:08.551Z] {
-[2025-09-23T00:00:08.551Z]   "MinLevel": "None",
-[2025-09-23T00:00:08.551Z]   "Rules": [
-[2025-09-23T00:00:08.551Z]     {
-[2025-09-23T00:00:08.551Z]       "ProviderName": null,
-[2025-09-23T00:00:08.551Z]       "CategoryName": "Microsoft.Hosting.Lifetime",
-[2025-09-23T00:00:08.551Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.551Z]       "Filter": null
-[2025-09-23T00:00:08.551Z]     },
-[2025-09-23T00:00:08.551Z]     {
-[2025-09-23T00:00:08.551Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.551Z]       "CategoryName": null,
-[2025-09-23T00:00:08.551Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.551Z]       "Filter": null
-[2025-09-23T00:00:08.551Z]     },
-[2025-09-23T00:00:08.551Z]     {
-[2025-09-23T00:00:08.551Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.551Z]       "CategoryName": null,
-[2025-09-23T00:00:08.551Z]       "LogLevel": null,
-[2025-09-23T00:00:08.551Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": null,
-[2025-09-23T00:00:08.552Z]       "LogLevel": null,
-[2025-09-23T00:00:08.552Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": null,
-[2025-09-23T00:00:08.552Z]       "LogLevel": null,
-[2025-09-23T00:00:08.552Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": "Microsoft.Azure.WebJobs.Extensions.Storage.Queues",
-[2025-09-23T00:00:08.552Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.552Z]       "Filter": null
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": "Host.Startup",
-[2025-09-23T00:00:08.552Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.552Z]       "Filter": null
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": "Host.Results",
-[2025-09-23T00:00:08.552Z]       "LogLevel": "Information",
-[2025-09-23T00:00:08.552Z]       "Filter": null
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": "Function.queue_ingestor",
-[2025-09-23T00:00:08.552Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.552Z]       "Filter": null
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.552Z]       "ProviderName": null,
-[2025-09-23T00:00:08.552Z]       "CategoryName": null,
-[2025-09-23T00:00:08.552Z]       "LogLevel": "Information",
-[2025-09-23T00:00:08.552Z]       "Filter": null
-[2025-09-23T00:00:08.552Z]     },
-[2025-09-23T00:00:08.552Z]     {
-[2025-09-23T00:00:08.553Z]       "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
-[2025-09-23T00:00:08.553Z]       "CategoryName": null,
-[2025-09-23T00:00:08.553Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.553Z]       "Filter": null
-[2025-09-23T00:00:08.553Z]     },
-[2025-09-23T00:00:08.553Z]     {
-[2025-09-23T00:00:08.553Z]       "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
-[2025-09-23T00:00:08.553Z]       "CategoryName": null,
-[2025-09-23T00:00:08.553Z]       "LogLevel": null,
-[2025-09-23T00:00:08.553Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.553Z]     },
-[2025-09-23T00:00:08.553Z]     {
-[2025-09-23T00:00:08.553Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.553Z]       "CategoryName": null,
-[2025-09-23T00:00:08.553Z]       "LogLevel": null,
-[2025-09-23T00:00:08.553Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.553Z]     }
-[2025-09-23T00:00:08.553Z]   ]
-[2025-09-23T00:00:08.553Z] }
-[2025-09-23T00:00:08.553Z] LoggerFilterOptions
-[2025-09-23T00:00:08.553Z] {
-[2025-09-23T00:00:08.553Z]   "MinLevel": "None",
-[2025-09-23T00:00:08.553Z]   "Rules": [
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": null,
-[2025-09-23T00:00:08.554Z]       "CategoryName": "Microsoft.Hosting.Lifetime",
-[2025-09-23T00:00:08.554Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.554Z]       "Filter": null
-[2025-09-23T00:00:08.554Z]     },
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.554Z]       "CategoryName": null,
-[2025-09-23T00:00:08.554Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.554Z]       "Filter": null
-[2025-09-23T00:00:08.554Z]     },
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.554Z]       "CategoryName": null,
-[2025-09-23T00:00:08.554Z]       "LogLevel": null,
-[2025-09-23T00:00:08.554Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.554Z]     },
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": null,
-[2025-09-23T00:00:08.554Z]       "CategoryName": null,
-[2025-09-23T00:00:08.554Z]       "LogLevel": null,
-[2025-09-23T00:00:08.554Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.554Z]     },
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": null,
-[2025-09-23T00:00:08.554Z]       "CategoryName": null,
-[2025-09-23T00:00:08.554Z]       "LogLevel": null,
-[2025-09-23T00:00:08.554Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.554Z]     },
-[2025-09-23T00:00:08.554Z]     {
-[2025-09-23T00:00:08.554Z]       "ProviderName": null,
-[2025-09-23T00:00:08.554Z]       "CategoryName": "Microsoft.Azure.WebJobs.Extensions.Storage.Queues",
-[2025-09-23T00:00:08.554Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.554Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": null,
-[2025-09-23T00:00:08.555Z]       "CategoryName": "Host.Startup",
-[2025-09-23T00:00:08.555Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.555Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": null,
-[2025-09-23T00:00:08.555Z]       "CategoryName": "Host.Results",
-[2025-09-23T00:00:08.555Z]       "LogLevel": "Information",
-[2025-09-23T00:00:08.555Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": null,
-[2025-09-23T00:00:08.555Z]       "CategoryName": "Function.queue_ingestor",
-[2025-09-23T00:00:08.555Z]       "LogLevel": "Trace",
-[2025-09-23T00:00:08.555Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": null,
-[2025-09-23T00:00:08.555Z]       "CategoryName": null,
-[2025-09-23T00:00:08.555Z]       "LogLevel": "Information",
-[2025-09-23T00:00:08.555Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
-[2025-09-23T00:00:08.555Z]       "CategoryName": null,
-[2025-09-23T00:00:08.555Z]       "LogLevel": "None",
-[2025-09-23T00:00:08.555Z]       "Filter": null
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
-[2025-09-23T00:00:08.555Z]       "CategoryName": null,
-[2025-09-23T00:00:08.555Z]       "LogLevel": null,
-[2025-09-23T00:00:08.555Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.555Z]     },
-[2025-09-23T00:00:08.555Z]     {
-[2025-09-23T00:00:08.555Z]       "ProviderName": "Azure.Functions.Cli.Diagnostics.ColoredConsoleLoggerProvider",
-[2025-09-23T00:00:08.555Z]       "CategoryName": null,
-[2025-09-23T00:00:08.556Z]       "LogLevel": null,
-[2025-09-23T00:00:08.556Z]       "Filter": "<AddFilter>b__0"
-[2025-09-23T00:00:08.556Z]     }
-[2025-09-23T00:00:08.556Z]   ]
-[2025-09-23T00:00:08.556Z] }
-[2025-09-23T00:00:08.556Z] FunctionResultAggregatorOptions
-[2025-09-23T00:00:08.556Z] {
-[2025-09-23T00:00:08.556Z]   "BatchSize": 1000,
-[2025-09-23T00:00:08.556Z]   "FlushTimeout": "00:00:30",
-[2025-09-23T00:00:08.556Z]   "IsEnabled": true
-[2025-09-23T00:00:08.556Z] }
-[2025-09-23T00:00:08.556Z] ConcurrencyOptions
-[2025-09-23T00:00:08.556Z] {
-[2025-09-23T00:00:08.556Z]   "DynamicConcurrencyEnabled": false,
-[2025-09-23T00:00:08.556Z]   "MaximumFunctionConcurrency": 500,
-[2025-09-23T00:00:08.556Z]   "CPUThreshold": 0.8,
-[2025-09-23T00:00:08.556Z]   "SnapshotPersistenceEnabled": true
-[2025-09-23T00:00:08.556Z] }
-[2025-09-23T00:00:08.556Z] QueuesOptions
-[2025-09-23T00:00:08.557Z] {
-[2025-09-23T00:00:08.557Z]   "BatchSize": 16,
-[2025-09-23T00:00:08.557Z]   "NewBatchThreshold": 32,
-[2025-09-23T00:00:08.557Z]   "MaxPollingInterval": "00:01:00",
-[2025-09-23T00:00:08.557Z]   "MaxDequeueCount": 5,
-[2025-09-23T00:00:08.557Z]   "VisibilityTimeout": "00:00:00",
-[2025-09-23T00:00:08.557Z]   "MessageEncoding": "Base64"
-[2025-09-23T00:00:08.557Z] }
-[2025-09-23T00:00:08.557Z] SingletonOptions
-[2025-09-23T00:00:08.557Z] {
-[2025-09-23T00:00:08.557Z]   "LockPeriod": "00:00:15",
-[2025-09-23T00:00:08.557Z]   "ListenerLockPeriod": "00:00:15",
-[2025-09-23T00:00:08.557Z]   "LockAcquisitionTimeout": "10675199.02:48:05.4775807",
-[2025-09-23T00:00:08.557Z]   "LockAcquisitionPollingInterval": "00:00:05",
-[2025-09-23T00:00:08.557Z]   "ListenerLockRecoveryPollingInterval": "00:01:00"
-[2025-09-23T00:00:08.557Z] }
-[2025-09-23T00:00:08.557Z] BlobsOptions
-[2025-09-23T00:00:08.557Z] {
-[2025-09-23T00:00:08.557Z]   "MaxDegreeOfParallelism": 32,
-[2025-09-23T00:00:08.557Z]   "PoisonBlobThreshold": 5
-[2025-09-23T00:00:08.557Z] }
-[2025-09-23T00:00:08.557Z] QueuesOptions
-[2025-09-23T00:00:08.557Z] {
-[2025-09-23T00:00:08.557Z]   "BatchSize": 1,
-[2025-09-23T00:00:08.557Z]   "NewBatchThreshold": 0,
-[2025-09-23T00:00:08.557Z]   "MaxPollingInterval": "00:00:10",
-[2025-09-23T00:00:08.557Z]   "MaxDequeueCount": 3,
-[2025-09-23T00:00:08.557Z]   "VisibilityTimeout": "00:02:00",
-[2025-09-23T00:00:08.557Z]   "MessageEncoding": "Base64"
-[2025-09-23T00:00:08.557Z] }
-[2025-09-23T00:00:08.557Z] ScaleOptions
-[2025-09-23T00:00:08.557Z] {
-[2025-09-23T00:00:08.557Z]   "ScaleMetricsMaxAge": "00:02:00",
-[2025-09-23T00:00:08.557Z]   "ScaleMetricsSampleInterval": "00:00:10",
-[2025-09-23T00:00:08.557Z]   "MetricsPurgeEnabled": true,
-[2025-09-23T00:00:08.557Z]   "IsTargetScalingEnabled": true,
-[2025-09-23T00:00:08.557Z]   "IsRuntimeScalingEnabled": false
-[2025-09-23T00:00:08.557Z] }
-[2025-09-23T00:00:08.561Z] Starting JobHost
-[2025-09-23T00:00:08.567Z] Starting Host (HostId=nbg-52972058, InstanceId=fc1202b9-cbb3-48af-bbc1-ab2f695404c7, Version=4.1041.200.25360, ProcessId=88076, AppDomainId=1, InDebugMode=False, InDiagnosticMode=False, FunctionsExtensionVersion=(null))
-[2025-09-23T00:00:08.580Z] Loading functions metadata
-[2025-09-23T00:00:08.580Z] Worker indexing is enabled
-[2025-09-23T00:00:08.580Z] Fetching metadata for workerRuntime: python
-[2025-09-23T00:00:08.580Z] Reading functions metadata (Worker)
-[2025-09-23T00:00:08.590Z] Reading functions metadata (Custom)
-[2025-09-23T00:00:08.607Z] 0 functions found (Custom)
-[2025-09-23T00:00:08.615Z] 3 functions loaded
-[2025-09-23T00:00:08.629Z] FUNCTIONS_WORKER_RUNTIME value: 'python'
-[2025-09-23T00:00:08.635Z] Adding Function descriptor provider for language python.
-[2025-09-23T00:00:08.646Z] Creating function descriptors.
-[2025-09-23T00:00:08.700Z] Function descriptors created.
-[2025-09-23T00:00:08.722Z] Worker process started and initialized.
-[2025-09-23T00:00:08.724Z] Generating 3 job function(s)
-[2025-09-23T00:00:08.727Z] Received WorkerLoadRequest, request ID 5da191f6-c5e1-45dc-be80-89509ada9115, function_id: 3fd12a91-4979-58ae-a2b7-0a2f6a33271d,function_name: blob_enqueuer, function_app_directory : /home/nickg/StreamFoundry
-[2025-09-23T00:00:08.729Z] Received WorkerLoadRequest, request ID 5da191f6-c5e1-45dc-be80-89509ada9115, function_id: 97dce5a1-ab73-5ccb-ba04-bcbf28dc3d16,function_name: queue_ingestor, function_app_directory : /home/nickg/StreamFoundry
-[2025-09-23T00:00:08.729Z] Successfully processed FunctionLoadRequest, request ID: 5da191f6-c5e1-45dc-be80-89509ada9115, function ID: 97dce5a1-ab73-5ccb-ba04-bcbf28dc3d16,function Name: queue_ingestor,programming model: V2
-[2025-09-23T00:00:08.732Z] Successfully processed FunctionLoadRequest, request ID: 5da191f6-c5e1-45dc-be80-89509ada9115, function ID: 3fd12a91-4979-58ae-a2b7-0a2f6a33271d,function Name: blob_enqueuer,programming model: V2
-[2025-09-23T00:00:08.732Z] Received WorkerLoadRequest, request ID 5da191f6-c5e1-45dc-be80-89509ada9115, function_id: e49b1195-4555-509e-a515-be44deb4d43f,function_name: submit_job, function_app_directory : /home/nickg/StreamFoundry
-[2025-09-23T00:00:08.732Z] Successfully processed FunctionLoadRequest, request ID: 5da191f6-c5e1-45dc-be80-89509ada9115, function ID: e49b1195-4555-509e-a515-be44deb4d43f,function Name: submit_job,programming model: V2
-[2025-09-23T00:00:09.021Z] Found the following functions:
-[2025-09-23T00:00:09.022Z] Host.Functions.blob_enqueuer
-[2025-09-23T00:00:09.022Z] Host.Functions.queue_ingestor
-[2025-09-23T00:00:09.022Z] Host.Functions.submit_job
-[2025-09-23T00:00:09.022Z] 
-[2025-09-23T00:00:09.099Z] HttpOptions
-[2025-09-23T00:00:09.099Z] {
-[2025-09-23T00:00:09.099Z]   "DynamicThrottlesEnabled": false,
-[2025-09-23T00:00:09.099Z]   "EnableChunkedRequestBinding": false,
-[2025-09-23T00:00:09.099Z]   "MaxConcurrentRequests": -1,
-[2025-09-23T00:00:09.099Z]   "MaxOutstandingRequests": -1,
-[2025-09-23T00:00:09.099Z]   "RoutePrefix": "api"
-[2025-09-23T00:00:09.099Z] }
-[2025-09-23T00:00:09.106Z] Initializing function HTTP routes
-[2025-09-23T00:00:09.106Z] Mapped function route 'api/submit' [POST] to 'submit_job'
-[2025-09-23T00:00:09.106Z] 
-[2025-09-23T00:00:09.119Z] Host initialized (536ms)
-[2025-09-23T00:00:09.140Z] Request [c126e90f-da9e-417b-88a5-2fabb6c15948] HEAD http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener
-[2025-09-23T00:00:09.140Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:09.140Z] Accept:application/xml
-[2025-09-23T00:00:09.140Z] x-ms-client-request-id:c126e90f-da9e-417b-88a5-2fabb6c15948
-[2025-09-23T00:00:09.140Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.140Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.140Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.141Z] Authorization:REDACTED
-[2025-09-23T00:00:09.141Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:09.148Z] Response [c126e90f-da9e-417b-88a5-2fabb6c15948] 200 OK (00.0s)
-[2025-09-23T00:00:09.148Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:09.148Z] x-ms-creation-time:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:09.148Z] x-ms-blob-type:BlockBlob
-[2025-09-23T00:00:09.148Z] x-ms-lease-state:available
-[2025-09-23T00:00:09.148Z] x-ms-lease-status:unlocked
-[2025-09-23T00:00:09.148Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:09.148Z] x-ms-client-request-id:c126e90f-da9e-417b-88a5-2fabb6c15948
-[2025-09-23T00:00:09.148Z] x-ms-request-id:e3421ab5-dec7-4520-8d67-3e78be75a077
-[2025-09-23T00:00:09.148Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.148Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.148Z] Accept-Ranges:bytes
-[2025-09-23T00:00:09.148Z] x-ms-server-encrypted:true
-[2025-09-23T00:00:09.148Z] x-ms-access-tier:Hot
-[2025-09-23T00:00:09.148Z] x-ms-access-tier-inferred:true
-[2025-09-23T00:00:09.148Z] x-ms-access-tier-change-time:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:09.148Z] Connection:keep-alive
-[2025-09-23T00:00:09.148Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.148Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:09.148Z] Content-Length:0
-[2025-09-23T00:00:09.148Z] Content-Type:application/octet-stream
-[2025-09-23T00:00:09.148Z] Content-MD5:1B2M2Y8AsgTpgAmY7PhCfg==
-[2025-09-23T00:00:09.148Z] 
-[2025-09-23T00:00:09.165Z] Request [de91bd12-23bc-44c4-83dd-2b46b643b68a] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:09.165Z] x-ms-lease-action:acquire
-[2025-09-23T00:00:09.165Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:09.165Z] Accept:application/xml
-[2025-09-23T00:00:09.165Z] x-ms-lease-duration:15
-[2025-09-23T00:00:09.165Z] x-ms-proposed-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:09.165Z] x-ms-client-request-id:de91bd12-23bc-44c4-83dd-2b46b643b68a
-[2025-09-23T00:00:09.165Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.165Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.165Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.165Z] Authorization:REDACTED
-[2025-09-23T00:00:09.165Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:09.183Z] Response [de91bd12-23bc-44c4-83dd-2b46b643b68a] 201 Created (00.0s)
-[2025-09-23T00:00:09.183Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:09.183Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:09.183Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:09.183Z] x-ms-client-request-id:de91bd12-23bc-44c4-83dd-2b46b643b68a
-[2025-09-23T00:00:09.183Z] x-ms-request-id:311d5379-5e7f-4c57-9c36-ec9d10b356b2
-[2025-09-23T00:00:09.183Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.183Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.183Z] Connection:keep-alive
-[2025-09-23T00:00:09.183Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.183Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:09.183Z] Content-Length:0
-[2025-09-23T00:00:09.183Z] 
+[2025-10-07T02:26:14.248Z] Worker process started and initialized.
 
 Functions:
 
-[2025-09-23T00:00:09.223Z] Host started (653ms)
-[2025-09-23T00:00:09.223Z] Job host started
 	submit_job: [POST] http://localhost:7071/api/submit
 
 	blob_enqueuer: blobTrigger
 
+	Packager: queueTrigger
+
 	queue_ingestor: queueTrigger
 
-[2025-09-23T00:00:09.281Z] Request [487d5956-c678-4f40-8048-6cf48fd7d795] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:09.281Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.281Z] Accept:application/xml
-[2025-09-23T00:00:09.281Z] x-ms-client-request-id:487d5956-c678-4f40-8048-6cf48fd7d795
-[2025-09-23T00:00:09.281Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.281Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.281Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.281Z] Authorization:REDACTED
-[2025-09-23T00:00:09.281Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.292Z] Request [b777b022-4481-48f8-a391-7577e48746ee] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs?comp=metadata
-[2025-09-23T00:00:09.297Z] Request [e7f23880-4e86-4f66-b712-cd558ad464e7] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:09.297Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:09.297Z] Accept:application/xml
-[2025-09-23T00:00:09.297Z] x-ms-client-request-id:e7f23880-4e86-4f66-b712-cd558ad464e7
-[2025-09-23T00:00:09.298Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.298Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.298Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.298Z] Authorization:REDACTED
-[2025-09-23T00:00:09.298Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:09.298Z] File event source initialized.
-[2025-09-23T00:00:09.301Z] Debug file watch initialized.
-[2025-09-23T00:00:09.294Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.304Z] Accept:application/xml
-[2025-09-23T00:00:09.304Z] x-ms-client-request-id:b777b022-4481-48f8-a391-7577e48746ee
-[2025-09-23T00:00:09.304Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.304Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.304Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.304Z] Authorization:REDACTED
-[2025-09-23T00:00:09.304Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.304Z] Diagnostic file watch initialized.
-[2025-09-23T00:00:09.407Z] Response [e7f23880-4e86-4f66-b712-cd558ad464e7] 200 OK (00.1s)
-[2025-09-23T00:00:09.408Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:09.408Z] x-ms-client-request-id:e7f23880-4e86-4f66-b712-cd558ad464e7
-[2025-09-23T00:00:09.408Z] x-ms-request-id:70084753-cbe6-4ca8-be75-158232ff296c
-[2025-09-23T00:00:09.408Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.408Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.408Z] Connection:keep-alive
-[2025-09-23T00:00:09.408Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.408Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.408Z] Content-Type:application/xml
-[2025-09-23T00:00:09.408Z] 
-[2025-09-23T00:00:09.408Z] Response [b777b022-4481-48f8-a391-7577e48746ee] 200 OK (00.1s)
-[2025-09-23T00:00:09.409Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.409Z] x-ms-client-request-id:b777b022-4481-48f8-a391-7577e48746ee
-[2025-09-23T00:00:09.409Z] x-ms-approximate-messages-count:0
-[2025-09-23T00:00:09.409Z] x-ms-request-id:85803467-a4b3-4647-8c25-1fe9f530b38d
-[2025-09-23T00:00:09.409Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.409Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.409Z] Connection:keep-alive
-[2025-09-23T00:00:09.409Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.409Z] Content-Length:0
-[2025-09-23T00:00:09.409Z] 
-[2025-09-23T00:00:09.439Z] Error response [487d5956-c678-4f40-8048-6cf48fd7d795] 404 The specified queue does not exist. (00.1s)
-[2025-09-23T00:00:09.440Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.440Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:09.441Z] x-ms-request-id:890f48f0-bb1a-4a38-907d-31080c8c8933
-[2025-09-23T00:00:09.441Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.441Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.442Z] Connection:keep-alive
-[2025-09-23T00:00:09.442Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.453Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.454Z] Content-Type:application/xml
-[2025-09-23T00:00:09.454Z] 
-[2025-09-23T00:00:09.475Z] Request [b777b022-4481-48f8-a391-7577e48746ee] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:09.476Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.476Z] Accept:application/xml
-[2025-09-23T00:00:09.476Z] x-ms-client-request-id:b777b022-4481-48f8-a391-7577e48746ee
-[2025-09-23T00:00:09.476Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.476Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.476Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.476Z] Authorization:REDACTED
-[2025-09-23T00:00:09.476Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.519Z] Response [b777b022-4481-48f8-a391-7577e48746ee] 200 OK (00.0s)
-[2025-09-23T00:00:09.519Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.519Z] x-ms-client-request-id:b777b022-4481-48f8-a391-7577e48746ee
-[2025-09-23T00:00:09.519Z] x-ms-request-id:a06e2721-e86b-4e0a-a0ab-4f54371fb515
-[2025-09-23T00:00:09.519Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.519Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.519Z] Connection:keep-alive
-[2025-09-23T00:00:09.519Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.519Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.519Z] Content-Type:application/xml
-[2025-09-23T00:00:09.519Z] 
-[2025-09-23T00:00:09.594Z] Request [78dfe6ff-a8cd-41d6-b630-802afc57b8b1] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:09.595Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.595Z] Accept:application/xml
-[2025-09-23T00:00:09.595Z] x-ms-client-request-id:78dfe6ff-a8cd-41d6-b630-802afc57b8b1
-[2025-09-23T00:00:09.595Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.595Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.595Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.595Z] Authorization:REDACTED
-[2025-09-23T00:00:09.595Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.600Z] Error response [78dfe6ff-a8cd-41d6-b630-802afc57b8b1] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:09.600Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.600Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:09.600Z] x-ms-request-id:dcbf761b-c818-4ddf-a0c9-9a9c172a0384
-[2025-09-23T00:00:09.600Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.600Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.600Z] Connection:keep-alive
-[2025-09-23T00:00:09.600Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.600Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.600Z] Content-Type:application/xml
-[2025-09-23T00:00:09.600Z] 
-[2025-09-23T00:00:09.655Z] Request [c30671b5-3ddd-4d57-a1e9-90c78656aae2] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:09.655Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.655Z] Accept:application/xml
-[2025-09-23T00:00:09.655Z] x-ms-client-request-id:c30671b5-3ddd-4d57-a1e9-90c78656aae2
-[2025-09-23T00:00:09.655Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.655Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.655Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.655Z] Authorization:REDACTED
-[2025-09-23T00:00:09.655Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.661Z] Response [c30671b5-3ddd-4d57-a1e9-90c78656aae2] 200 OK (00.0s)
-[2025-09-23T00:00:09.661Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.661Z] x-ms-client-request-id:c30671b5-3ddd-4d57-a1e9-90c78656aae2
-[2025-09-23T00:00:09.661Z] x-ms-request-id:7b457436-c967-4215-820c-eae38ad9c9db
-[2025-09-23T00:00:09.661Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.661Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.663Z] Connection:keep-alive
-[2025-09-23T00:00:09.663Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.663Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.663Z] Content-Type:application/xml
-[2025-09-23T00:00:09.663Z] 
-[2025-09-23T00:00:09.817Z] Request [d006562b-db5f-4163-ab2f-69b5bd00b3f8] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:09.818Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.818Z] Accept:application/xml
-[2025-09-23T00:00:09.818Z] x-ms-client-request-id:d006562b-db5f-4163-ab2f-69b5bd00b3f8
-[2025-09-23T00:00:09.818Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.818Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.818Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.818Z] Authorization:REDACTED
-[2025-09-23T00:00:09.818Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.858Z] Error response [d006562b-db5f-4163-ab2f-69b5bd00b3f8] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:09.858Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.858Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:09.859Z] x-ms-request-id:112768c2-97da-4de2-9641-7879aa3dec5c
-[2025-09-23T00:00:09.859Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.859Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.859Z] Connection:keep-alive
-[2025-09-23T00:00:09.859Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.859Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.859Z] Content-Type:application/xml
-[2025-09-23T00:00:09.859Z] 
-[2025-09-23T00:00:09.897Z] Request [9b643824-8966-4ea4-9dfa-4a0d66c3d409] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:09.897Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:09.897Z] Accept:application/xml
-[2025-09-23T00:00:09.897Z] x-ms-client-request-id:9b643824-8966-4ea4-9dfa-4a0d66c3d409
-[2025-09-23T00:00:09.897Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:09.897Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:09.897Z] x-ms-date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.897Z] Authorization:REDACTED
-[2025-09-23T00:00:09.897Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:09.911Z] Response [9b643824-8966-4ea4-9dfa-4a0d66c3d409] 200 OK (00.0s)
-[2025-09-23T00:00:09.912Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:09.912Z] x-ms-client-request-id:9b643824-8966-4ea4-9dfa-4a0d66c3d409
-[2025-09-23T00:00:09.912Z] x-ms-request-id:c1a1912a-fa44-4f7d-b6b5-491c7ad03353
-[2025-09-23T00:00:09.912Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:09.912Z] Date:Tue, 23 Sep 2025 00:00:09 GMT
-[2025-09-23T00:00:09.912Z] Connection:keep-alive
-[2025-09-23T00:00:09.912Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:09.912Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:09.912Z] Content-Type:application/xml
-[2025-09-23T00:00:09.912Z] 
-[2025-09-23T00:00:10.174Z] Request [6d934aac-f4ea-45ec-9b91-d4f5f8988e1c] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:10.175Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:10.175Z] Accept:application/xml
-[2025-09-23T00:00:10.175Z] x-ms-client-request-id:6d934aac-f4ea-45ec-9b91-d4f5f8988e1c
-[2025-09-23T00:00:10.175Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:10.175Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:10.175Z] x-ms-date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.175Z] Authorization:REDACTED
-[2025-09-23T00:00:10.175Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:10.182Z] Error response [6d934aac-f4ea-45ec-9b91-d4f5f8988e1c] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:10.182Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:10.183Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:10.183Z] x-ms-request-id:0b52cc80-c78d-4113-b652-c6a375564db2
-[2025-09-23T00:00:10.183Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:10.192Z] Date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.192Z] Connection:keep-alive
-[2025-09-23T00:00:10.192Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:10.192Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:10.192Z] Content-Type:application/xml
-[2025-09-23T00:00:10.192Z] 
-[2025-09-23T00:00:10.233Z] Request [f7a307a8-21b7-424b-bbfa-44103459e3d4] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:10.233Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:10.233Z] Accept:application/xml
-[2025-09-23T00:00:10.233Z] x-ms-client-request-id:f7a307a8-21b7-424b-bbfa-44103459e3d4
-[2025-09-23T00:00:10.233Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:10.233Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:10.233Z] x-ms-date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.233Z] Authorization:REDACTED
-[2025-09-23T00:00:10.233Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:10.251Z] Response [f7a307a8-21b7-424b-bbfa-44103459e3d4] 200 OK (00.0s)
-[2025-09-23T00:00:10.251Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:10.251Z] x-ms-client-request-id:f7a307a8-21b7-424b-bbfa-44103459e3d4
-[2025-09-23T00:00:10.251Z] x-ms-request-id:3e8c6ef6-eabc-43b3-afec-07ddbfc4a16f
-[2025-09-23T00:00:10.251Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:10.251Z] Date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.251Z] Connection:keep-alive
-[2025-09-23T00:00:10.251Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:10.251Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:10.251Z] Content-Type:application/xml
-[2025-09-23T00:00:10.251Z] 
-[2025-09-23T00:00:10.770Z] Request [d6dcc17e-dd3f-4a78-a0dd-1f45af6db693] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:10.770Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:10.770Z] Accept:application/xml
-[2025-09-23T00:00:10.770Z] x-ms-client-request-id:d6dcc17e-dd3f-4a78-a0dd-1f45af6db693
-[2025-09-23T00:00:10.770Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:10.770Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:10.770Z] x-ms-date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.770Z] Authorization:REDACTED
-[2025-09-23T00:00:10.770Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:10.777Z] Error response [d6dcc17e-dd3f-4a78-a0dd-1f45af6db693] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:10.777Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:10.777Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:10.777Z] x-ms-request-id:5b96ebd3-4be8-4db6-a97e-44da3f76e9d8
-[2025-09-23T00:00:10.777Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:10.777Z] Date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.777Z] Connection:keep-alive
-[2025-09-23T00:00:10.777Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:10.777Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:10.777Z] Content-Type:application/xml
-[2025-09-23T00:00:10.777Z] 
-[2025-09-23T00:00:10.793Z] Request [851fca37-c2ad-44e7-88a1-74a9dee67594] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:10.793Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:10.793Z] Accept:application/xml
-[2025-09-23T00:00:10.793Z] x-ms-client-request-id:851fca37-c2ad-44e7-88a1-74a9dee67594
-[2025-09-23T00:00:10.793Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:10.793Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:10.793Z] x-ms-date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.793Z] Authorization:REDACTED
-[2025-09-23T00:00:10.793Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:10.816Z] Response [851fca37-c2ad-44e7-88a1-74a9dee67594] 200 OK (00.0s)
-[2025-09-23T00:00:10.816Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:10.816Z] x-ms-client-request-id:851fca37-c2ad-44e7-88a1-74a9dee67594
-[2025-09-23T00:00:10.816Z] x-ms-request-id:183b1397-be13-4727-b698-f1b53cf2121e
-[2025-09-23T00:00:10.816Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:10.816Z] Date:Tue, 23 Sep 2025 00:00:10 GMT
-[2025-09-23T00:00:10.816Z] Connection:keep-alive
-[2025-09-23T00:00:10.816Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:10.816Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:10.816Z] Content-Type:application/xml
-[2025-09-23T00:00:10.816Z] 
-[2025-09-23T00:00:11.476Z] Request [e04d8617-b05b-4574-be4f-448ec40f2440] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:11.476Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:11.476Z] Accept:application/xml
-[2025-09-23T00:00:11.476Z] x-ms-client-request-id:e04d8617-b05b-4574-be4f-448ec40f2440
-[2025-09-23T00:00:11.476Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:11.476Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:11.476Z] x-ms-date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.476Z] Authorization:REDACTED
-[2025-09-23T00:00:11.476Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:11.481Z] Response [e04d8617-b05b-4574-be4f-448ec40f2440] 200 OK (00.0s)
-[2025-09-23T00:00:11.481Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:11.481Z] x-ms-client-request-id:e04d8617-b05b-4574-be4f-448ec40f2440
-[2025-09-23T00:00:11.481Z] x-ms-request-id:fd290811-7aa8-4e25-9a5a-5a28f22c3ac0
-[2025-09-23T00:00:11.481Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:11.481Z] Date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.481Z] Connection:keep-alive
-[2025-09-23T00:00:11.481Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:11.481Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:11.481Z] Content-Type:application/xml
-[2025-09-23T00:00:11.481Z] 
-[2025-09-23T00:00:11.637Z] Request [6fa234d0-c512-4c04-acee-a0a0f9ace377] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:11.637Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:11.637Z] Accept:application/xml
-[2025-09-23T00:00:11.637Z] x-ms-client-request-id:6fa234d0-c512-4c04-acee-a0a0f9ace377
-[2025-09-23T00:00:11.637Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:11.637Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:11.637Z] x-ms-date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.637Z] Authorization:REDACTED
-[2025-09-23T00:00:11.637Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:11.641Z] Error response [6fa234d0-c512-4c04-acee-a0a0f9ace377] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:11.642Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:11.642Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:11.642Z] x-ms-request-id:2d53944c-708f-49ee-bfd6-c121a378a5f8
-[2025-09-23T00:00:11.642Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:11.642Z] Date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.642Z] Connection:keep-alive
-[2025-09-23T00:00:11.642Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:11.642Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:11.642Z] Content-Type:application/xml
-[2025-09-23T00:00:11.642Z] 
-[2025-09-23T00:00:11.712Z] Request [2f4a3679-c9d7-4d34-8516-1cd29dada22b] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:11.712Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:11.712Z] Accept:application/xml
-[2025-09-23T00:00:11.712Z] x-ms-client-request-id:2f4a3679-c9d7-4d34-8516-1cd29dada22b
-[2025-09-23T00:00:11.712Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:11.712Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:11.712Z] x-ms-date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.712Z] Authorization:REDACTED
-[2025-09-23T00:00:11.712Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:11.723Z] Response [2f4a3679-c9d7-4d34-8516-1cd29dada22b] 200 OK (00.0s)
-[2025-09-23T00:00:11.724Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:11.724Z] x-ms-client-request-id:2f4a3679-c9d7-4d34-8516-1cd29dada22b
-[2025-09-23T00:00:11.724Z] x-ms-request-id:c0a30690-d1a4-4263-a890-6826d2ade30a
-[2025-09-23T00:00:11.724Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:11.724Z] Date:Tue, 23 Sep 2025 00:00:11 GMT
-[2025-09-23T00:00:11.724Z] Connection:keep-alive
-[2025-09-23T00:00:11.724Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:11.724Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:11.724Z] Content-Type:application/xml
-[2025-09-23T00:00:11.724Z] 
-[2025-09-23T00:00:13.178Z] Request [ebbfd6af-e19c-406e-8f2b-7faa5c2d4ae9] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:13.178Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:13.178Z] Accept:application/xml
-[2025-09-23T00:00:13.178Z] x-ms-client-request-id:ebbfd6af-e19c-406e-8f2b-7faa5c2d4ae9
-[2025-09-23T00:00:13.178Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.178Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.178Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.178Z] Authorization:REDACTED
-[2025-09-23T00:00:13.178Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:13.196Z] Response [ebbfd6af-e19c-406e-8f2b-7faa5c2d4ae9] 200 OK (00.0s)
-[2025-09-23T00:00:13.196Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:13.196Z] x-ms-client-request-id:ebbfd6af-e19c-406e-8f2b-7faa5c2d4ae9
-[2025-09-23T00:00:13.196Z] x-ms-request-id:c7e003e5-0dd5-4318-a959-69da880bd839
-[2025-09-23T00:00:13.196Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.196Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.196Z] Connection:keep-alive
-[2025-09-23T00:00:13.196Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.196Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:13.196Z] Content-Type:application/xml
-[2025-09-23T00:00:13.196Z] 
-[2025-09-23T00:00:13.481Z] Request [ac43bf4b-a6a3-4b00-8f1c-ee58d82b18c0] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:13.481Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:13.481Z] Accept:application/xml
-[2025-09-23T00:00:13.481Z] x-ms-client-request-id:ac43bf4b-a6a3-4b00-8f1c-ee58d82b18c0
-[2025-09-23T00:00:13.481Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.481Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.481Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.481Z] Authorization:REDACTED
-[2025-09-23T00:00:13.481Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:13.487Z] Response [ac43bf4b-a6a3-4b00-8f1c-ee58d82b18c0] 200 OK (00.0s)
-[2025-09-23T00:00:13.487Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:13.487Z] x-ms-client-request-id:ac43bf4b-a6a3-4b00-8f1c-ee58d82b18c0
-[2025-09-23T00:00:13.487Z] x-ms-request-id:e545d93d-20ff-4561-a20b-c1b5c5d152ae
-[2025-09-23T00:00:13.487Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.487Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.487Z] Connection:keep-alive
-[2025-09-23T00:00:13.487Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.487Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:13.487Z] Content-Type:application/xml
-[2025-09-23T00:00:13.487Z] 
-[2025-09-23T00:00:13.558Z] Request [b169b083-d6a7-44ca-91b7-08f68dfc5b67] HEAD http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host
-[2025-09-23T00:00:13.558Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:13.558Z] Accept:application/xml
-[2025-09-23T00:00:13.558Z] x-ms-client-request-id:b169b083-d6a7-44ca-91b7-08f68dfc5b67
-[2025-09-23T00:00:13.559Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.559Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.559Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.559Z] Authorization:REDACTED
-[2025-09-23T00:00:13.559Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:13.565Z] Response [b169b083-d6a7-44ca-91b7-08f68dfc5b67] 200 OK (00.0s)
-[2025-09-23T00:00:13.565Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:13.565Z] x-ms-creation-time:Sat, 20 Sep 2025 07:59:19 GMT
-[2025-09-23T00:00:13.565Z] x-ms-meta-FunctionInstance:REDACTED
-[2025-09-23T00:00:13.565Z] x-ms-blob-type:BlockBlob
-[2025-09-23T00:00:13.565Z] x-ms-lease-state:available
-[2025-09-23T00:00:13.565Z] x-ms-lease-status:unlocked
-[2025-09-23T00:00:13.565Z] ETag:"0x250A93D5FD14540"
-[2025-09-23T00:00:13.565Z] x-ms-client-request-id:b169b083-d6a7-44ca-91b7-08f68dfc5b67
-[2025-09-23T00:00:13.565Z] x-ms-request-id:0c028600-c659-49a0-9e46-4dd3d299800a
-[2025-09-23T00:00:13.565Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.565Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.565Z] Accept-Ranges:bytes
-[2025-09-23T00:00:13.565Z] x-ms-server-encrypted:true
-[2025-09-23T00:00:13.565Z] x-ms-access-tier:Hot
-[2025-09-23T00:00:13.565Z] x-ms-access-tier-inferred:true
-[2025-09-23T00:00:13.565Z] x-ms-access-tier-change-time:Sat, 20 Sep 2025 07:59:19 GMT
-[2025-09-23T00:00:13.565Z] Connection:keep-alive
-[2025-09-23T00:00:13.565Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.565Z] Last-Modified:Mon, 22 Sep 2025 23:31:24 GMT
-[2025-09-23T00:00:13.565Z] Content-Length:0
-[2025-09-23T00:00:13.565Z] Content-Type:application/octet-stream
-[2025-09-23T00:00:13.565Z] Content-MD5:1B2M2Y8AsgTpgAmY7PhCfg==
-[2025-09-23T00:00:13.565Z] 
-[2025-09-23T00:00:13.566Z] Request [f98088af-7bdf-4f22-ac57-2fafa17d67ef] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=lease
-[2025-09-23T00:00:13.566Z] x-ms-lease-action:acquire
-[2025-09-23T00:00:13.566Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:13.566Z] Accept:application/xml
-[2025-09-23T00:00:13.566Z] x-ms-lease-duration:15
-[2025-09-23T00:00:13.566Z] x-ms-proposed-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:13.566Z] x-ms-client-request-id:f98088af-7bdf-4f22-ac57-2fafa17d67ef
-[2025-09-23T00:00:13.566Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.566Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.566Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.566Z] Authorization:REDACTED
-[2025-09-23T00:00:13.566Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:13.584Z] Response [f98088af-7bdf-4f22-ac57-2fafa17d67ef] 201 Created (00.0s)
-[2025-09-23T00:00:13.584Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:13.584Z] ETag:"0x250A93D5FD14540"
-[2025-09-23T00:00:13.584Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:13.584Z] x-ms-client-request-id:f98088af-7bdf-4f22-ac57-2fafa17d67ef
-[2025-09-23T00:00:13.584Z] x-ms-request-id:ea05c860-5c1e-4626-8f95-63a04eaea6f4
-[2025-09-23T00:00:13.586Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.587Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.587Z] Connection:keep-alive
-[2025-09-23T00:00:13.587Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.587Z] Last-Modified:Mon, 22 Sep 2025 23:31:24 GMT
-[2025-09-23T00:00:13.587Z] Content-Length:0
-[2025-09-23T00:00:13.587Z] 
-[2025-09-23T00:00:13.589Z] Request [2bf214b3-4be8-420b-8fef-84554aa62e0a] HEAD http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host
-[2025-09-23T00:00:13.589Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:13.589Z] Accept:application/xml
-[2025-09-23T00:00:13.589Z] x-ms-client-request-id:2bf214b3-4be8-420b-8fef-84554aa62e0a
-[2025-09-23T00:00:13.590Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.590Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.592Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.592Z] Authorization:REDACTED
-[2025-09-23T00:00:13.592Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:13.606Z] Response [2bf214b3-4be8-420b-8fef-84554aa62e0a] 200 OK (00.0s)
-[2025-09-23T00:00:13.607Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:13.607Z] x-ms-creation-time:Sat, 20 Sep 2025 07:59:19 GMT
-[2025-09-23T00:00:13.607Z] x-ms-meta-FunctionInstance:REDACTED
-[2025-09-23T00:00:13.608Z] x-ms-blob-type:BlockBlob
-[2025-09-23T00:00:13.608Z] x-ms-lease-duration:fixed
-[2025-09-23T00:00:13.608Z] x-ms-lease-state:leased
-[2025-09-23T00:00:13.608Z] x-ms-lease-status:locked
-[2025-09-23T00:00:13.608Z] ETag:"0x250A93D5FD14540"
-[2025-09-23T00:00:13.608Z] x-ms-client-request-id:2bf214b3-4be8-420b-8fef-84554aa62e0a
-[2025-09-23T00:00:13.608Z] x-ms-request-id:02525952-87eb-4ec7-89f1-5da28af8a390
-[2025-09-23T00:00:13.608Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.608Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.608Z] Accept-Ranges:bytes
-[2025-09-23T00:00:13.608Z] x-ms-server-encrypted:true
-[2025-09-23T00:00:13.608Z] x-ms-access-tier:Hot
-[2025-09-23T00:00:13.608Z] x-ms-access-tier-inferred:true
-[2025-09-23T00:00:13.608Z] x-ms-access-tier-change-time:Sat, 20 Sep 2025 07:59:19 GMT
-[2025-09-23T00:00:13.608Z] Connection:keep-alive
-[2025-09-23T00:00:13.608Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.608Z] Last-Modified:Mon, 22 Sep 2025 23:31:24 GMT
-[2025-09-23T00:00:13.608Z] Content-Length:0
-[2025-09-23T00:00:13.608Z] Content-Type:application/octet-stream
-[2025-09-23T00:00:13.608Z] Content-MD5:1B2M2Y8AsgTpgAmY7PhCfg==
-[2025-09-23T00:00:13.608Z] 
-[2025-09-23T00:00:13.625Z] Request [d38a0ed8-f347-407c-9961-60c81f92304e] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=metadata
-[2025-09-23T00:00:13.625Z] x-ms-meta-FunctionInstance:REDACTED
-[2025-09-23T00:00:13.625Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:13.625Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:13.625Z] Accept:application/xml
-[2025-09-23T00:00:13.625Z] x-ms-client-request-id:d38a0ed8-f347-407c-9961-60c81f92304e
-[2025-09-23T00:00:13.625Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.625Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.625Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.625Z] Authorization:REDACTED
-[2025-09-23T00:00:13.625Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:13.641Z] Request [a3790187-039a-4eb7-9f29-128d4798fcb4] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:13.641Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:13.641Z] Accept:application/xml
-[2025-09-23T00:00:13.641Z] x-ms-client-request-id:a3790187-039a-4eb7-9f29-128d4798fcb4
-[2025-09-23T00:00:13.641Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:13.641Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:13.641Z] x-ms-date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.641Z] Authorization:REDACTED
-[2025-09-23T00:00:13.641Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:13.646Z] Response [d38a0ed8-f347-407c-9961-60c81f92304e] 200 OK (00.0s)
-[2025-09-23T00:00:13.647Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:13.647Z] ETag:"0x1D82617F8DD0150"
-[2025-09-23T00:00:13.647Z] x-ms-client-request-id:d38a0ed8-f347-407c-9961-60c81f92304e
-[2025-09-23T00:00:13.647Z] x-ms-request-id:8a7bebce-62c4-4028-a627-424cb7ba62ec
-[2025-09-23T00:00:13.647Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.647Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.647Z] x-ms-request-server-encrypted:true
-[2025-09-23T00:00:13.647Z] Connection:keep-alive
-[2025-09-23T00:00:13.647Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.647Z] Last-Modified:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.647Z] Content-Length:0
-[2025-09-23T00:00:13.647Z] 
-[2025-09-23T00:00:13.665Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-09-23T00:00:13.668Z] Error response [a3790187-039a-4eb7-9f29-128d4798fcb4] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:13.668Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:13.668Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:13.668Z] x-ms-request-id:d36e1845-1e2e-4cca-87ca-18c2e800a91f
-[2025-09-23T00:00:13.668Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:13.668Z] Date:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:13.668Z] Connection:keep-alive
-[2025-09-23T00:00:13.668Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:13.668Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:13.668Z] Content-Type:application/xml
-[2025-09-23T00:00:13.668Z] 
-[2025-09-23T00:00:15.488Z] Request [e7f93db4-f6af-461c-af84-ddd65c11b29a] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:15.489Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:15.489Z] Accept:application/xml
-[2025-09-23T00:00:15.489Z] x-ms-client-request-id:e7f93db4-f6af-461c-af84-ddd65c11b29a
-[2025-09-23T00:00:15.489Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:15.489Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:15.489Z] x-ms-date:Tue, 23 Sep 2025 00:00:15 GMT
-[2025-09-23T00:00:15.489Z] Authorization:REDACTED
-[2025-09-23T00:00:15.489Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:15.494Z] Response [e7f93db4-f6af-461c-af84-ddd65c11b29a] 200 OK (00.0s)
-[2025-09-23T00:00:15.494Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:15.494Z] x-ms-client-request-id:e7f93db4-f6af-461c-af84-ddd65c11b29a
-[2025-09-23T00:00:15.494Z] x-ms-request-id:3cc9b391-13df-4b7b-831f-38fb63af3a93
-[2025-09-23T00:00:15.494Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:15.494Z] Date:Tue, 23 Sep 2025 00:00:15 GMT
-[2025-09-23T00:00:15.494Z] Connection:keep-alive
-[2025-09-23T00:00:15.494Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:15.494Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:15.494Z] Content-Type:application/xml
-[2025-09-23T00:00:15.494Z] 
-[2025-09-23T00:00:16.104Z] Request [94031b99-2bf5-4d9e-bc8f-05db26041b19] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:16.104Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:16.104Z] Accept:application/xml
-[2025-09-23T00:00:16.104Z] x-ms-client-request-id:94031b99-2bf5-4d9e-bc8f-05db26041b19
-[2025-09-23T00:00:16.104Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:16.104Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:16.104Z] x-ms-date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.104Z] Authorization:REDACTED
-[2025-09-23T00:00:16.104Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:16.111Z] Response [94031b99-2bf5-4d9e-bc8f-05db26041b19] 200 OK (00.0s)
-[2025-09-23T00:00:16.111Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:16.111Z] x-ms-client-request-id:94031b99-2bf5-4d9e-bc8f-05db26041b19
-[2025-09-23T00:00:16.111Z] x-ms-request-id:c301fc8c-3364-4185-9ee0-eef63dab225c
-[2025-09-23T00:00:16.111Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:16.111Z] Date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.111Z] Connection:keep-alive
-[2025-09-23T00:00:16.111Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:16.111Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:16.111Z] Content-Type:application/xml
-[2025-09-23T00:00:16.111Z] 
-[2025-09-23T00:00:16.669Z] Request [cd4e0f18-1b4b-4abf-82e7-d3a7567cc74f] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:16.669Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:16.669Z] Accept:application/xml
-[2025-09-23T00:00:16.669Z] x-ms-client-request-id:cd4e0f18-1b4b-4abf-82e7-d3a7567cc74f
-[2025-09-23T00:00:16.669Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:16.669Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:16.669Z] x-ms-date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.669Z] Authorization:REDACTED
-[2025-09-23T00:00:16.669Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:16.674Z] Error response [cd4e0f18-1b4b-4abf-82e7-d3a7567cc74f] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:16.674Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:16.674Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:16.674Z] x-ms-request-id:f8e5f782-fd29-4615-a7d1-1969bb0b29c4
-[2025-09-23T00:00:16.674Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:16.674Z] Date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.674Z] Connection:keep-alive
-[2025-09-23T00:00:16.674Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:16.674Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:16.674Z] Content-Type:application/xml
-[2025-09-23T00:00:16.674Z] 
-[2025-09-23T00:00:16.724Z] Request [058f4a76-53d6-4f34-a6b1-1791e3be14d4] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:16.724Z] x-ms-lease-action:renew
-[2025-09-23T00:00:16.724Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:16.724Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:16.724Z] Accept:application/xml
-[2025-09-23T00:00:16.724Z] x-ms-client-request-id:058f4a76-53d6-4f34-a6b1-1791e3be14d4
-[2025-09-23T00:00:16.724Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:16.724Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:16.724Z] x-ms-date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.724Z] Authorization:REDACTED
-[2025-09-23T00:00:16.724Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:16.738Z] Response [058f4a76-53d6-4f34-a6b1-1791e3be14d4] 200 OK (00.0s)
-[2025-09-23T00:00:16.738Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:16.738Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:16.738Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:16.738Z] x-ms-client-request-id:058f4a76-53d6-4f34-a6b1-1791e3be14d4
-[2025-09-23T00:00:16.738Z] x-ms-request-id:f76f21d2-5782-4f02-ba8f-268aa0eac982
-[2025-09-23T00:00:16.738Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:16.738Z] Date:Tue, 23 Sep 2025 00:00:16 GMT
-[2025-09-23T00:00:16.738Z] Connection:keep-alive
-[2025-09-23T00:00:16.738Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:16.738Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:16.738Z] Content-Length:0
-[2025-09-23T00:00:16.738Z] 
-[2025-09-23T00:00:17.496Z] Request [c4b8d4e3-6ecd-4664-83da-1938a326f6f7] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:17.496Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:17.496Z] Accept:application/xml
-[2025-09-23T00:00:17.496Z] x-ms-client-request-id:c4b8d4e3-6ecd-4664-83da-1938a326f6f7
-[2025-09-23T00:00:17.496Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:17.496Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:17.496Z] x-ms-date:Tue, 23 Sep 2025 00:00:17 GMT
-[2025-09-23T00:00:17.496Z] Authorization:REDACTED
-[2025-09-23T00:00:17.496Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:17.502Z] Response [c4b8d4e3-6ecd-4664-83da-1938a326f6f7] 200 OK (00.0s)
-[2025-09-23T00:00:17.502Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:17.502Z] x-ms-client-request-id:c4b8d4e3-6ecd-4664-83da-1938a326f6f7
-[2025-09-23T00:00:17.502Z] x-ms-request-id:66d4cdeb-3193-4e3e-b9b3-1c82864d0dfc
-[2025-09-23T00:00:17.502Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:17.502Z] Date:Tue, 23 Sep 2025 00:00:17 GMT
-[2025-09-23T00:00:17.502Z] Connection:keep-alive
-[2025-09-23T00:00:17.502Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:17.502Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:17.502Z] Content-Type:application/xml
-[2025-09-23T00:00:17.502Z] 
-[2025-09-23T00:00:19.505Z] Request [dbe2a3ca-6358-4a1f-9afb-dcd0e052ea3a] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:19.505Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:19.505Z] Accept:application/xml
-[2025-09-23T00:00:19.505Z] x-ms-client-request-id:dbe2a3ca-6358-4a1f-9afb-dcd0e052ea3a
-[2025-09-23T00:00:19.505Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:19.505Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:19.505Z] x-ms-date:Tue, 23 Sep 2025 00:00:19 GMT
-[2025-09-23T00:00:19.505Z] Authorization:REDACTED
-[2025-09-23T00:00:19.505Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:19.512Z] Response [dbe2a3ca-6358-4a1f-9afb-dcd0e052ea3a] 200 OK (00.0s)
-[2025-09-23T00:00:19.512Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:19.512Z] x-ms-client-request-id:dbe2a3ca-6358-4a1f-9afb-dcd0e052ea3a
-[2025-09-23T00:00:19.512Z] x-ms-request-id:30b6d807-5213-4210-8faa-04712506253b
-[2025-09-23T00:00:19.512Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:19.512Z] Date:Tue, 23 Sep 2025 00:00:19 GMT
-[2025-09-23T00:00:19.512Z] Connection:keep-alive
-[2025-09-23T00:00:19.512Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:19.512Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:19.512Z] Content-Type:application/xml
-[2025-09-23T00:00:19.512Z] 
-[2025-09-23T00:00:21.515Z] Request [a7d061d9-b58e-452e-9dab-03a13a834bbd] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:21.515Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:21.515Z] Accept:application/xml
-[2025-09-23T00:00:21.515Z] x-ms-client-request-id:a7d061d9-b58e-452e-9dab-03a13a834bbd
-[2025-09-23T00:00:21.515Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:21.515Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:21.515Z] x-ms-date:Tue, 23 Sep 2025 00:00:21 GMT
-[2025-09-23T00:00:21.515Z] Authorization:REDACTED
-[2025-09-23T00:00:21.515Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:21.521Z] Response [a7d061d9-b58e-452e-9dab-03a13a834bbd] 200 OK (00.0s)
-[2025-09-23T00:00:21.521Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:21.521Z] x-ms-client-request-id:a7d061d9-b58e-452e-9dab-03a13a834bbd
-[2025-09-23T00:00:21.521Z] x-ms-request-id:f6186d1d-4564-426d-88ac-f94cdedacb94
-[2025-09-23T00:00:21.521Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:21.521Z] Date:Tue, 23 Sep 2025 00:00:21 GMT
-[2025-09-23T00:00:21.521Z] Connection:keep-alive
-[2025-09-23T00:00:21.521Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:21.521Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:21.521Z] Content-Type:application/xml
-[2025-09-23T00:00:21.521Z] 
-[2025-09-23T00:00:22.116Z] Request [9ee1c275-95de-4ce8-af8f-3aaa6e87e7a6] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:22.116Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:22.116Z] Accept:application/xml
-[2025-09-23T00:00:22.116Z] x-ms-client-request-id:9ee1c275-95de-4ce8-af8f-3aaa6e87e7a6
-[2025-09-23T00:00:22.116Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:22.116Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:22.116Z] x-ms-date:Tue, 23 Sep 2025 00:00:22 GMT
-[2025-09-23T00:00:22.116Z] Authorization:REDACTED
-[2025-09-23T00:00:22.116Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:22.122Z] Response [9ee1c275-95de-4ce8-af8f-3aaa6e87e7a6] 200 OK (00.0s)
-[2025-09-23T00:00:22.122Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:22.122Z] x-ms-client-request-id:9ee1c275-95de-4ce8-af8f-3aaa6e87e7a6
-[2025-09-23T00:00:22.122Z] x-ms-request-id:7fac3a73-4249-4fb8-8c84-9485884f0913
-[2025-09-23T00:00:22.122Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:22.122Z] Date:Tue, 23 Sep 2025 00:00:22 GMT
-[2025-09-23T00:00:22.122Z] Connection:keep-alive
-[2025-09-23T00:00:22.122Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:22.122Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:22.122Z] Content-Type:application/xml
-[2025-09-23T00:00:22.122Z] 
-[2025-09-23T00:00:23.249Z] Request [f884a2ac-240a-4f53-aa63-d1f6a369f204] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:23.250Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:23.250Z] Accept:application/xml
-[2025-09-23T00:00:23.250Z] x-ms-client-request-id:f884a2ac-240a-4f53-aa63-d1f6a369f204
-[2025-09-23T00:00:23.250Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:23.250Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:23.250Z] x-ms-date:Tue, 23 Sep 2025 00:00:23 GMT
-[2025-09-23T00:00:23.250Z] Authorization:REDACTED
-[2025-09-23T00:00:23.250Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:23.254Z] Error response [f884a2ac-240a-4f53-aa63-d1f6a369f204] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:23.254Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:23.254Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:23.254Z] x-ms-request-id:693aeeb1-4765-431d-ac8a-7905939c5168
-[2025-09-23T00:00:23.254Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:23.254Z] Date:Tue, 23 Sep 2025 00:00:23 GMT
-[2025-09-23T00:00:23.254Z] Connection:keep-alive
-[2025-09-23T00:00:23.254Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:23.254Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:23.254Z] Content-Type:application/xml
-[2025-09-23T00:00:23.254Z] 
-[2025-09-23T00:00:23.524Z] Request [c434219c-dfc9-4aee-9ed6-ffb422806aa7] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:23.524Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:23.524Z] Accept:application/xml
-[2025-09-23T00:00:23.524Z] x-ms-client-request-id:c434219c-dfc9-4aee-9ed6-ffb422806aa7
-[2025-09-23T00:00:23.524Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:23.524Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:23.524Z] x-ms-date:Tue, 23 Sep 2025 00:00:23 GMT
-[2025-09-23T00:00:23.524Z] Authorization:REDACTED
-[2025-09-23T00:00:23.524Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:23.528Z] Response [c434219c-dfc9-4aee-9ed6-ffb422806aa7] 200 OK (00.0s)
-[2025-09-23T00:00:23.528Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:23.528Z] x-ms-client-request-id:c434219c-dfc9-4aee-9ed6-ffb422806aa7
-[2025-09-23T00:00:23.528Z] x-ms-request-id:bedf3e42-4928-4e1c-b619-2c223291e828
-[2025-09-23T00:00:23.528Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:23.528Z] Date:Tue, 23 Sep 2025 00:00:23 GMT
-[2025-09-23T00:00:23.528Z] Connection:keep-alive
-[2025-09-23T00:00:23.528Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:23.528Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:23.528Z] Content-Type:application/xml
-[2025-09-23T00:00:23.528Z] 
-[2025-09-23T00:00:24.257Z] Request [d9560933-7884-472c-b0a8-588e935ef46a] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:24.257Z] x-ms-lease-action:renew
-[2025-09-23T00:00:24.257Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:24.257Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:24.257Z] Accept:application/xml
-[2025-09-23T00:00:24.257Z] x-ms-client-request-id:d9560933-7884-472c-b0a8-588e935ef46a
-[2025-09-23T00:00:24.257Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:24.257Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:24.257Z] x-ms-date:Tue, 23 Sep 2025 00:00:24 GMT
-[2025-09-23T00:00:24.257Z] Authorization:REDACTED
-[2025-09-23T00:00:24.258Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:24.267Z] Response [d9560933-7884-472c-b0a8-588e935ef46a] 200 OK (00.0s)
-[2025-09-23T00:00:24.267Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:24.267Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:24.267Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:24.267Z] x-ms-client-request-id:d9560933-7884-472c-b0a8-588e935ef46a
-[2025-09-23T00:00:24.267Z] x-ms-request-id:036653b7-63b8-4138-a9a6-16f9234035cc
-[2025-09-23T00:00:24.267Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:24.267Z] Date:Tue, 23 Sep 2025 00:00:24 GMT
-[2025-09-23T00:00:24.267Z] Connection:keep-alive
-[2025-09-23T00:00:24.267Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:24.267Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:24.267Z] Content-Length:0
-[2025-09-23T00:00:24.267Z] 
-[2025-09-23T00:00:25.529Z] Request [b0902f16-36a6-4bf5-84ec-d1e1bda69b7a] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:25.529Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:25.529Z] Accept:application/xml
-[2025-09-23T00:00:25.529Z] x-ms-client-request-id:b0902f16-36a6-4bf5-84ec-d1e1bda69b7a
-[2025-09-23T00:00:25.529Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:25.529Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:25.529Z] x-ms-date:Tue, 23 Sep 2025 00:00:25 GMT
-[2025-09-23T00:00:25.529Z] Authorization:REDACTED
-[2025-09-23T00:00:25.529Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:25.534Z] Response [b0902f16-36a6-4bf5-84ec-d1e1bda69b7a] 200 OK (00.0s)
-[2025-09-23T00:00:25.535Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:25.535Z] x-ms-client-request-id:b0902f16-36a6-4bf5-84ec-d1e1bda69b7a
-[2025-09-23T00:00:25.535Z] x-ms-request-id:fca559f8-c4ec-4084-9473-5b9cc334460b
-[2025-09-23T00:00:25.535Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:25.535Z] Date:Tue, 23 Sep 2025 00:00:25 GMT
-[2025-09-23T00:00:25.535Z] Connection:keep-alive
-[2025-09-23T00:00:25.535Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:25.535Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:25.535Z] Content-Type:application/xml
-[2025-09-23T00:00:25.535Z] 
-[2025-09-23T00:00:25.662Z] Request [952a1a34-b229-4de1-bc4c-16fc50831fc6] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=lease
-[2025-09-23T00:00:25.662Z] x-ms-lease-action:renew
-[2025-09-23T00:00:25.662Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:25.662Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:25.662Z] Accept:application/xml
-[2025-09-23T00:00:25.662Z] x-ms-client-request-id:952a1a34-b229-4de1-bc4c-16fc50831fc6
-[2025-09-23T00:00:25.662Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:25.662Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:25.662Z] x-ms-date:Tue, 23 Sep 2025 00:00:25 GMT
-[2025-09-23T00:00:25.662Z] Authorization:REDACTED
-[2025-09-23T00:00:25.662Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:25.667Z] Response [952a1a34-b229-4de1-bc4c-16fc50831fc6] 200 OK (00.0s)
-[2025-09-23T00:00:25.668Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:25.668Z] ETag:"0x1D82617F8DD0150"
-[2025-09-23T00:00:25.668Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:25.668Z] x-ms-client-request-id:952a1a34-b229-4de1-bc4c-16fc50831fc6
-[2025-09-23T00:00:25.668Z] x-ms-request-id:e2cd5da2-56b5-45ad-9066-36a0260ba424
-[2025-09-23T00:00:25.668Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:25.668Z] Date:Tue, 23 Sep 2025 00:00:25 GMT
-[2025-09-23T00:00:25.668Z] Connection:keep-alive
-[2025-09-23T00:00:25.668Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:25.668Z] Last-Modified:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:25.668Z] Content-Length:0
-[2025-09-23T00:00:25.668Z] 
-[2025-09-23T00:00:27.533Z] Request [8727edb9-f47c-40ac-b3b1-b206fc400a59] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:27.533Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:27.533Z] Accept:application/xml
-[2025-09-23T00:00:27.533Z] x-ms-client-request-id:8727edb9-f47c-40ac-b3b1-b206fc400a59
-[2025-09-23T00:00:27.533Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:27.533Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:27.533Z] x-ms-date:Tue, 23 Sep 2025 00:00:27 GMT
-[2025-09-23T00:00:27.533Z] Authorization:REDACTED
-[2025-09-23T00:00:27.533Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:27.541Z] Response [8727edb9-f47c-40ac-b3b1-b206fc400a59] 200 OK (00.0s)
-[2025-09-23T00:00:27.541Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:27.541Z] x-ms-client-request-id:8727edb9-f47c-40ac-b3b1-b206fc400a59
-[2025-09-23T00:00:27.541Z] x-ms-request-id:ce935df7-97a5-4f69-b0ff-bca64b97dc60
-[2025-09-23T00:00:27.541Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:27.541Z] Date:Tue, 23 Sep 2025 00:00:27 GMT
-[2025-09-23T00:00:27.541Z] Connection:keep-alive
-[2025-09-23T00:00:27.541Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:27.541Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:27.541Z] Content-Type:application/xml
-[2025-09-23T00:00:27.541Z] 
-[2025-09-23T00:00:29.542Z] Request [237b983c-5a9a-49a4-9b66-08d27b516c67] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:29.542Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:29.542Z] Accept:application/xml
-[2025-09-23T00:00:29.542Z] x-ms-client-request-id:237b983c-5a9a-49a4-9b66-08d27b516c67
-[2025-09-23T00:00:29.542Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:29.542Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:29.542Z] x-ms-date:Tue, 23 Sep 2025 00:00:29 GMT
-[2025-09-23T00:00:29.542Z] Authorization:REDACTED
-[2025-09-23T00:00:29.542Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:29.548Z] Response [237b983c-5a9a-49a4-9b66-08d27b516c67] 200 OK (00.0s)
-[2025-09-23T00:00:29.548Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:29.548Z] x-ms-client-request-id:237b983c-5a9a-49a4-9b66-08d27b516c67
-[2025-09-23T00:00:29.548Z] x-ms-request-id:07e40af5-65cb-48fc-bf31-86c31477d46f
-[2025-09-23T00:00:29.548Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:29.548Z] Date:Tue, 23 Sep 2025 00:00:29 GMT
-[2025-09-23T00:00:29.548Z] Connection:keep-alive
-[2025-09-23T00:00:29.548Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:29.548Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:29.548Z] Content-Type:application/xml
-[2025-09-23T00:00:29.548Z] 
-[2025-09-23T00:00:31.551Z] Request [f1e88490-1490-40a0-8813-a98f756f8b9c] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:31.551Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:31.551Z] Accept:application/xml
-[2025-09-23T00:00:31.551Z] x-ms-client-request-id:f1e88490-1490-40a0-8813-a98f756f8b9c
-[2025-09-23T00:00:31.551Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:31.551Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:31.551Z] x-ms-date:Tue, 23 Sep 2025 00:00:31 GMT
-[2025-09-23T00:00:31.551Z] Authorization:REDACTED
-[2025-09-23T00:00:31.551Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:31.555Z] Response [f1e88490-1490-40a0-8813-a98f756f8b9c] 200 OK (00.0s)
-[2025-09-23T00:00:31.555Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:31.555Z] x-ms-client-request-id:f1e88490-1490-40a0-8813-a98f756f8b9c
-[2025-09-23T00:00:31.555Z] x-ms-request-id:8d5996d5-6065-4c83-9be7-b54b3da89282
-[2025-09-23T00:00:31.555Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:31.555Z] Date:Tue, 23 Sep 2025 00:00:31 GMT
-[2025-09-23T00:00:31.555Z] Connection:keep-alive
-[2025-09-23T00:00:31.555Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:31.555Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:31.555Z] Content-Type:application/xml
-[2025-09-23T00:00:31.555Z] 
-[2025-09-23T00:00:31.768Z] Request [c202b927-5645-4189-8167-5492cbd4f418] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:31.768Z] x-ms-lease-action:renew
-[2025-09-23T00:00:31.768Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:31.768Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:31.768Z] Accept:application/xml
-[2025-09-23T00:00:31.768Z] x-ms-client-request-id:c202b927-5645-4189-8167-5492cbd4f418
-[2025-09-23T00:00:31.768Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:31.768Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:31.768Z] x-ms-date:Tue, 23 Sep 2025 00:00:31 GMT
-[2025-09-23T00:00:31.768Z] Authorization:REDACTED
-[2025-09-23T00:00:31.768Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:31.774Z] Response [c202b927-5645-4189-8167-5492cbd4f418] 200 OK (00.0s)
-[2025-09-23T00:00:31.775Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:31.775Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:31.775Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:31.775Z] x-ms-client-request-id:c202b927-5645-4189-8167-5492cbd4f418
-[2025-09-23T00:00:31.775Z] x-ms-request-id:81ed700a-510e-4704-af55-728c3a14c779
-[2025-09-23T00:00:31.775Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:31.775Z] Date:Tue, 23 Sep 2025 00:00:31 GMT
-[2025-09-23T00:00:31.775Z] Connection:keep-alive
-[2025-09-23T00:00:31.775Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:31.775Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:31.775Z] Content-Length:0
-[2025-09-23T00:00:31.775Z] 
-[2025-09-23T00:00:32.123Z] Request [64341bfd-2743-446d-9667-3fd74952e38c] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:32.124Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:32.124Z] Accept:application/xml
-[2025-09-23T00:00:32.124Z] x-ms-client-request-id:64341bfd-2743-446d-9667-3fd74952e38c
-[2025-09-23T00:00:32.124Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:32.124Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:32.124Z] x-ms-date:Tue, 23 Sep 2025 00:00:32 GMT
-[2025-09-23T00:00:32.124Z] Authorization:REDACTED
-[2025-09-23T00:00:32.124Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:32.130Z] Response [64341bfd-2743-446d-9667-3fd74952e38c] 200 OK (00.0s)
-[2025-09-23T00:00:32.130Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:32.131Z] x-ms-client-request-id:64341bfd-2743-446d-9667-3fd74952e38c
-[2025-09-23T00:00:32.131Z] x-ms-request-id:543a353b-9e65-48e7-945c-d5f970284a5a
-[2025-09-23T00:00:32.131Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:32.131Z] Date:Tue, 23 Sep 2025 00:00:32 GMT
-[2025-09-23T00:00:32.131Z] Connection:keep-alive
-[2025-09-23T00:00:32.131Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:32.131Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:32.131Z] Content-Type:application/xml
-[2025-09-23T00:00:32.131Z] 
-[2025-09-23T00:00:33.557Z] Request [fd9cac21-6ca8-4580-bb2a-e196a3f61ff4] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:33.557Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:33.557Z] Accept:application/xml
-[2025-09-23T00:00:33.557Z] x-ms-client-request-id:fd9cac21-6ca8-4580-bb2a-e196a3f61ff4
-[2025-09-23T00:00:33.557Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:33.557Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:33.557Z] x-ms-date:Tue, 23 Sep 2025 00:00:33 GMT
-[2025-09-23T00:00:33.557Z] Authorization:REDACTED
-[2025-09-23T00:00:33.557Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:33.564Z] Response [fd9cac21-6ca8-4580-bb2a-e196a3f61ff4] 200 OK (00.0s)
-[2025-09-23T00:00:33.564Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:33.564Z] x-ms-client-request-id:fd9cac21-6ca8-4580-bb2a-e196a3f61ff4
-[2025-09-23T00:00:33.564Z] x-ms-request-id:0111573b-a455-4e5b-b094-8a948d2e4bb7
-[2025-09-23T00:00:33.564Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:33.564Z] Date:Tue, 23 Sep 2025 00:00:33 GMT
-[2025-09-23T00:00:33.564Z] Connection:keep-alive
-[2025-09-23T00:00:33.564Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:33.564Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:33.564Z] Content-Type:application/xml
-[2025-09-23T00:00:33.564Z] 
-[2025-09-23T00:00:34.212Z] Request [0be95e73-c3ef-48a7-8ee5-1a3a6989371e] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:00:34.213Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:34.213Z] Accept:application/xml
-[2025-09-23T00:00:34.213Z] x-ms-client-request-id:0be95e73-c3ef-48a7-8ee5-1a3a6989371e
-[2025-09-23T00:00:34.213Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:34.213Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:34.213Z] x-ms-date:Tue, 23 Sep 2025 00:00:34 GMT
-[2025-09-23T00:00:34.213Z] Authorization:REDACTED
-[2025-09-23T00:00:34.213Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:34.219Z] Error response [0be95e73-c3ef-48a7-8ee5-1a3a6989371e] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:00:34.219Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:34.219Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:00:34.219Z] x-ms-request-id:a8ff94a4-dab1-476e-9a6d-3c6f08bb6457
-[2025-09-23T00:00:34.219Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:34.219Z] Date:Tue, 23 Sep 2025 00:00:34 GMT
-[2025-09-23T00:00:34.219Z] Connection:keep-alive
-[2025-09-23T00:00:34.219Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:34.219Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:34.219Z] Content-Type:application/xml
-[2025-09-23T00:00:34.219Z] 
-[2025-09-23T00:00:35.569Z] Request [0d430949-e0d5-4116-84fe-36d12a3d420f] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:35.569Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:35.569Z] Accept:application/xml
-[2025-09-23T00:00:35.569Z] x-ms-client-request-id:0d430949-e0d5-4116-84fe-36d12a3d420f
-[2025-09-23T00:00:35.569Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:35.569Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:35.569Z] x-ms-date:Tue, 23 Sep 2025 00:00:35 GMT
-[2025-09-23T00:00:35.569Z] Authorization:REDACTED
-[2025-09-23T00:00:35.569Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:35.574Z] Response [0d430949-e0d5-4116-84fe-36d12a3d420f] 200 OK (00.0s)
-[2025-09-23T00:00:35.574Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:35.574Z] x-ms-client-request-id:0d430949-e0d5-4116-84fe-36d12a3d420f
-[2025-09-23T00:00:35.574Z] x-ms-request-id:a8e9e942-10ef-442f-a923-f6c75a815e0c
-[2025-09-23T00:00:35.574Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:35.574Z] Date:Tue, 23 Sep 2025 00:00:35 GMT
-[2025-09-23T00:00:35.574Z] Connection:keep-alive
-[2025-09-23T00:00:35.574Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:35.574Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:35.574Z] Content-Type:application/xml
-[2025-09-23T00:00:35.574Z] 
-[2025-09-23T00:00:39.325Z] Request [3284e205-b3ff-4431-b16b-c53d4626fc9e] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:39.325Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:39.325Z] Accept:application/xml
-[2025-09-23T00:00:39.325Z] x-ms-client-request-id:3284e205-b3ff-4431-b16b-c53d4626fc9e
-[2025-09-23T00:00:39.325Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:39.325Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:39.325Z] x-ms-date:Tue, 23 Sep 2025 00:00:39 GMT
-[2025-09-23T00:00:39.325Z] Authorization:REDACTED
-[2025-09-23T00:00:39.325Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:39.330Z] Response [3284e205-b3ff-4431-b16b-c53d4626fc9e] 200 OK (00.0s)
-[2025-09-23T00:00:39.330Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:39.330Z] x-ms-client-request-id:3284e205-b3ff-4431-b16b-c53d4626fc9e
-[2025-09-23T00:00:39.330Z] x-ms-request-id:bf40f586-4509-4ea0-bed1-5013760035b5
-[2025-09-23T00:00:39.330Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:39.330Z] Date:Tue, 23 Sep 2025 00:00:39 GMT
-[2025-09-23T00:00:39.330Z] Connection:keep-alive
-[2025-09-23T00:00:39.330Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:39.330Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:39.330Z] Content-Type:application/xml
-[2025-09-23T00:00:39.330Z] 
-[2025-09-23T00:00:39.418Z] Request [f42b74f9-1118-45e0-bf65-a1acdda424b6] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=lease
-[2025-09-23T00:00:39.418Z] x-ms-lease-action:renew
-[2025-09-23T00:00:39.419Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:39.419Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:39.419Z] Accept:application/xml
-[2025-09-23T00:00:39.419Z] x-ms-client-request-id:f42b74f9-1118-45e0-bf65-a1acdda424b6
-[2025-09-23T00:00:39.419Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:39.419Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:39.419Z] x-ms-date:Tue, 23 Sep 2025 00:00:39 GMT
-[2025-09-23T00:00:39.419Z] Authorization:REDACTED
-[2025-09-23T00:00:39.419Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:39.427Z] Response [f42b74f9-1118-45e0-bf65-a1acdda424b6] 200 OK (00.0s)
-[2025-09-23T00:00:39.427Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:39.427Z] ETag:"0x1D82617F8DD0150"
-[2025-09-23T00:00:39.427Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:39.427Z] x-ms-client-request-id:f42b74f9-1118-45e0-bf65-a1acdda424b6
-[2025-09-23T00:00:39.427Z] x-ms-request-id:dcd89e74-53ea-4647-92e9-0b9b00c410cb
-[2025-09-23T00:00:39.427Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:39.427Z] Date:Tue, 23 Sep 2025 00:00:39 GMT
-[2025-09-23T00:00:39.427Z] Connection:keep-alive
-[2025-09-23T00:00:39.427Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:39.427Z] Last-Modified:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:39.427Z] Content-Length:0
-[2025-09-23T00:00:39.427Z] 
-[2025-09-23T00:00:41.024Z] Request [01fe2dad-268d-4998-aeac-ebbcec69e55b] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:41.024Z] x-ms-lease-action:renew
-[2025-09-23T00:00:41.024Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:41.024Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:41.024Z] Accept:application/xml
-[2025-09-23T00:00:41.024Z] x-ms-client-request-id:01fe2dad-268d-4998-aeac-ebbcec69e55b
-[2025-09-23T00:00:41.024Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:41.024Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:41.024Z] x-ms-date:Tue, 23 Sep 2025 00:00:41 GMT
-[2025-09-23T00:00:41.024Z] Authorization:REDACTED
-[2025-09-23T00:00:41.024Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:41.029Z] Response [01fe2dad-268d-4998-aeac-ebbcec69e55b] 200 OK (00.0s)
-[2025-09-23T00:00:41.029Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:41.029Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:41.029Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:41.029Z] x-ms-client-request-id:01fe2dad-268d-4998-aeac-ebbcec69e55b
-[2025-09-23T00:00:41.029Z] x-ms-request-id:d1ae36d0-5bdc-41b2-b4c7-eb3fc680d05b
-[2025-09-23T00:00:41.029Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:41.029Z] Date:Tue, 23 Sep 2025 00:00:41 GMT
-[2025-09-23T00:00:41.029Z] Connection:keep-alive
-[2025-09-23T00:00:41.029Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:41.029Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:41.029Z] Content-Length:0
-[2025-09-23T00:00:41.029Z] 
-[2025-09-23T00:00:41.365Z] Request [b65f5155-c4b4-4d80-b579-1958217373c0] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:41.365Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:41.365Z] Accept:application/xml
-[2025-09-23T00:00:41.365Z] x-ms-client-request-id:b65f5155-c4b4-4d80-b579-1958217373c0
-[2025-09-23T00:00:41.365Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:41.365Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:41.365Z] x-ms-date:Tue, 23 Sep 2025 00:00:41 GMT
-[2025-09-23T00:00:41.365Z] Authorization:REDACTED
-[2025-09-23T00:00:41.365Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:41.393Z] Response [b65f5155-c4b4-4d80-b579-1958217373c0] 200 OK (00.0s)
-[2025-09-23T00:00:41.393Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:41.393Z] x-ms-client-request-id:b65f5155-c4b4-4d80-b579-1958217373c0
-[2025-09-23T00:00:41.393Z] x-ms-request-id:41927345-ba17-4652-ad5c-9598170245ea
-[2025-09-23T00:00:41.393Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:41.393Z] Date:Tue, 23 Sep 2025 00:00:41 GMT
-[2025-09-23T00:00:41.393Z] Connection:keep-alive
-[2025-09-23T00:00:41.393Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:41.393Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:41.393Z] Content-Type:application/xml
-[2025-09-23T00:00:41.393Z] 
-[2025-09-23T00:00:43.396Z] Request [eee18962-7449-4a54-a37d-898a87eff3d3] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:43.396Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:43.396Z] Accept:application/xml
-[2025-09-23T00:00:43.396Z] x-ms-client-request-id:eee18962-7449-4a54-a37d-898a87eff3d3
-[2025-09-23T00:00:43.396Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:43.396Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:43.396Z] x-ms-date:Tue, 23 Sep 2025 00:00:43 GMT
-[2025-09-23T00:00:43.396Z] Authorization:REDACTED
-[2025-09-23T00:00:43.396Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:43.407Z] Response [eee18962-7449-4a54-a37d-898a87eff3d3] 200 OK (00.0s)
-[2025-09-23T00:00:43.407Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:43.407Z] x-ms-client-request-id:eee18962-7449-4a54-a37d-898a87eff3d3
-[2025-09-23T00:00:43.407Z] x-ms-request-id:b1b96b84-9e56-48fb-9047-19e81b8ddabd
-[2025-09-23T00:00:43.407Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:43.407Z] Date:Tue, 23 Sep 2025 00:00:43 GMT
-[2025-09-23T00:00:43.407Z] Connection:keep-alive
-[2025-09-23T00:00:43.407Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:43.407Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:43.407Z] Content-Type:application/xml
-[2025-09-23T00:00:43.407Z] 
-[2025-09-23T00:00:43.881Z] Request [fda99cfd-bf86-403e-8b26-a59a9db8384b] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:43.881Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:43.881Z] Accept:application/xml
-[2025-09-23T00:00:43.881Z] x-ms-client-request-id:fda99cfd-bf86-403e-8b26-a59a9db8384b
-[2025-09-23T00:00:43.881Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:43.881Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:43.881Z] x-ms-date:Tue, 23 Sep 2025 00:00:43 GMT
-[2025-09-23T00:00:43.881Z] Authorization:REDACTED
-[2025-09-23T00:00:43.881Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:43.888Z] Response [fda99cfd-bf86-403e-8b26-a59a9db8384b] 200 OK (00.0s)
-[2025-09-23T00:00:43.888Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:43.888Z] x-ms-client-request-id:fda99cfd-bf86-403e-8b26-a59a9db8384b
-[2025-09-23T00:00:43.888Z] x-ms-request-id:edc73eb8-973b-4938-881b-f7ffcacf099c
-[2025-09-23T00:00:43.888Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:43.888Z] Date:Tue, 23 Sep 2025 00:00:43 GMT
-[2025-09-23T00:00:43.888Z] Connection:keep-alive
-[2025-09-23T00:00:43.888Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:43.889Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:43.889Z] Content-Type:application/xml
-[2025-09-23T00:00:43.889Z] 
-[2025-09-23T00:00:45.412Z] Request [fac81ebb-057e-4e09-b77f-4107fd8b2d4d] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:45.412Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:45.412Z] Accept:application/xml
-[2025-09-23T00:00:45.412Z] x-ms-client-request-id:fac81ebb-057e-4e09-b77f-4107fd8b2d4d
-[2025-09-23T00:00:45.412Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:45.412Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:45.412Z] x-ms-date:Tue, 23 Sep 2025 00:00:45 GMT
-[2025-09-23T00:00:45.412Z] Authorization:REDACTED
-[2025-09-23T00:00:45.412Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:45.417Z] Response [fac81ebb-057e-4e09-b77f-4107fd8b2d4d] 200 OK (00.0s)
-[2025-09-23T00:00:45.417Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:45.417Z] x-ms-client-request-id:fac81ebb-057e-4e09-b77f-4107fd8b2d4d
-[2025-09-23T00:00:45.417Z] x-ms-request-id:44295bb6-3c16-4d18-aeaf-54e851e8e7b9
-[2025-09-23T00:00:45.417Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:45.417Z] Date:Tue, 23 Sep 2025 00:00:45 GMT
-[2025-09-23T00:00:45.417Z] Connection:keep-alive
-[2025-09-23T00:00:45.417Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:45.417Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:45.417Z] Content-Type:application/xml
-[2025-09-23T00:00:45.417Z] 
-[2025-09-23T00:00:47.420Z] Request [92b3e250-bc63-4754-a789-d70570382947] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:47.420Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:47.420Z] Accept:application/xml
-[2025-09-23T00:00:47.420Z] x-ms-client-request-id:92b3e250-bc63-4754-a789-d70570382947
-[2025-09-23T00:00:47.420Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:47.420Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:47.420Z] x-ms-date:Tue, 23 Sep 2025 00:00:47 GMT
-[2025-09-23T00:00:47.420Z] Authorization:REDACTED
-[2025-09-23T00:00:47.420Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:47.424Z] Response [92b3e250-bc63-4754-a789-d70570382947] 200 OK (00.0s)
-[2025-09-23T00:00:47.424Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:47.424Z] x-ms-client-request-id:92b3e250-bc63-4754-a789-d70570382947
-[2025-09-23T00:00:47.424Z] x-ms-request-id:aa1c6043-6955-4bf5-9d43-94d02b1ba774
-[2025-09-23T00:00:47.425Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:47.425Z] Date:Tue, 23 Sep 2025 00:00:47 GMT
-[2025-09-23T00:00:47.425Z] Connection:keep-alive
-[2025-09-23T00:00:47.425Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:47.425Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:47.425Z] Content-Type:application/xml
-[2025-09-23T00:00:47.425Z] 
-[2025-09-23T00:00:48.532Z] Request [ef5e83d7-93d5-4dfd-b5bf-48cb39074ba3] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:48.532Z] x-ms-lease-action:renew
-[2025-09-23T00:00:48.532Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:48.532Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:48.532Z] Accept:application/xml
-[2025-09-23T00:00:48.532Z] x-ms-client-request-id:ef5e83d7-93d5-4dfd-b5bf-48cb39074ba3
-[2025-09-23T00:00:48.532Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:48.532Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:48.532Z] x-ms-date:Tue, 23 Sep 2025 00:00:48 GMT
-[2025-09-23T00:00:48.532Z] Authorization:REDACTED
-[2025-09-23T00:00:48.532Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:48.538Z] Response [ef5e83d7-93d5-4dfd-b5bf-48cb39074ba3] 200 OK (00.0s)
-[2025-09-23T00:00:48.538Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:48.538Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:48.538Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:48.538Z] x-ms-client-request-id:ef5e83d7-93d5-4dfd-b5bf-48cb39074ba3
-[2025-09-23T00:00:48.538Z] x-ms-request-id:03a684ee-7b0b-4c1d-ab43-f307a032f1f9
-[2025-09-23T00:00:48.538Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:48.538Z] Date:Tue, 23 Sep 2025 00:00:48 GMT
-[2025-09-23T00:00:48.538Z] Connection:keep-alive
-[2025-09-23T00:00:48.538Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:48.538Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:48.538Z] Content-Length:0
-[2025-09-23T00:00:48.538Z] 
-[2025-09-23T00:00:49.426Z] Request [54f5a3a9-da81-4cbb-b1a0-c416da528002] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:49.426Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:49.426Z] Accept:application/xml
-[2025-09-23T00:00:49.426Z] x-ms-client-request-id:54f5a3a9-da81-4cbb-b1a0-c416da528002
-[2025-09-23T00:00:49.426Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:49.426Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:49.426Z] x-ms-date:Tue, 23 Sep 2025 00:00:49 GMT
-[2025-09-23T00:00:49.426Z] Authorization:REDACTED
-[2025-09-23T00:00:49.426Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:49.432Z] Response [54f5a3a9-da81-4cbb-b1a0-c416da528002] 200 OK (00.0s)
-[2025-09-23T00:00:49.432Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:49.432Z] x-ms-client-request-id:54f5a3a9-da81-4cbb-b1a0-c416da528002
-[2025-09-23T00:00:49.432Z] x-ms-request-id:ceee372d-e427-4d98-9a7c-69039049996e
-[2025-09-23T00:00:49.432Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:49.432Z] Date:Tue, 23 Sep 2025 00:00:49 GMT
-[2025-09-23T00:00:49.432Z] Connection:keep-alive
-[2025-09-23T00:00:49.432Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:49.432Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:49.432Z] Content-Type:application/xml
-[2025-09-23T00:00:49.432Z] 
-[2025-09-23T00:00:51.417Z] Request [fba158c7-f890-456f-87d1-67282307c72a] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=lease
-[2025-09-23T00:00:51.417Z] x-ms-lease-action:renew
-[2025-09-23T00:00:51.417Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:51.417Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:51.417Z] Accept:application/xml
-[2025-09-23T00:00:51.417Z] x-ms-client-request-id:fba158c7-f890-456f-87d1-67282307c72a
-[2025-09-23T00:00:51.417Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:51.417Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:51.417Z] x-ms-date:Tue, 23 Sep 2025 00:00:51 GMT
-[2025-09-23T00:00:51.417Z] Authorization:REDACTED
-[2025-09-23T00:00:51.417Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:51.422Z] Response [fba158c7-f890-456f-87d1-67282307c72a] 200 OK (00.0s)
-[2025-09-23T00:00:51.422Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:51.422Z] ETag:"0x1D82617F8DD0150"
-[2025-09-23T00:00:51.423Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:00:51.423Z] x-ms-client-request-id:fba158c7-f890-456f-87d1-67282307c72a
-[2025-09-23T00:00:51.423Z] x-ms-request-id:98701359-51ce-4ab7-949f-ad387bd36be4
-[2025-09-23T00:00:51.423Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:51.423Z] Date:Tue, 23 Sep 2025 00:00:51 GMT
-[2025-09-23T00:00:51.423Z] Connection:keep-alive
-[2025-09-23T00:00:51.423Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:51.423Z] Last-Modified:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:00:51.423Z] Content-Length:0
-[2025-09-23T00:00:51.423Z] 
-[2025-09-23T00:00:51.437Z] Request [3900ecff-aaf6-4006-974c-7bc02b1fd3bf] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:51.437Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:51.437Z] Accept:application/xml
-[2025-09-23T00:00:51.437Z] x-ms-client-request-id:3900ecff-aaf6-4006-974c-7bc02b1fd3bf
-[2025-09-23T00:00:51.437Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:51.437Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:51.438Z] x-ms-date:Tue, 23 Sep 2025 00:00:51 GMT
-[2025-09-23T00:00:51.438Z] Authorization:REDACTED
-[2025-09-23T00:00:51.438Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:51.452Z] Response [3900ecff-aaf6-4006-974c-7bc02b1fd3bf] 200 OK (00.0s)
-[2025-09-23T00:00:51.452Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:51.452Z] x-ms-client-request-id:3900ecff-aaf6-4006-974c-7bc02b1fd3bf
-[2025-09-23T00:00:51.452Z] x-ms-request-id:ed2483ae-4a8a-4a5d-81cf-a85a7ac61d56
-[2025-09-23T00:00:51.452Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:51.452Z] Date:Tue, 23 Sep 2025 00:00:51 GMT
-[2025-09-23T00:00:51.452Z] Connection:keep-alive
-[2025-09-23T00:00:51.452Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:51.452Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:51.452Z] Content-Type:application/xml
-[2025-09-23T00:00:51.452Z] 
-[2025-09-23T00:00:53.456Z] Request [775acb49-1405-4997-a713-0222b002b3bf] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:53.456Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:53.456Z] Accept:application/xml
-[2025-09-23T00:00:53.456Z] x-ms-client-request-id:775acb49-1405-4997-a713-0222b002b3bf
-[2025-09-23T00:00:53.456Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:53.456Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:53.456Z] x-ms-date:Tue, 23 Sep 2025 00:00:53 GMT
-[2025-09-23T00:00:53.456Z] Authorization:REDACTED
-[2025-09-23T00:00:53.456Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:53.461Z] Response [775acb49-1405-4997-a713-0222b002b3bf] 200 OK (00.0s)
-[2025-09-23T00:00:53.461Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:53.461Z] x-ms-client-request-id:775acb49-1405-4997-a713-0222b002b3bf
-[2025-09-23T00:00:53.461Z] x-ms-request-id:6d604b43-0c7e-47c1-9c81-e91d238154e4
-[2025-09-23T00:00:53.461Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:53.461Z] Date:Tue, 23 Sep 2025 00:00:53 GMT
-[2025-09-23T00:00:53.461Z] Connection:keep-alive
-[2025-09-23T00:00:53.461Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:53.461Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:53.461Z] Content-Type:application/xml
-[2025-09-23T00:00:53.461Z] 
-[2025-09-23T00:00:53.886Z] Request [2d0c5d39-a0f2-44da-87f4-24774f39ffb0] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:00:53.886Z] x-ms-version:2025-05-05
-[2025-09-23T00:00:53.886Z] Accept:application/xml
-[2025-09-23T00:00:53.886Z] x-ms-client-request-id:2d0c5d39-a0f2-44da-87f4-24774f39ffb0
-[2025-09-23T00:00:53.886Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:53.886Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:53.886Z] x-ms-date:Tue, 23 Sep 2025 00:00:53 GMT
-[2025-09-23T00:00:53.886Z] Authorization:REDACTED
-[2025-09-23T00:00:53.886Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:00:53.893Z] Response [2d0c5d39-a0f2-44da-87f4-24774f39ffb0] 200 OK (00.0s)
-[2025-09-23T00:00:53.893Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:00:53.893Z] x-ms-client-request-id:2d0c5d39-a0f2-44da-87f4-24774f39ffb0
-[2025-09-23T00:00:53.893Z] x-ms-request-id:ffd21f9b-3367-4d9f-92f8-12af270ea972
-[2025-09-23T00:00:53.893Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:53.893Z] Date:Tue, 23 Sep 2025 00:00:53 GMT
-[2025-09-23T00:00:53.893Z] Connection:keep-alive
-[2025-09-23T00:00:53.893Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:53.893Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:53.893Z] Content-Type:application/xml
-[2025-09-23T00:00:53.893Z] 
-[2025-09-23T00:00:55.461Z] Request [eaf36903-ec20-4b08-aafb-cbcce78247f4] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:55.461Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:55.461Z] Accept:application/xml
-[2025-09-23T00:00:55.461Z] x-ms-client-request-id:eaf36903-ec20-4b08-aafb-cbcce78247f4
-[2025-09-23T00:00:55.461Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:55.461Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:55.461Z] x-ms-date:Tue, 23 Sep 2025 00:00:55 GMT
-[2025-09-23T00:00:55.461Z] Authorization:REDACTED
-[2025-09-23T00:00:55.461Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:55.465Z] Response [eaf36903-ec20-4b08-aafb-cbcce78247f4] 200 OK (00.0s)
-[2025-09-23T00:00:55.465Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:55.465Z] x-ms-client-request-id:eaf36903-ec20-4b08-aafb-cbcce78247f4
-[2025-09-23T00:00:55.465Z] x-ms-request-id:4c741aed-b796-4fbf-8051-3cbb4e23d9cb
-[2025-09-23T00:00:55.465Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:55.465Z] Date:Tue, 23 Sep 2025 00:00:55 GMT
-[2025-09-23T00:00:55.465Z] Connection:keep-alive
-[2025-09-23T00:00:55.465Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:55.465Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:55.465Z] Content-Type:application/xml
-[2025-09-23T00:00:55.465Z] 
-[2025-09-23T00:00:56.036Z] Request [c8d61190-e264-443f-b1c7-a46205d9d37f] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:00:56.036Z] x-ms-lease-action:renew
-[2025-09-23T00:00:56.036Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:56.036Z] x-ms-version:2024-08-04
-[2025-09-23T00:00:56.036Z] Accept:application/xml
-[2025-09-23T00:00:56.036Z] x-ms-client-request-id:c8d61190-e264-443f-b1c7-a46205d9d37f
-[2025-09-23T00:00:56.036Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:56.036Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:56.036Z] x-ms-date:Tue, 23 Sep 2025 00:00:56 GMT
-[2025-09-23T00:00:56.036Z] Authorization:REDACTED
-[2025-09-23T00:00:56.036Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:56.043Z] Response [c8d61190-e264-443f-b1c7-a46205d9d37f] 200 OK (00.0s)
-[2025-09-23T00:00:56.043Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:56.043Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:00:56.043Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:00:56.043Z] x-ms-client-request-id:c8d61190-e264-443f-b1c7-a46205d9d37f
-[2025-09-23T00:00:56.043Z] x-ms-request-id:20264f15-3e9d-4b03-99fa-8bf083120773
-[2025-09-23T00:00:56.043Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:56.043Z] Date:Tue, 23 Sep 2025 00:00:56 GMT
-[2025-09-23T00:00:56.043Z] Connection:keep-alive
-[2025-09-23T00:00:56.043Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:56.043Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:00:56.043Z] Content-Length:0
-[2025-09-23T00:00:56.043Z] 
-[2025-09-23T00:00:57.468Z] Request [cd9e2cfe-db85-4188-a183-02d972e1c444] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:57.468Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:57.468Z] Accept:application/xml
-[2025-09-23T00:00:57.468Z] x-ms-client-request-id:cd9e2cfe-db85-4188-a183-02d972e1c444
-[2025-09-23T00:00:57.468Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:57.468Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:57.468Z] x-ms-date:Tue, 23 Sep 2025 00:00:57 GMT
-[2025-09-23T00:00:57.468Z] Authorization:REDACTED
-[2025-09-23T00:00:57.468Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:57.473Z] Response [cd9e2cfe-db85-4188-a183-02d972e1c444] 200 OK (00.0s)
-[2025-09-23T00:00:57.473Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:57.473Z] x-ms-client-request-id:cd9e2cfe-db85-4188-a183-02d972e1c444
-[2025-09-23T00:00:57.473Z] x-ms-request-id:1237e264-cecc-4858-a64d-83f7a7a11380
-[2025-09-23T00:00:57.473Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:57.473Z] Date:Tue, 23 Sep 2025 00:00:57 GMT
-[2025-09-23T00:00:57.473Z] Connection:keep-alive
-[2025-09-23T00:00:57.473Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:57.473Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:57.473Z] Content-Type:application/xml
-[2025-09-23T00:00:57.473Z] 
-[2025-09-23T00:00:59.476Z] Request [1965481d-2c62-4f32-aee0-47fdc38fd9e6] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:00:59.476Z] x-ms-version:2025-01-05
-[2025-09-23T00:00:59.476Z] Accept:application/xml
-[2025-09-23T00:00:59.476Z] x-ms-client-request-id:1965481d-2c62-4f32-aee0-47fdc38fd9e6
-[2025-09-23T00:00:59.476Z] x-ms-return-client-request-id:true
-[2025-09-23T00:00:59.476Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:00:59.476Z] x-ms-date:Tue, 23 Sep 2025 00:00:59 GMT
-[2025-09-23T00:00:59.476Z] Authorization:REDACTED
-[2025-09-23T00:00:59.476Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:00:59.483Z] Response [1965481d-2c62-4f32-aee0-47fdc38fd9e6] 200 OK (00.0s)
-[2025-09-23T00:00:59.483Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:00:59.483Z] x-ms-client-request-id:1965481d-2c62-4f32-aee0-47fdc38fd9e6
-[2025-09-23T00:00:59.483Z] x-ms-request-id:ab1f17a3-8652-4949-ac11-5d6caf37c74e
-[2025-09-23T00:00:59.483Z] x-ms-version:2025-11-05
-[2025-09-23T00:00:59.483Z] Date:Tue, 23 Sep 2025 00:00:59 GMT
-[2025-09-23T00:00:59.483Z] Connection:keep-alive
-[2025-09-23T00:00:59.483Z] Keep-Alive:REDACTED
-[2025-09-23T00:00:59.483Z] Transfer-Encoding:chunked
-[2025-09-23T00:00:59.483Z] Content-Type:application/xml
-[2025-09-23T00:00:59.483Z] 
-[2025-09-23T00:01:01.394Z] Request [ceb31d77-edca-484f-8aa6-74bc8312f9ac] GET http://127.0.0.1:10001/devstoreaccount1/azure-webjobs-blobtrigger-nbg-52972058?comp=metadata
-[2025-09-23T00:01:01.394Z] x-ms-version:2025-05-05
-[2025-09-23T00:01:01.394Z] Accept:application/xml
-[2025-09-23T00:01:01.394Z] x-ms-client-request-id:ceb31d77-edca-484f-8aa6-74bc8312f9ac
-[2025-09-23T00:01:01.394Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:01.394Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:01.394Z] x-ms-date:Tue, 23 Sep 2025 00:01:01 GMT
-[2025-09-23T00:01:01.394Z] Authorization:REDACTED
-[2025-09-23T00:01:01.394Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:01:01.399Z] Error response [ceb31d77-edca-484f-8aa6-74bc8312f9ac] 404 The specified queue does not exist. (00.0s)
-[2025-09-23T00:01:01.399Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:01:01.399Z] x-ms-error-code:QueueNotFound
-[2025-09-23T00:01:01.399Z] x-ms-request-id:084ff455-05b4-41f8-a46e-2a48a5cbc0d9
-[2025-09-23T00:01:01.399Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:01.399Z] Date:Tue, 23 Sep 2025 00:01:01 GMT
-[2025-09-23T00:01:01.399Z] Connection:keep-alive
-[2025-09-23T00:01:01.399Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:01.399Z] Transfer-Encoding:chunked
-[2025-09-23T00:01:01.399Z] Content-Type:application/xml
-[2025-09-23T00:01:01.399Z] 
-[2025-09-23T00:01:01.487Z] Request [e0f1cb15-b65b-4ee1-a72c-2be05e0a933b] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:01:01.487Z] x-ms-version:2025-01-05
-[2025-09-23T00:01:01.487Z] Accept:application/xml
-[2025-09-23T00:01:01.487Z] x-ms-client-request-id:e0f1cb15-b65b-4ee1-a72c-2be05e0a933b
-[2025-09-23T00:01:01.487Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:01.487Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:01.487Z] x-ms-date:Tue, 23 Sep 2025 00:01:01 GMT
-[2025-09-23T00:01:01.487Z] Authorization:REDACTED
-[2025-09-23T00:01:01.487Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:01:01.491Z] Response [e0f1cb15-b65b-4ee1-a72c-2be05e0a933b] 200 OK (00.0s)
-[2025-09-23T00:01:01.491Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:01:01.491Z] x-ms-client-request-id:e0f1cb15-b65b-4ee1-a72c-2be05e0a933b
-[2025-09-23T00:01:01.491Z] x-ms-request-id:44892da6-2a77-403e-8c5a-c67d50572d8b
-[2025-09-23T00:01:01.491Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:01.491Z] Date:Tue, 23 Sep 2025 00:01:01 GMT
-[2025-09-23T00:01:01.491Z] Connection:keep-alive
-[2025-09-23T00:01:01.491Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:01.491Z] Transfer-Encoding:chunked
-[2025-09-23T00:01:01.491Z] Content-Type:application/xml
-[2025-09-23T00:01:01.491Z] 
-[2025-09-23T00:01:03.415Z] Request [ba6584dc-4c69-4ece-86f2-cb8289ec187e] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/host?comp=lease
-[2025-09-23T00:01:03.415Z] x-ms-lease-action:renew
-[2025-09-23T00:01:03.415Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:01:03.415Z] x-ms-version:2024-08-04
-[2025-09-23T00:01:03.415Z] Accept:application/xml
-[2025-09-23T00:01:03.415Z] x-ms-client-request-id:ba6584dc-4c69-4ece-86f2-cb8289ec187e
-[2025-09-23T00:01:03.415Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:03.415Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:03.415Z] x-ms-date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.415Z] Authorization:REDACTED
-[2025-09-23T00:01:03.415Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:01:03.423Z] Response [ba6584dc-4c69-4ece-86f2-cb8289ec187e] 200 OK (00.0s)
-[2025-09-23T00:01:03.424Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:01:03.424Z] ETag:"0x1D82617F8DD0150"
-[2025-09-23T00:01:03.424Z] x-ms-lease-id:000000000000000000000000000BA19C
-[2025-09-23T00:01:03.424Z] x-ms-client-request-id:ba6584dc-4c69-4ece-86f2-cb8289ec187e
-[2025-09-23T00:01:03.424Z] x-ms-request-id:eb4b70da-2cd3-47f1-b96d-4e875dbfacce
-[2025-09-23T00:01:03.424Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:03.424Z] Date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.424Z] Connection:keep-alive
-[2025-09-23T00:01:03.424Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:03.424Z] Last-Modified:Tue, 23 Sep 2025 00:00:13 GMT
-[2025-09-23T00:01:03.424Z] Content-Length:0
-[2025-09-23T00:01:03.424Z] 
-[2025-09-23T00:01:03.497Z] Request [259208af-7b0c-4f52-866d-31f333813792] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:01:03.497Z] x-ms-version:2025-01-05
-[2025-09-23T00:01:03.497Z] Accept:application/xml
-[2025-09-23T00:01:03.497Z] x-ms-client-request-id:259208af-7b0c-4f52-866d-31f333813792
-[2025-09-23T00:01:03.497Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:03.497Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:03.497Z] x-ms-date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.497Z] Authorization:REDACTED
-[2025-09-23T00:01:03.497Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:01:03.503Z] Response [259208af-7b0c-4f52-866d-31f333813792] 200 OK (00.0s)
-[2025-09-23T00:01:03.503Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:01:03.503Z] x-ms-client-request-id:259208af-7b0c-4f52-866d-31f333813792
-[2025-09-23T00:01:03.503Z] x-ms-request-id:e3f03bd8-a708-4d87-8536-6b3136bde0cc
-[2025-09-23T00:01:03.503Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:03.503Z] Date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.503Z] Connection:keep-alive
-[2025-09-23T00:01:03.503Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:03.503Z] Transfer-Encoding:chunked
-[2025-09-23T00:01:03.503Z] Content-Type:application/xml
-[2025-09-23T00:01:03.503Z] 
-[2025-09-23T00:01:03.541Z] Request [a9dcf663-48a1-4217-a4c1-c20a4232b5af] PUT http://127.0.0.1:10000/devstoreaccount1/azure-webjobs-hosts/locks/nbg-52972058/WebJobs.Internal.Blobs.Listener?comp=lease
-[2025-09-23T00:01:03.541Z] x-ms-lease-action:renew
-[2025-09-23T00:01:03.541Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:01:03.541Z] x-ms-version:2024-08-04
-[2025-09-23T00:01:03.541Z] Accept:application/xml
-[2025-09-23T00:01:03.541Z] x-ms-client-request-id:a9dcf663-48a1-4217-a4c1-c20a4232b5af
-[2025-09-23T00:01:03.541Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:03.541Z] User-Agent:azsdk-net-Storage.Blobs/12.21.2 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:03.541Z] x-ms-date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.541Z] Authorization:REDACTED
-[2025-09-23T00:01:03.541Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:01:03.547Z] Response [a9dcf663-48a1-4217-a4c1-c20a4232b5af] 200 OK (00.0s)
-[2025-09-23T00:01:03.547Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:01:03.547Z] ETag:"0x1CD7AC990E0FB90"
-[2025-09-23T00:01:03.547Z] x-ms-lease-id:23148cd7-450b-4bcd-816a-529b504bb58a
-[2025-09-23T00:01:03.547Z] x-ms-client-request-id:a9dcf663-48a1-4217-a4c1-c20a4232b5af
-[2025-09-23T00:01:03.547Z] x-ms-request-id:1eac9617-378e-47be-996f-6ed7b254d095
-[2025-09-23T00:01:03.547Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:03.547Z] Date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.547Z] Connection:keep-alive
-[2025-09-23T00:01:03.547Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:03.547Z] Last-Modified:Sat, 20 Sep 2025 07:59:15 GMT
-[2025-09-23T00:01:03.547Z] Content-Length:0
-[2025-09-23T00:01:03.547Z] 
-[2025-09-23T00:01:03.891Z] Request [e3a6b7e6-321b-4815-968a-142e5b9aa496] GET http://127.0.0.1:10001/devstoreaccount1/transcode-jobs/messages?numofmessages=1&visibilitytimeout=600
-[2025-09-23T00:01:03.891Z] x-ms-version:2025-05-05
-[2025-09-23T00:01:03.891Z] Accept:application/xml
-[2025-09-23T00:01:03.891Z] x-ms-client-request-id:e3a6b7e6-321b-4815-968a-142e5b9aa496
-[2025-09-23T00:01:03.891Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:03.891Z] User-Agent:azsdk-net-Storage.Queues/12.22.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:03.891Z] x-ms-date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.891Z] Authorization:REDACTED
-[2025-09-23T00:01:03.891Z] client assembly: Azure.Storage.Queues
-[2025-09-23T00:01:03.895Z] Response [e3a6b7e6-321b-4815-968a-142e5b9aa496] 200 OK (00.0s)
-[2025-09-23T00:01:03.895Z] Server:Azurite-Queue/3.35.0
-[2025-09-23T00:01:03.895Z] x-ms-client-request-id:e3a6b7e6-321b-4815-968a-142e5b9aa496
-[2025-09-23T00:01:03.895Z] x-ms-request-id:6730dca6-ac76-4426-a7f1-89cdbdc23a39
-[2025-09-23T00:01:03.896Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:03.896Z] Date:Tue, 23 Sep 2025 00:01:03 GMT
-[2025-09-23T00:01:03.896Z] Connection:keep-alive
-[2025-09-23T00:01:03.896Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:03.896Z] Transfer-Encoding:chunked
-[2025-09-23T00:01:03.896Z] Content-Type:application/xml
-[2025-09-23T00:01:03.896Z] 
-[2025-09-23T00:01:05.506Z] Request [9deb567d-9e66-4814-9d36-828fac4bdbba] GET http://127.0.0.1:10000/devstoreaccount1/raw-videos?restype=container&comp=list
-[2025-09-23T00:01:05.506Z] x-ms-version:2025-01-05
-[2025-09-23T00:01:05.506Z] Accept:application/xml
-[2025-09-23T00:01:05.506Z] x-ms-client-request-id:9deb567d-9e66-4814-9d36-828fac4bdbba
-[2025-09-23T00:01:05.506Z] x-ms-return-client-request-id:true
-[2025-09-23T00:01:05.506Z] User-Agent:azsdk-net-Storage.Blobs/12.23.0 (.NET 8.0.19; Ubuntu 24.04.3 LTS)
-[2025-09-23T00:01:05.506Z] x-ms-date:Tue, 23 Sep 2025 00:01:05 GMT
-[2025-09-23T00:01:05.506Z] Authorization:REDACTED
-[2025-09-23T00:01:05.506Z] client assembly: Azure.Storage.Blobs
-[2025-09-23T00:01:05.511Z] Response [9deb567d-9e66-4814-9d36-828fac4bdbba] 200 OK (00.0s)
-[2025-09-23T00:01:05.511Z] Server:Azurite-Blob/3.35.0
-[2025-09-23T00:01:05.511Z] x-ms-client-request-id:9deb567d-9e66-4814-9d36-828fac4bdbba
-[2025-09-23T00:01:05.511Z] x-ms-request-id:ff12d49d-50e5-438a-9df2-6fbf8a80a26c
-[2025-09-23T00:01:05.511Z] x-ms-version:2025-11-05
-[2025-09-23T00:01:05.511Z] Date:Tue, 23 Sep 2025 00:01:05 GMT
-[2025-09-23T00:01:05.511Z] Connection:keep-alive
-[2025-09-23T00:01:05.511Z] Keep-Alive:REDACTED
-[2025-09-23T00:01:05.511Z] Transfer-Encoding:chunked
-[2025-09-23T00:01:05.511Z] Content-Type:application/xml
-[2025-09-23T00:01:05.511Z] 
+[2025-10-07T02:26:20.765Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-07T02:26:42.389Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=9181b775-5bad-4b4e-b123-692914f58356)
+[2025-10-07T02:26:42.405Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 1, InsertedOn: 2025-10-07T02:26:41.000+00:00
+[2025-10-07T02:26:42.685Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:26:42.685Z] Request method: 'HEAD'
+[2025-10-07T02:26:42.685Z] Request headers:
+[2025-10-07T02:26:42.685Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.685Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.685Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.685Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.685Z]     'x-ms-client-request-id': '0ffb8511-a325-11f0-b484-00155d66480d'
+[2025-10-07T02:26:42.685Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.685Z] No body was attached to the request
+[2025-10-07T02:26:42.688Z] Response status: 200
+[2025-10-07T02:26:42.688Z] Response headers:
+[2025-10-07T02:26:42.688Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.688Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:26:42.688Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'content-length': '158008374'
+[2025-10-07T02:26:42.688Z]     'content-type': 'video/mp4'
+[2025-10-07T02:26:42.688Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:26:42.688Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-client-request-id': '0ffb8511-a325-11f0-b484-00155d66480d'
+[2025-10-07T02:26:42.688Z]     'x-ms-request-id': 'dd0ff8f7-b456-45e8-b0c7-e14e120e86f6'
+[2025-10-07T02:26:42.688Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.688Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:26:42.688Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.688Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:26:42.689Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
+[2025-10-07T02:26:42.689Z] Request method: 'PUT'
+[2025-10-07T02:26:42.689Z] Request headers:
+[2025-10-07T02:26:42.689Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.689Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.689Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.689Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.689Z]     'x-ms-client-request-id': '1005d820-a325-11f0-8884-00155d66480d'
+[2025-10-07T02:26:42.689Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.689Z] No body was attached to the request
+[2025-10-07T02:26:42.689Z] Response status: 409
+[2025-10-07T02:26:42.689Z] Response headers:
+[2025-10-07T02:26:42.689Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.689Z]     'x-ms-error-code': 'ContainerAlreadyExists'
+[2025-10-07T02:26:42.689Z]     'x-ms-request-id': '4f88c899-3976-48b5-bea3-45515b50ce4a'
+[2025-10-07T02:26:42.689Z]     'content-type': 'application/xml'
+[2025-10-07T02:26:42.689Z]     'Date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.689Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.689Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:26:42.689Z]     'Transfer-Encoding': 'chunked'
+[2025-10-07T02:26:42.695Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
+[2025-10-07T02:26:42.696Z] Request method: 'HEAD'
+[2025-10-07T02:26:42.696Z] Request headers:
+[2025-10-07T02:26:42.696Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.696Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.696Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.696Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.696Z]     'x-ms-client-request-id': '100bee3f-a325-11f0-ba5d-00155d66480d'
+[2025-10-07T02:26:42.696Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.696Z] No body was attached to the request
+[2025-10-07T02:26:42.721Z] Response status: 200
+[2025-10-07T02:26:42.721Z] Response headers:
+[2025-10-07T02:26:42.721Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.721Z]     'last-modified': 'Tue, 07 Oct 2025 02:21:15 GMT'
+[2025-10-07T02:26:42.721Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'content-length': '0'
+[2025-10-07T02:26:42.721Z]     'content-type': 'application/octet-stream'
+[2025-10-07T02:26:42.721Z]     'etag': '"0x26FFD1BAC202D20"'
+[2025-10-07T02:26:42.721Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-client-request-id': '100bee3f-a325-11f0-ba5d-00155d66480d'
+[2025-10-07T02:26:42.721Z]     'x-ms-request-id': 'd47e8f83-2f5a-4065-8504-6381f8a218f5'
+[2025-10-07T02:26:42.721Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.721Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'x-ms-access-tier-change-time': 'REDACTED'
+[2025-10-07T02:26:42.721Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.721Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:26:42.726Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:26:42.726Z] Request method: 'PUT'
+[2025-10-07T02:26:42.726Z] Request headers:
+[2025-10-07T02:26:42.726Z]     'x-ms-lease-action': 'REDACTED'
+[2025-10-07T02:26:42.726Z]     'x-ms-lease-duration': 'REDACTED'
+[2025-10-07T02:26:42.726Z]     'x-ms-proposed-lease-id': 'REDACTED'
+[2025-10-07T02:26:42.726Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.726Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.726Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.726Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.726Z]     'x-ms-client-request-id': '100f33ed-a325-11f0-a09c-00155d66480d'
+[2025-10-07T02:26:42.726Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.726Z] No body was attached to the request
+[2025-10-07T02:26:42.739Z] Response status: 201
+[2025-10-07T02:26:42.739Z] Response headers:
+[2025-10-07T02:26:42.739Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.739Z]     'etag': '"0x26FFD1BAC202D20"'
+[2025-10-07T02:26:42.739Z]     'last-modified': 'Tue, 07 Oct 2025 02:21:15 GMT'
+[2025-10-07T02:26:42.739Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'x-ms-client-request-id': '100f33ed-a325-11f0-a09c-00155d66480d'
+[2025-10-07T02:26:42.739Z]     'x-ms-request-id': 'd88eced4-3cba-4e4b-9d59-7765990b484b'
+[2025-10-07T02:26:42.739Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.739Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.739Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'Content-Length': '0'
+[2025-10-07T02:26:42.739Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:26:42.739Z] Request method: 'PUT'
+[2025-10-07T02:26:42.739Z] Request headers:
+[2025-10-07T02:26:42.739Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.739Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.739Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.739Z]     'x-ms-client-request-id': '101332be-a325-11f0-8638-00155d66480d'
+[2025-10-07T02:26:42.739Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.739Z] No body was attached to the request
+[2025-10-07T02:26:42.765Z] Response status: 200
+[2025-10-07T02:26:42.765Z] Response headers:
+[2025-10-07T02:26:42.765Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.765Z]     'etag': '"0x221466F49B3D360"'
+[2025-10-07T02:26:42.766Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.766Z]     'x-ms-client-request-id': '101332be-a325-11f0-8638-00155d66480d'
+[2025-10-07T02:26:42.766Z]     'x-ms-request-id': 'c2bdf216-ad4b-4c55-a93b-f3b22ec31a1d'
+[2025-10-07T02:26:42.766Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.766Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.766Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:26:42.766Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.766Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:26:42.766Z]     'Content-Length': '0'
+[2025-10-07T02:26:42.934Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:26:42.934Z] Request method: 'GET'
+[2025-10-07T02:26:42.934Z] Request headers:
+[2025-10-07T02:26:42.934Z]     'x-ms-range': 'REDACTED'
+[2025-10-07T02:26:42.934Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.934Z]     'Accept': 'application/xml'
+[2025-10-07T02:26:42.934Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:26:42.934Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:26:42.934Z]     'x-ms-client-request-id': '102f2fe7-a325-11f0-ba87-00155d66480d'
+[2025-10-07T02:26:42.934Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:26:42.934Z] No body was attached to the request
+[2025-10-07T02:26:42.991Z] Response status: 206
+[2025-10-07T02:26:42.991Z] Response headers:
+[2025-10-07T02:26:42.991Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:26:42.991Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:26:42.991Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'content-length': '33554432'
+[2025-10-07T02:26:42.991Z]     'content-type': 'video/mp4'
+[2025-10-07T02:26:42.991Z]     'content-range': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:26:42.991Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'x-ms-client-request-id': '102f2fe7-a325-11f0-ba87-00155d66480d'
+[2025-10-07T02:26:42.991Z]     'x-ms-request-id': '7730b2b1-78fa-4626-b9f3-9f4a7e395ad6'
+[2025-10-07T02:26:42.991Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:26:42.991Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'x-ms-blob-content-md5': 'REDACTED'
+[2025-10-07T02:26:42.991Z]     'Connection': 'keep-alive'
+[2025-10-07T02:26:42.992Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:27:31.287Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T052731Z.log'
+[2025-10-07T02:27:31.287Z] Request method: 'PUT'
+[2025-10-07T02:27:31.287Z] Request headers:
+[2025-10-07T02:27:31.287Z]     'Content-Length': '1035'
+[2025-10-07T02:27:31.287Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:27:31.288Z]     'x-ms-blob-content-type': 'REDACTED'
+[2025-10-07T02:27:31.288Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:27:31.288Z]     'Content-Type': 'application/octet-stream'
+[2025-10-07T02:27:31.288Z]     'Accept': 'application/xml'
+[2025-10-07T02:27:31.288Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:27:31.288Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:27:31.288Z]     'x-ms-client-request-id': '2d04430f-a325-11f0-b11f-00155d66480d'
+[2025-10-07T02:27:31.288Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:27:31.288Z] A body is sent with the request
+[2025-10-07T02:27:31.304Z] Response status: 201
+[2025-10-07T02:27:31.304Z] Response headers:
+[2025-10-07T02:27:31.304Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:27:31.304Z]     'etag': '"0x1BECAD9EB4CACB0"'
+[2025-10-07T02:27:31.304Z]     'last-modified': 'Tue, 07 Oct 2025 02:27:31 GMT'
+[2025-10-07T02:27:31.304Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:27:31.304Z]     'x-ms-client-request-id': '2d04430f-a325-11f0-b11f-00155d66480d'
+[2025-10-07T02:27:31.304Z]     'x-ms-request-id': '4f780a87-3a1b-4120-ae4b-89fbf660c364'
+[2025-10-07T02:27:31.304Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:27:31.304Z]     'date': 'Tue, 07 Oct 2025 02:27:31 GMT'
+[2025-10-07T02:27:31.304Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:27:31.304Z]     'Connection': 'keep-alive'
+[2025-10-07T02:27:31.304Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:27:31.306Z]     'Content-Length': '0'
+[2025-10-07T02:27:31.308Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:27:31.310Z] [queue] function complete
+[2025-10-07T02:27:31.362Z] Executed 'Functions.queue_ingestor' (Failed, Id=9181b775-5bad-4b4e-b123-692914f58356, Duration=49028ms)
+[2025-10-07T02:27:31.362Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
+[2025-10-07T02:27:31.362Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:27:31.362Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
+[2025-10-07T02:27:31.362Z]     call_result = await self._loop.run_in_executor(
+[2025-10-07T02:27:31.362Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+[2025-10-07T02:27:31.362Z]     result = self.fn(*self.args, **self.kwargs)
+[2025-10-07T02:27:31.362Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
+[2025-10-07T02:27:31.362Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
+[2025-10-07T02:27:31.362Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
+[2025-10-07T02:27:31.362Z]     result = function(**args)
+[2025-10-07T02:27:31.362Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
+[2025-10-07T02:27:31.362Z]     r = _process_one_rung_cmaf(
+[2025-10-07T02:27:31.362Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
+[2025-10-07T02:27:31.363Z]     _ffmpeg_video_to_cmaf_segments(
+[2025-10-07T02:27:31.363Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
+[2025-10-07T02:27:31.363Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
+[2025-10-07T02:27:31.363Z] .
+[2025-10-07T02:29:32.561Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=f848d571-5409-42b3-9737-65a40651f7aa)
+[2025-10-07T02:29:32.561Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 2, InsertedOn: 2025-10-07T02:26:41.000+00:00
+[2025-10-07T02:29:32.575Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:29:32.575Z] Request method: 'HEAD'
+[2025-10-07T02:29:32.575Z] Request headers:
+[2025-10-07T02:29:32.575Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.575Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.575Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.575Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.576Z]     'x-ms-client-request-id': '754ef52a-a325-11f0-a677-00155d66480d'
+[2025-10-07T02:29:32.576Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.576Z] No body was attached to the request
+[2025-10-07T02:29:32.583Z] Response status: 200
+[2025-10-07T02:29:32.583Z] Response headers:
+[2025-10-07T02:29:32.583Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.583Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:29:32.583Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'content-length': '158008374'
+[2025-10-07T02:29:32.583Z]     'content-type': 'video/mp4'
+[2025-10-07T02:29:32.583Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:29:32.583Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-client-request-id': '754ef52a-a325-11f0-a677-00155d66480d'
+[2025-10-07T02:29:32.583Z]     'x-ms-request-id': '269128c9-ea1c-476f-a963-33b269ef4920'
+[2025-10-07T02:29:32.583Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.583Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:29:32.583Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.583Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:29:32.594Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
+[2025-10-07T02:29:32.594Z] Request method: 'PUT'
+[2025-10-07T02:29:32.594Z] Request headers:
+[2025-10-07T02:29:32.594Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.594Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.594Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.594Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.594Z]     'x-ms-client-request-id': '75510c2f-a325-11f0-bdc0-00155d66480d'
+[2025-10-07T02:29:32.594Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.594Z] No body was attached to the request
+[2025-10-07T02:29:32.615Z] Response status: 409
+[2025-10-07T02:29:32.615Z] Response headers:
+[2025-10-07T02:29:32.615Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.615Z]     'x-ms-error-code': 'ContainerAlreadyExists'
+[2025-10-07T02:29:32.615Z]     'x-ms-request-id': '33d07829-8615-44df-a0f2-df40f62218e9'
+[2025-10-07T02:29:32.615Z]     'content-type': 'application/xml'
+[2025-10-07T02:29:32.615Z]     'Date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.615Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.615Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:29:32.615Z]     'Transfer-Encoding': 'chunked'
+[2025-10-07T02:29:32.655Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
+[2025-10-07T02:29:32.655Z] Request method: 'HEAD'
+[2025-10-07T02:29:32.655Z] Request headers:
+[2025-10-07T02:29:32.655Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.655Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.655Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.655Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.655Z]     'x-ms-client-request-id': '755573bd-a325-11f0-8886-00155d66480d'
+[2025-10-07T02:29:32.655Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.656Z] No body was attached to the request
+[2025-10-07T02:29:32.663Z] Response status: 200
+[2025-10-07T02:29:32.663Z] Response headers:
+[2025-10-07T02:29:32.663Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.663Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:29:32.663Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'content-length': '0'
+[2025-10-07T02:29:32.663Z]     'content-type': 'application/octet-stream'
+[2025-10-07T02:29:32.663Z]     'etag': '"0x221466F49B3D360"'
+[2025-10-07T02:29:32.663Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-client-request-id': '755573bd-a325-11f0-8886-00155d66480d'
+[2025-10-07T02:29:32.663Z]     'x-ms-request-id': '51b45b26-b656-4525-996b-a5ab56d23b81'
+[2025-10-07T02:29:32.663Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.663Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'x-ms-access-tier-change-time': 'REDACTED'
+[2025-10-07T02:29:32.663Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.663Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:29:32.665Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:29:32.665Z] Request method: 'PUT'
+[2025-10-07T02:29:32.665Z] Request headers:
+[2025-10-07T02:29:32.665Z]     'x-ms-lease-action': 'REDACTED'
+[2025-10-07T02:29:32.665Z]     'x-ms-lease-duration': 'REDACTED'
+[2025-10-07T02:29:32.665Z]     'x-ms-proposed-lease-id': 'REDACTED'
+[2025-10-07T02:29:32.665Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.665Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.665Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.665Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.665Z]     'x-ms-client-request-id': '755cae55-a325-11f0-b75b-00155d66480d'
+[2025-10-07T02:29:32.665Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.665Z] No body was attached to the request
+[2025-10-07T02:29:32.681Z] Response status: 201
+[2025-10-07T02:29:32.681Z] Response headers:
+[2025-10-07T02:29:32.681Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.681Z]     'etag': '"0x221466F49B3D360"'
+[2025-10-07T02:29:32.681Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
+[2025-10-07T02:29:32.681Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'x-ms-client-request-id': '755cae55-a325-11f0-b75b-00155d66480d'
+[2025-10-07T02:29:32.682Z]     'x-ms-request-id': 'd9f30488-aea1-473e-89c0-9b00de98daf4'
+[2025-10-07T02:29:32.682Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.682Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.682Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'Content-Length': '0'
+[2025-10-07T02:29:32.682Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:29:32.682Z] Request method: 'PUT'
+[2025-10-07T02:29:32.682Z] Request headers:
+[2025-10-07T02:29:32.682Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.682Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.682Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.682Z]     'x-ms-client-request-id': '755f600d-a325-11f0-8c70-00155d66480d'
+[2025-10-07T02:29:32.682Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.682Z] No body was attached to the request
+[2025-10-07T02:29:32.696Z] Response status: 200
+[2025-10-07T02:29:32.696Z] Response headers:
+[2025-10-07T02:29:32.696Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.696Z]     'etag': '"0x22ED9345443C480"'
+[2025-10-07T02:29:32.696Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.696Z]     'x-ms-client-request-id': '755f600d-a325-11f0-8c70-00155d66480d'
+[2025-10-07T02:29:32.696Z]     'x-ms-request-id': '25323945-3e44-48f1-9dd5-5b043f462771'
+[2025-10-07T02:29:32.696Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.696Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.696Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:29:32.696Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.696Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:29:32.696Z]     'Content-Length': '0'
+[2025-10-07T02:29:32.769Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:29:32.769Z] Request method: 'GET'
+[2025-10-07T02:29:32.769Z] Request headers:
+[2025-10-07T02:29:32.769Z]     'x-ms-range': 'REDACTED'
+[2025-10-07T02:29:32.769Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.769Z]     'Accept': 'application/xml'
+[2025-10-07T02:29:32.769Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:29:32.769Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:29:32.769Z]     'x-ms-client-request-id': '756cf724-a325-11f0-a864-00155d66480d'
+[2025-10-07T02:29:32.769Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:29:32.769Z] No body was attached to the request
+[2025-10-07T02:29:32.783Z] Response status: 206
+[2025-10-07T02:29:32.783Z] Response headers:
+[2025-10-07T02:29:32.783Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:29:32.783Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:29:32.783Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'content-length': '33554432'
+[2025-10-07T02:29:32.783Z]     'content-type': 'video/mp4'
+[2025-10-07T02:29:32.783Z]     'content-range': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:29:32.783Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'x-ms-client-request-id': '756cf724-a325-11f0-a864-00155d66480d'
+[2025-10-07T02:29:32.783Z]     'x-ms-request-id': '41583113-30a6-45b9-b244-ea1e035d7948'
+[2025-10-07T02:29:32.783Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:29:32.783Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'x-ms-blob-content-md5': 'REDACTED'
+[2025-10-07T02:29:32.783Z]     'Connection': 'keep-alive'
+[2025-10-07T02:29:32.783Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:30:21.490Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T053021Z.log'
+[2025-10-07T02:30:21.490Z] Request method: 'PUT'
+[2025-10-07T02:30:21.490Z] Request headers:
+[2025-10-07T02:30:21.490Z]     'Content-Length': '1035'
+[2025-10-07T02:30:21.490Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:30:21.490Z]     'x-ms-blob-content-type': 'REDACTED'
+[2025-10-07T02:30:21.490Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:30:21.490Z]     'Content-Type': 'application/octet-stream'
+[2025-10-07T02:30:21.490Z]     'Accept': 'application/xml'
+[2025-10-07T02:30:21.490Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:30:21.490Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:30:21.490Z]     'x-ms-client-request-id': '9275e96e-a325-11f0-b7b4-00155d66480d'
+[2025-10-07T02:30:21.490Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:30:21.490Z] A body is sent with the request
+[2025-10-07T02:30:21.508Z] Response status: 201
+[2025-10-07T02:30:21.510Z] Response headers:
+[2025-10-07T02:30:21.511Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:30:21.511Z]     'etag': '"0x1B990D129A9DEB0"'
+[2025-10-07T02:30:21.511Z]     'last-modified': 'Tue, 07 Oct 2025 02:30:21 GMT'
+[2025-10-07T02:30:21.511Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:30:21.511Z]     'x-ms-client-request-id': '9275e96e-a325-11f0-b7b4-00155d66480d'
+[2025-10-07T02:30:21.512Z]     'x-ms-request-id': '228ae182-7207-42cd-9ef4-b88eb19cb657'
+[2025-10-07T02:30:21.512Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:30:21.512Z]     'date': 'Tue, 07 Oct 2025 02:30:21 GMT'
+[2025-10-07T02:30:21.512Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:30:21.512Z]     'Connection': 'keep-alive'
+[2025-10-07T02:30:21.512Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:30:21.512Z]     'Content-Length': '0'
+[2025-10-07T02:30:21.515Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:30:21.515Z] [queue] function complete
+[2025-10-07T02:30:21.553Z] Executed 'Functions.queue_ingestor' (Failed, Id=f848d571-5409-42b3-9737-65a40651f7aa, Duration=48999ms)
+[2025-10-07T02:30:21.553Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
+[2025-10-07T02:30:21.553Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:30:21.553Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
+[2025-10-07T02:30:21.553Z]     call_result = await self._loop.run_in_executor(
+[2025-10-07T02:30:21.553Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+[2025-10-07T02:30:21.553Z]     result = self.fn(*self.args, **self.kwargs)
+[2025-10-07T02:30:21.553Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
+[2025-10-07T02:30:21.553Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
+[2025-10-07T02:30:21.554Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
+[2025-10-07T02:30:21.554Z]     result = function(**args)
+[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
+[2025-10-07T02:30:21.554Z]     r = _process_one_rung_cmaf(
+[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
+[2025-10-07T02:30:21.554Z]     _ffmpeg_video_to_cmaf_segments(
+[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
+[2025-10-07T02:30:21.554Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
+[2025-10-07T02:30:21.554Z] .
+[2025-10-07T02:32:22.155Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=514dfc2b-ecc0-4705-8fe3-b333dcbacd66)
+[2025-10-07T02:32:22.164Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 3, InsertedOn: 2025-10-07T02:26:41.000+00:00
+[2025-10-07T02:32:22.173Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:32:22.173Z] Request method: 'HEAD'
+[2025-10-07T02:32:22.174Z] Request headers:
+[2025-10-07T02:32:22.174Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.174Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.174Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.174Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.174Z]     'x-ms-client-request-id': 'da659fef-a325-11f0-b9b7-00155d66480d'
+[2025-10-07T02:32:22.174Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.174Z] No body was attached to the request
+[2025-10-07T02:32:22.198Z] Response status: 200
+[2025-10-07T02:32:22.198Z] Response headers:
+[2025-10-07T02:32:22.198Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.198Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:32:22.198Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'content-length': '158008374'
+[2025-10-07T02:32:22.198Z]     'content-type': 'video/mp4'
+[2025-10-07T02:32:22.198Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:32:22.198Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-client-request-id': 'da659fef-a325-11f0-b9b7-00155d66480d'
+[2025-10-07T02:32:22.198Z]     'x-ms-request-id': 'e00093c6-a37b-45ef-9ef1-b298cc896c2f'
+[2025-10-07T02:32:22.198Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.198Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:32:22.198Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.198Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:32:22.200Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
+[2025-10-07T02:32:22.200Z] Request method: 'PUT'
+[2025-10-07T02:32:22.200Z] Request headers:
+[2025-10-07T02:32:22.200Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.200Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.200Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.200Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.200Z]     'x-ms-client-request-id': 'da682d4b-a325-11f0-bc16-00155d66480d'
+[2025-10-07T02:32:22.200Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.200Z] No body was attached to the request
+[2025-10-07T02:32:22.223Z] Response status: 409
+[2025-10-07T02:32:22.223Z] Response headers:
+[2025-10-07T02:32:22.223Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.223Z]     'x-ms-error-code': 'ContainerAlreadyExists'
+[2025-10-07T02:32:22.223Z]     'x-ms-request-id': '22cd8f54-f6e3-46f8-ba12-aea9d9a184fe'
+[2025-10-07T02:32:22.223Z]     'content-type': 'application/xml'
+[2025-10-07T02:32:22.223Z]     'Date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.223Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.223Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:32:22.223Z]     'Transfer-Encoding': 'chunked'
+[2025-10-07T02:32:22.235Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
+[2025-10-07T02:32:22.235Z] Request method: 'HEAD'
+[2025-10-07T02:32:22.235Z] Request headers:
+[2025-10-07T02:32:22.235Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.235Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.235Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.235Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.235Z]     'x-ms-client-request-id': 'da6de41e-a325-11f0-858a-00155d66480d'
+[2025-10-07T02:32:22.235Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.235Z] No body was attached to the request
+[2025-10-07T02:32:22.266Z] Response status: 200
+[2025-10-07T02:32:22.266Z] Response headers:
+[2025-10-07T02:32:22.266Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.266Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:32:22.266Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'content-length': '0'
+[2025-10-07T02:32:22.267Z]     'content-type': 'application/octet-stream'
+[2025-10-07T02:32:22.267Z]     'etag': '"0x22ED9345443C480"'
+[2025-10-07T02:32:22.267Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-client-request-id': 'da6de41e-a325-11f0-858a-00155d66480d'
+[2025-10-07T02:32:22.267Z]     'x-ms-request-id': '8a270326-e682-4992-b9c4-358e40686f5c'
+[2025-10-07T02:32:22.267Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.267Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-access-tier-change-time': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.267Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:32:22.267Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:32:22.267Z] Request method: 'PUT'
+[2025-10-07T02:32:22.267Z] Request headers:
+[2025-10-07T02:32:22.267Z]     'x-ms-lease-action': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-lease-duration': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-proposed-lease-id': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.267Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.267Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.267Z]     'x-ms-client-request-id': 'da72823d-a325-11f0-9b39-00155d66480d'
+[2025-10-07T02:32:22.267Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.267Z] No body was attached to the request
+[2025-10-07T02:32:22.303Z] Response status: 201
+[2025-10-07T02:32:22.303Z] Response headers:
+[2025-10-07T02:32:22.303Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.303Z]     'etag': '"0x22ED9345443C480"'
+[2025-10-07T02:32:22.303Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
+[2025-10-07T02:32:22.303Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:32:22.303Z]     'x-ms-client-request-id': 'da72823d-a325-11f0-9b39-00155d66480d'
+[2025-10-07T02:32:22.303Z]     'x-ms-request-id': 'ab077725-3f4b-480e-9e1c-2c7088579612'
+[2025-10-07T02:32:22.303Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.303Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.303Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.303Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:32:22.303Z]     'Content-Length': '0'
+[2025-10-07T02:32:22.307Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-07T02:32:22.308Z] Request method: 'PUT'
+[2025-10-07T02:32:22.308Z] Request headers:
+[2025-10-07T02:32:22.308Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-07T02:32:22.308Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-07T02:32:22.308Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-07T02:32:22.308Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.308Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.308Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.308Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.308Z]     'x-ms-client-request-id': 'da7a14ff-a325-11f0-bd2a-00155d66480d'
+[2025-10-07T02:32:22.308Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.308Z] No body was attached to the request
+[2025-10-07T02:32:22.330Z] Response status: 200
+[2025-10-07T02:32:22.330Z] Response headers:
+[2025-10-07T02:32:22.330Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.330Z]     'etag': '"0x240AC5645B55CA0"'
+[2025-10-07T02:32:22.330Z]     'last-modified': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.330Z]     'x-ms-client-request-id': 'da7a14ff-a325-11f0-bd2a-00155d66480d'
+[2025-10-07T02:32:22.330Z]     'x-ms-request-id': 'eb5f3661-f075-4f20-9954-fc04875b9899'
+[2025-10-07T02:32:22.330Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.330Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.330Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:32:22.330Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.330Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:32:22.330Z]     'Content-Length': '0'
+[2025-10-07T02:32:22.559Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-07T02:32:22.559Z] Request method: 'GET'
+[2025-10-07T02:32:22.559Z] Request headers:
+[2025-10-07T02:32:22.559Z]     'x-ms-range': 'REDACTED'
+[2025-10-07T02:32:22.559Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.559Z]     'Accept': 'application/xml'
+[2025-10-07T02:32:22.559Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:32:22.559Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:32:22.559Z]     'x-ms-client-request-id': 'da9f233d-a325-11f0-b06e-00155d66480d'
+[2025-10-07T02:32:22.559Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:32:22.559Z] No body was attached to the request
+[2025-10-07T02:32:22.567Z] Response status: 206
+[2025-10-07T02:32:22.567Z] Response headers:
+[2025-10-07T02:32:22.567Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:32:22.567Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-07T02:32:22.567Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'content-length': '33554432'
+[2025-10-07T02:32:22.567Z]     'content-type': 'video/mp4'
+[2025-10-07T02:32:22.567Z]     'content-range': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-07T02:32:22.567Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'x-ms-client-request-id': 'da9f233d-a325-11f0-b06e-00155d66480d'
+[2025-10-07T02:32:22.567Z]     'x-ms-request-id': '865bdfd1-be66-4c62-9857-ccc1dd93be4b'
+[2025-10-07T02:32:22.567Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'accept-ranges': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
+[2025-10-07T02:32:22.567Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'x-ms-blob-content-md5': 'REDACTED'
+[2025-10-07T02:32:22.567Z]     'Connection': 'keep-alive'
+[2025-10-07T02:32:22.568Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:33:28.634Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T053328Z.log'
+[2025-10-07T02:33:28.634Z] Request method: 'PUT'
+[2025-10-07T02:33:28.634Z] Request headers:
+[2025-10-07T02:33:28.634Z]     'Content-Length': '1035'
+[2025-10-07T02:33:28.634Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-07T02:33:28.634Z]     'x-ms-blob-content-type': 'REDACTED'
+[2025-10-07T02:33:28.634Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:33:28.634Z]     'Content-Type': 'application/octet-stream'
+[2025-10-07T02:33:28.634Z]     'Accept': 'application/xml'
+[2025-10-07T02:33:28.634Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-07T02:33:28.634Z]     'x-ms-date': 'REDACTED'
+[2025-10-07T02:33:28.634Z]     'x-ms-client-request-id': '0202a159-a326-11f0-8188-00155d66480d'
+[2025-10-07T02:33:28.634Z]     'Authorization': 'REDACTED'
+[2025-10-07T02:33:28.634Z] A body is sent with the request
+[2025-10-07T02:33:28.665Z] Response status: 201
+[2025-10-07T02:33:28.665Z] Response headers:
+[2025-10-07T02:33:28.665Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-07T02:33:28.665Z]     'etag': '"0x26A397BC3FC8E80"'
+[2025-10-07T02:33:28.665Z]     'last-modified': 'Tue, 07 Oct 2025 02:33:28 GMT'
+[2025-10-07T02:33:28.665Z]     'content-md5': 'REDACTED'
+[2025-10-07T02:33:28.665Z]     'x-ms-client-request-id': '0202a159-a326-11f0-8188-00155d66480d'
+[2025-10-07T02:33:28.666Z]     'x-ms-request-id': '334e18ac-19b3-4e9d-a782-62dc0668ca09'
+[2025-10-07T02:33:28.666Z]     'x-ms-version': 'REDACTED'
+[2025-10-07T02:33:28.666Z]     'date': 'Tue, 07 Oct 2025 02:33:28 GMT'
+[2025-10-07T02:33:28.666Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-07T02:33:28.666Z]     'Connection': 'keep-alive'
+[2025-10-07T02:33:28.666Z]     'Keep-Alive': 'REDACTED'
+[2025-10-07T02:33:28.666Z]     'Content-Length': '0'
+[2025-10-07T02:33:28.667Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:33:28.669Z] [queue] function complete
+[2025-10-07T02:33:28.685Z] Executed 'Functions.queue_ingestor' (Failed, Id=514dfc2b-ecc0-4705-8fe3-b333dcbacd66, Duration=66524ms)
+[2025-10-07T02:33:28.685Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
+[2025-10-07T02:33:28.685Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
+[2025-10-07T02:33:28.685Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
+[2025-10-07T02:33:28.685Z]     call_result = await self._loop.run_in_executor(
+[2025-10-07T02:33:28.685Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+[2025-10-07T02:33:28.686Z]     result = self.fn(*self.args, **self.kwargs)
+[2025-10-07T02:33:28.686Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
+[2025-10-07T02:33:28.686Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
+[2025-10-07T02:33:28.686Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
+[2025-10-07T02:33:28.686Z]     result = function(**args)
+[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
+[2025-10-07T02:33:28.686Z]     r = _process_one_rung_cmaf(
+[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
+[2025-10-07T02:33:28.686Z]     _ffmpeg_video_to_cmaf_segments(
+[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
+[2025-10-07T02:33:28.686Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
+[2025-10-07T02:33:28.686Z] .
+[2025-10-07T02:33:28.697Z] Message has reached MaxDequeueCount of 3. Moving message to queue 'transcode-jobs-poison'.
+[2025-10-07T03:24:20.037Z] Worker process started and initialized.
+[2025-10-07T03:24:25.156Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-07T03:29:11.586Z] Worker process started and initialized.
+[2025-10-07T03:29:18.314Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-07T03:30:53.565Z] Worker process started and initialized.
+[2025-10-07T03:31:00.270Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-07T03:33:27.219Z] Worker process started and initialized.
+[2025-10-07T03:33:32.265Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-07T04:08:13.844Z] Response [ad659d3b-c5d8-4e2b-9610-f84a75b118a3] took 04.2s
+[2025-10-07T04:08:13.868Z] Response [80a0b613-df3a-4493-887d-93f51f8c5a08] took 04.2s
+[2025-10-07T04:08:13.876Z] Response [d77439cf-d799-4345-8f38-093032017ccb] took 04.2s

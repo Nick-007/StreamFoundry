@@ -10,32 +10,34 @@ from azure.storage.blob import BlobServiceClient
 SETTINGS_PATH = Path("local.settings.json")
 try:
     cfg = json.loads(SETTINGS_PATH.read_text())
-    CONN = cfg["Values"]["AzureWebJobsStorage"]
+    values = cfg["Values"]
+    CONN = values["AzureWebJobsStorage"]
 except Exception as e:
     print(f"[ERR] cannot read AzureWebJobsStorage from {SETTINGS_PATH}: {e}")
     sys.exit(2)
 
-# Known/real resources in your app:
-QUEUE_NAME = "transcode-jobs"
-# List your BlobTrigger containers here; add more if your app uses them.
-# (We saw 'raw-videos' in your logs; do not include any azure-webjobs-* internals.)
+# Queues (read from settings with sensible defaults)
+JOB_QUEUE        = values.get("JOB_QUEUE", "transcode-jobs")
+PACKAGING_QUEUE  = values.get("PACKAGING_QUEUE", "packaging-jobs")
+PACKAGING_POISON = values.get("PACKAGING_QUEUE-POISON", "packaging-jobs-poison")
+# BlobTrigger containers your app uses (adjust if needed)
 BLOBTRIGGER_CONTAINERS = ["raw-videos"]
 
-# Seed blob name + content
+# Seed blob for empty containers (to ensure trigger registration)
 SEED_BLOB_NAME = "__seed__.keep"
 SEED_CONTENT = b"# seed blob to force BlobTrigger registration\n"
 SEED_METADATA = {"seed": "true", "created": datetime.utcnow().isoformat()}
 
-def ensure_queue():
+def ensure_queue(name: str):
     qs = QueueServiceClient.from_connection_string(CONN)
-    q = qs.get_queue_client(QUEUE_NAME)
+    q = qs.get_queue_client(name)
     try:
         q.get_queue_properties()
-        print(f"[ok] queue exists: {QUEUE_NAME}")
+        print(f"[ok] queue exists: {name}")
     except Exception:
-        print(f"[i] creating queue: {QUEUE_NAME}")
+        print(f"[i] creating queue: {name}")
         q.create_queue()
-        print(f"[ok] created queue: {QUEUE_NAME}")
+        print(f"[ok] created queue: {name}")
 
 def ensure_blobtrigger_container(name: str):
     bs = BlobServiceClient.from_connection_string(CONN)
@@ -61,7 +63,6 @@ def ensure_blobtrigger_container(name: str):
     if not has_any:
         print(f"[i] {name} is empty -> uploading seed blob: {SEED_BLOB_NAME}")
         bc = cc.get_blob_client(SEED_BLOB_NAME)
-        # Upload is idempotent: if already present, just leave it
         try:
             if not bc.exists():
                 bc.upload_blob(io.BytesIO(SEED_CONTENT), overwrite=False, metadata=SEED_METADATA)
@@ -73,7 +74,11 @@ def ensure_blobtrigger_container(name: str):
 
 if __name__ == "__main__":
     print("[seed] using AzureWebJobsStorage from local.settings.json")
-    ensure_queue()
+    # Queues
+    ensure_queue(JOB_QUEUE)
+    ensure_queue(PACKAGING_QUEUE)
+    ensure_queue(PACKAGING_POISON)
+    # Containers used by blob triggers
     for cname in BLOBTRIGGER_CONTAINERS:
         ensure_blobtrigger_container(cname)
     print("[seed] done.")
