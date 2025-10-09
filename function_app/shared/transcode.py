@@ -2,6 +2,7 @@ import time, subprocess, shlex, re, os, shutil, signal
 from pathlib import Path
 from typing import Callable, Optional, Tuple, List, Dict
 from math import floor, ceil
+from fractions import Fraction
 from .config import get
 from .errors import CmdError
 from .tools import ffmpeg_path
@@ -35,7 +36,6 @@ def _sec_from_segments(n: int, seg_dur: int) -> float:
     return float(n * seg_dur)
 
 # in function_app/shared/transcode.py (replace your existing derive_k)
-from fractions import Fraction
 
 def derive_k(*args, fps: float | None = None, seg_dur: int | None = None, **kwargs) -> int:
     """
@@ -107,6 +107,39 @@ def derive_k(*args, fps: float | None = None, seg_dur: int | None = None, **kwar
     return k
 
 # --- DROP-IN: resumable CMAF VIDEO rung (add; do not replace your MP4 path) ---
+
+def derive_run_quota(
+    *,
+    total_duration_sec: float,
+    seg_dur: int,
+    n_done: int,
+    budget_sec: float,
+    rate_media_per_wall: float | None = None,
+) -> int:
+    """
+    Decide how many whole segments to encode in this invocation, respecting:
+      - remaining media (based on already completed segments)
+      - available time budget
+      - optional throughput hint (rate_media_per_wall), used for a small headroom
+    Returns an integer #segments (>= 0).
+    """
+    # Remaining media after already-completed segments
+    t0 = max(0, n_done) * seg_dur
+    remaining = max(0.0, float(total_duration_sec) - float(t0))
+    if remaining <= 0:
+        return 0
+
+    # Cap by budget; apply a conservative headroom if we have a measured rate
+    if budget_sec is None or float(budget_sec) <= 0:
+        span_cap = remaining
+    else:
+        headroom = 0.90 if (rate_media_per_wall and rate_media_per_wall > 0) else 1.00
+        span_cap = min(remaining, float(budget_sec) * headroom)
+
+    # Encode only whole segments
+    return int(span_cap // seg_dur)
+
+
 def _ffmpeg_video_to_cmaf_segments(
     input_path: str,
     out_dir: str,
@@ -125,39 +158,52 @@ def _ffmpeg_video_to_cmaf_segments(
     """
     Produce CMAF video segments for a single rung, with:
       - resume (start_number = last+1)
-      - time-budget cap (encode only K segments this run)
-      - fixed cut-points using -force_key_frames
+      - time-budget cap (encode only N segments this run)
+      - IDR alignment to segment boundaries via GOP and force_key_frames
     Returns dict describing the rung’s init + pattern.
     """
     def _log(s): (log or print)(s)
 
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    # How many already done? Where do we resume?
+    # Progress & resume
     base = f"video_{label}_"
-    n_done  = _highest_segment_index(out_dir, base)            # last existing $Number$
+    n_done  = _highest_segment_index(out_dir, base)   # last existing $Number$
     resumeN = n_done + 1
-    # How many *new* segments to do now?
-    K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
-    if K <= 0:
+
+    # Decide how many segments to emit this run (quota)
+    n_to_make = derive_run_quota(
+        total_duration_sec=total_duration_sec,
+        seg_dur=seg_dur,
+        n_done=n_done,
+        budget_sec=budget_sec,
+        rate_media_per_wall=rate_media_per_wall,
+    )
+    if n_to_make <= 0:
         _log(f"[video:{label}] nothing to do (n_done={n_done})")
         return {
             "label": label,
-            "init": str(Path(out_dir)/f"video_{label}_init.mp4"),
+            "init": str(Path(out_dir) / f"video_{label}_init.mp4"),
             "pattern": f"video_{label}_$Number$.m4s",
             "kind": "video",
             "resumeN": resumeN,
-            "K": 0,
+            "K": 0,  # K = quota for this run (kept for shape-compat)
         }
 
-    # Time slice to encode for this run (seek to the exact segment boundary)
+    # Time slice for this invocation (seek to exact segment boundary)
     t0   = n_done * seg_dur
-    span = K * seg_dur
+    span = n_to_make * seg_dur
 
-    # Encoder settings
-    gop     = max(1, int(round(fps * seg_dur)))
-    enc     = get("VIDEO_CODEC", "libx264").strip().lower()
-    bt709   = _get_bool("SET_BT709_TAGS")
+    # GOP/key-int for codec (align IDR to segment boundaries)
+    try:
+        # Stabilize common fractional fps (e.g., 30000/1001)
+        f = float(Fraction(fps).limit_denominator(1001))
+    except Exception:
+        f = float(fps)
+    gop = max(2, int(round(f * seg_dur)))
+
+    enc   = get("VIDEO_CODEC", "libx264").strip().lower()
+    bt709 = _get_bool("SET_BT709_TAGS")
 
     vf = f'scale=-2:{height}'
     force_kf = f'-force_key_frames "expr:gte(t,n_forced*{seg_dur})" '
@@ -171,19 +217,24 @@ def _ffmpeg_video_to_cmaf_segments(
 
     if enc == "h264_nvenc":
         vcodec = (
-            f'-c:v h264_nvenc -preset {get("NVENC_PRESET","p5")} -rc {get("NVENC_RC","vbr_hq")} '
+            f'-c:v h264_nvenc '
+            f'-preset {get("NVENC_PRESET","p5")} '
+            f'-rc {get("NVENC_RC","vbr_hq")} '
             f'-rc-lookahead {get("NVENC_LOOKAHEAD","32")} '
             f'-spatial_aq {"1" if _get_bool("NVENC_AQ") else "0"} -temporal_aq 1 '
         )
     elif enc in ("h264_videotoolbox", "hevc_videotoolbox"):
         vcodec = f'-c:v {enc} '
+    elif enc in ("libx265", "hevc", "hevc_nvenc"):
+        # Optional: handle HEVC similarly; keep simple if not used
+        vcodec = f'-c:v {("hevc_nvenc" if enc=="hevc_nvenc" else "libx265")} '
     else:
         vcodec = '-c:v libx264 -preset medium -tune film '
 
-    init_name  = f'video_{label}_init.mp4'
-    media_pat  = f'video_{label}_$Number$.m4s'
+    init_name = f'video_{label}_init.mp4'
+    media_pat = f'video_{label}_$Number$.m4s'
 
-    # DASH muxer writes CMAF segments; we ignore the .mpd file produced here
+    # DASH muxer writes CMAF segments; the .mpd it produces here is not consumed
     dash_opts = (
         f'-f dash -use_timeline 1 -use_template 1 '
         f'-seg_duration {seg_dur} -min_seg_duration {seg_dur} '
@@ -204,18 +255,20 @@ def _ffmpeg_video_to_cmaf_segments(
         f'"{Path(out_dir)/f"video_{label}.mpd"}"'
     )
 
-    _log(f"[video:{label}] resumeN={resumeN} K={K} t0={t0}s span={span}s → {out_dir}")
+    _log(f"[video:{label}] resumeN={resumeN} n_to_make={n_to_make} gop={gop} "
+         f"t0={t0}s span={span}s → {out_dir}")
+
     rc = _run_stream(v_cmd, on_line=_log, on_progress=None, cwd=out_dir, idle_timeout_sec=600)
     if rc != 0:
         raise CmdError(f"FFmpeg CMAF video rung failed ({label}): rc={rc}")
 
     return {
         "label": label,
-        "init": str(Path(out_dir)/init_name),
+        "init": str(Path(out_dir) / init_name),
         "pattern": media_pat,
         "kind": "video",
         "resumeN": resumeN,
-        "K": K,
+        "K": n_to_make,  # K now clearly = segments emitted this run
     }
 
 
@@ -230,24 +283,46 @@ def _ffmpeg_audio_to_cmaf_segments(
     log=None,
 ) -> dict:
     def _log(s): (log or print)(s)
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    outp = Path(out_dir)
+    outp.mkdir(parents=True, exist_ok=True)
 
+    # How many segments already exist?
     n_done  = _highest_segment_index(out_dir, "audio_")
     resumeN = n_done + 1
-    K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
-    if K <= 0:
+
+    # Remaining media duration from current offset
+    t0 = n_done * seg_dur
+    remaining_media = max(0.0, float(total_duration_sec) - t0)
+
+    if remaining_media <= 0:
         _log(f"[audio] nothing to do (n_done={n_done})")
         return {
             "label": "audio",
-            "init": str(Path(out_dir)/"audio_init.m4a"),
+            "init": str(outp / "audio_init.m4a"),
+            "pattern": "audio_$Number$.m4s",
+            "kind": "audio",
+            "resumeN": resumeN,
+            "K": 0,  # kept for shape-compat; audio doesn’t use GOP
+        }
+
+    # Timebox by budget: encode only as many whole segments as we can
+    # If budget is tiny (< seg_dur), we’ll do 0 and exit early.
+    max_span_by_budget = max(0.0, float(budget_sec))
+    span_cap = remaining_media if max_span_by_budget <= 0 else min(remaining_media, max_span_by_budget)
+    n_to_make = int(span_cap // seg_dur)
+
+    if n_to_make <= 0:
+        _log(f"[audio] budget exhausted or <1 segment available (n_done={n_done}, budget_sec={budget_sec})")
+        return {
+            "label": "audio",
+            "init": str(outp / "audio_init.m4a"),
             "pattern": "audio_$Number$.m4s",
             "kind": "audio",
             "resumeN": resumeN,
             "K": 0,
         }
 
-    t0   = n_done * seg_dur
-    span = K * seg_dur
+    span = n_to_make * seg_dur  # encode an integral number of segments
 
     a_cmd = (
         f'{ffmpeg_path()} -hide_banner -nostdin -y '
@@ -260,22 +335,23 @@ def _ffmpeg_audio_to_cmaf_segments(
         f'-hls_playlist 0 '
         f'-start_number {resumeN} '
         f'-t {span} '
-        f'"{Path(out_dir)/"audio.mpd"}"'
+        f'"{outp/"audio.mpd"}"'
     )
 
-    _log(f"[audio] resumeN={resumeN} K={K} t0={t0}s span={span}s → {out_dir}")
+    _log(f"[audio] resumeN={resumeN} t0={t0}s span={span}s → {out_dir}")
     rc = _run_stream(a_cmd, on_line=_log, on_progress=None, cwd=out_dir, idle_timeout_sec=600)
     if rc != 0:
         raise CmdError(f"FFmpeg CMAF audio failed: rc={rc}")
 
     return {
         "label": "audio",
-        "init": str(Path(out_dir)/"audio_init.m4a"),
+        "init": str(outp / "audio_init.m4a"),
         "pattern": "audio_$Number$.m4s",
         "kind": "audio",
         "resumeN": resumeN,
-        "K": K,
+        "K": 0,  # still returned for shape-compat
     }
+
 
 def _popen(cmd: str, *, cwd: str | None = None, text: bool = True, bufsize: int = 1, **popen_kwargs):
     kwargs = dict(cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=text, bufsize=bufsize)

@@ -32,7 +32,7 @@ from ..shared.transcode import (
 )
 
 # Containers / Queues
-IN       = get("INPUT_CONTAINER", "incoming")
+IN       = get("RAW_CONTAINER", "raw-videos")
 HLS      = get("HLS_CONTAINER",   "hls")
 DASH     = get("DASH_CONTAINER",  "dash")
 MEZZ     = get("MEZZ_CONTAINER",  "mezzanine")
@@ -99,7 +99,6 @@ def _process_one_rung_cmaf(
     *,
     input_path: str,
     work_dir: str,
-    stem: str,
     meta: Dict[str, Any],
     seg_dur: int,
     log,
@@ -107,16 +106,16 @@ def _process_one_rung_cmaf(
 ) -> Dict[str, Any]:
     rung_budget_sec = rung_budget_sec or int(get("RUNG_BUDGET_SEC", "1400"))  # < host timeout
     t0 = time.time()
+
     # --- derive duration early (from ffprobe meta) ---
-    # try 'duration_sec' first; fall back to 'duration'
     duration_sec = float(meta.get("duration_sec") or meta.get("duration") or 0.0)
+    fps = float(meta.get("fps") or 24.0)
 
     # Audio first (idempotent)
     audio_dir = Path(work_dir) / "cmaf" / "audio"
     audio_init = audio_dir / "audio_init.m4a"
     if not audio_init.exists():
         log("[audio] begin (CMAF)")
-        # budget for audio: whatever remains from rung_budget_sec
         budget_left = max(60, rung_budget_sec - int(time.time() - t0))
         _ffmpeg_audio_to_cmaf_segments(
             input_path=input_path,
@@ -124,10 +123,10 @@ def _process_one_rung_cmaf(
             seg_dur=seg_dur,
             total_duration_sec=duration_sec,
             budget_sec=budget_left,
-            log=log
+            log=log,
         )
         log("[audio] end (CMAF)")
-        return {"kind": "audio", "label": "stereo", "K": None}
+        return {"kind": "audio", "label": "stereo", "K": 0}  # audio doesn’t use GOP; keep shape
 
     # Ladder (same as your MP4 ladder, now CMAF’d)
     ladder = [
@@ -137,9 +136,6 @@ def _process_one_rung_cmaf(
         {"name":"720p",  "height":720,  "bv":"2500k", "maxrate":"2800k", "bufsize":"5000k"},
         {"name":"1080p", "height":1080, "bv":"4200k", "maxrate":"4600k", "bufsize":"8000k"},
     ]
-
-    fps = float(meta.get("fps") or 24.0)
-    K = derive_k(fps=fps, seg_dur=seg_dur)
 
     def rung_progress(label: str) -> int:
         vdir = Path(work_dir) / "cmaf" / "video" / label
@@ -154,7 +150,8 @@ def _process_one_rung_cmaf(
 
     budget_left = max(60, rung_budget_sec - int(time.time() - t0))
     log(f"[video:{label}] begin → {vdir} (budget~{budget_left}s)")
-    _ffmpeg_video_to_cmaf_segments(
+
+    res = _ffmpeg_video_to_cmaf_segments(
         input_path=input_path,
         out_dir=str(vdir),
         label=label,
@@ -164,12 +161,14 @@ def _process_one_rung_cmaf(
         bufsize=target["bufsize"],
         fps=fps,
         seg_dur=seg_dur,
-        total_duration_sec=duration_sec,  # <-- add (mirrors audio)
+        total_duration_sec=duration_sec,
         budget_sec=budget_left,
-        log=log
+        log=log,
     )
+
     log(f"[video:{label}] end")
-    return {"kind": "video", "label": label, "K": K}
+    # Bubble up how many segments were emitted this run (res["K"])
+    return {"kind": "video", "label": label, "K": res.get("K", 0)}
 
 # -----------------------------
 # Queue Trigger (v2 DECORATOR MODEL)
@@ -241,6 +240,7 @@ def queue_ingestor(msg: func.QueueMessage) -> None:
         with open(inp_path, "wb") as f:
             bc_in.download_blob(max_concurrency=4).readinto(f)
         log(f"[download] input ready path={inp_path} took={int(time.time()-t0)}s")
+        pylog(f"[download] input ready path={inp_path} took={int(time.time()-t0)}s")
 
         # QC (tools, smoke, probe, analyze) — strict
         meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
@@ -250,17 +250,18 @@ def queue_ingestor(msg: func.QueueMessage) -> None:
         r = _process_one_rung_cmaf(
             input_path=inp_path,
             work_dir=work_dir,
-            stem=stem,
             meta=meta_in,
             seg_dur=seg_dur,
             log=log,
         )
         log(f"[rung] done kind={r.get('kind')} label={r.get('label','-')} K={r.get('K','-')}")
+        pylog(f"[rung] done kind={r.get('kind')} label={r.get('label','-')} K={r.get('K','-')}")
 
         # Enqueue packaging (parallel; packager checks readiness)
         _enqueue_packaging_if_ready(stem=stem, dist_dir=dist_dir, log=log)
-
+        pylog(f"[queue] packaging enqueued for {stem} → {PKG_Q}")
         log("[queue] success (rung completed; more work will resume on next dequeue)")
+        pylog("[queue] success (rung completed; more work will resume on next dequeue)")
 
     except Exception as e:
         _log_exception("queue", f"Unhandled error: {e}")
