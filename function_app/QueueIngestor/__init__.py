@@ -30,7 +30,8 @@ from ..shared.transcode import (
     _ffmpeg_video_to_cmaf_segments,
     derive_k,
 )
-
+# Integrity checker (expects check_integrity.py to be in function_app/shared/)
+from ..shared.verify import integrity_local, integrity_remote, integrity_cmaf_local
 # Containers / Queues
 IN       = get("RAW_CONTAINER", "raw-videos")
 HLS      = get("HLS_CONTAINER",   "hls")
@@ -77,6 +78,24 @@ def _start_heartbeat(lock_handle, ttl: int, stop_evt: threading.Event, log):
     t = threading.Thread(target=_beat, name="lock-heartbeat", daemon=True)
     t.start()
     return t
+# -----------------------------
+# Upload report to blob storage
+# -----------------------------
+def _write_report(*, container: str, stem: str, kind: str, stage: str, report: dict, log):
+    ts = int(time.time())
+    key = f"reports/{stem}/{stage}-{kind}-{ts}.json"
+    upload_bytes(container, key, json.dumps(report, separators=(",", ":")).encode("utf-8"), "application/json")
+    log(f"[verify] uploaded {stage} {kind} report → {container}/{key}")
+
+# -----------------------------
+# Log job report (upload to blob)
+# -----------------------------
+def _log_job_report(*, container: str, stem: str, kind: str, stage: str, report: dict, log):
+    try:
+        _write_report(container=container, stem=stem, kind=kind, stage=stage, report=report, log=log)
+    except Exception as e:
+        _log_exception("report", f"Failed to write report for {stem} {kind} {stage}: {e}")
+        log(f"[report] failed to write report for {stem} {kind} {stage}: {e}")
 
 # -----------------------------
 # Enqueue packaging job (if ready)
@@ -126,6 +145,15 @@ def _process_one_rung_cmaf(
             log=log,
         )
         log("[audio] end (CMAF)")
+        rep = integrity_cmaf_local(
+            root=str(audio_dir),
+            kind="audio", label=None,
+            seg_prefix="audio_", init_name="audio_init.m4a",
+            seg_dur=seg_dur, duration_sec=duration_sec,
+            log=log
+        )
+        if rep["status"] == "fail":
+            raise RuntimeError("audio CMAF integrity failed")
         return {"kind": "audio", "label": "stereo", "K": 0}  # audio doesn’t use GOP; keep shape
 
     # Ladder (same as your MP4 ladder, now CMAF’d)
@@ -165,9 +193,18 @@ def _process_one_rung_cmaf(
         budget_sec=budget_left,
         log=log,
     )
-
+    
     log(f"[video:{label}] end")
     # Bubble up how many segments were emitted this run (res["K"])
+    rep = integrity_cmaf_local(
+        root=str(vdir),
+        kind="video", label=label,
+        seg_prefix=f"video_{label}_", init_name=f"video_{label}_init.mp4",
+        seg_dur=seg_dur, duration_sec=duration_sec,
+        log=log
+    )
+    if rep["status"] == "fail":
+        raise RuntimeError(f"video {label} CMAF integrity failed")
     return {"kind": "video", "label": label, "K": res.get("K", 0)}
 
 # -----------------------------
