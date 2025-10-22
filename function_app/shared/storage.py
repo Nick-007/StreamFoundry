@@ -471,20 +471,49 @@ def download_blob_streaming(container: str, blob: str, dest_path: str, *,
     
     with open(dest_path, "wb") as f:
         try:
+            if log:
+                log(f"[download] starting blob download for {container}/{blob}")
+            
+            # Try to get the stream first
             stream = bc.download_blob(max_concurrency=4)
-            for chunk in stream.chunks():
-                if not chunk:
-                    continue
-                total += len(chunk)
-                if total > max_bytes:
-                    f.close()
-                    try:
-                        os.unlink(dest_path)
-                    except Exception:
-                        pass
+            if log:
+                log(f"[download] got download stream, starting chunked read")
+            
+            # Try using readinto() instead of chunks() to avoid potential gRPC issues
+            try:
+                # Read the entire stream at once (this might avoid gRPC chunking issues)
+                data = stream.readall()
+                if len(data) > max_bytes:
                     raise ValueError(f"Download exceeded {max_mb} MB limit")
-                f.write(chunk)
+                f.write(data)
+                total = len(data)
+                if log:
+                    log(f"[download] downloaded {total // (1024*1024)}MB in one read")
+            except Exception as chunk_error:
+                if log:
+                    log(f"[download] readall() failed, trying chunked approach: {chunk_error}")
+                # Fallback to chunked reading
+                stream = bc.download_blob(max_concurrency=4)
+                for chunk in stream.chunks():
+                    if not chunk:
+                        continue
+                    total += len(chunk)
+                    if total > max_bytes:
+                        f.close()
+                        try:
+                            os.unlink(dest_path)
+                        except Exception:
+                            pass
+                        raise ValueError(f"Download exceeded {max_mb} MB limit")
+                    f.write(chunk)
+                    
+                    # Log progress every 10MB
+                    if total % (10 * 1024 * 1024) < len(chunk) and log:
+                        log(f"[download] downloaded {total // (1024*1024)}MB so far")
+                    
         except Exception as e:
+            if log:
+                log(f"[download] error during download: {type(e).__name__}: {e}")
             # Clean up partial file on error
             f.close()
             try:
