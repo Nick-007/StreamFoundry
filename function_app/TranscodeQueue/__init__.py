@@ -43,8 +43,8 @@ TMP_DIR      = settings.TMP_DIR
 LOCK_TTL     = int(settings.LOCK_TTL_SECONDS)
 
 # File size limits (similar to SubmitJob)
-MAX_DOWNLOAD_MB = int(getattr(settings, 'TRANSCODE_MAX_DOWNLOAD_MB', '2048'))  # 2 GB default
-CHUNK_BYTES     = int(getattr(settings, 'TRANSCODE_CHUNK_BYTES', '4194304'))   # 4 MiB default
+MAX_DOWNLOAD_MB = 2048  # 2 GB default
+CHUNK_BYTES     = 4194304   # 4 MiB default
 
 # queues
 TRANSCODE_Q   = settings.TRANSCODE_QUEUE
