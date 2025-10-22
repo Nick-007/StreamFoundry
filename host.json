@@ -13,6 +13,12 @@
       "maxDegreeOfParallelism": 1,
       "pollingInterval": "00:02:00",
       "maxBatchSize": 1
+    },
+    "http": {
+      "routePrefix": "api",
+      "maxOutstandingRequests": 200,
+      "maxConcurrentRequests": 100,
+      "dynamicThrottlesEnabled": true
     }
   },
   "logging": {
@@ -23,18 +29,25 @@
       }
     },
     "logLevel": {
-      "submit": "Warning",
-      "transcode": "Warning",
-      "package": "Warning",
-      "Function": "Information",
-      "Host.Results": "Information",
-      "Host.Triggers.Queue": "Warning",
-      "Azure.Storage": "Warning",
-      "Azure.Storage.Queues": "Warning",
-      "Azure.Core": "Warning",
-      "Worker": "Warning",
-      "Microsoft": "Warning",
-      "Default": "Warning"
+      "submit": "Debug",
+      "transcode": "Debug", 
+      "package": "Debug",
+      "Function": "Debug",
+      "Host.Results": "Debug",
+      "Host.Triggers.Queue": "Debug",
+      "Host.Triggers.Blob": "Debug",
+      "Azure.Storage": "Debug",
+      "Azure.Storage.Queues": "Debug",
+      "Azure.Storage.Blobs": "Debug",
+      "Azure.Core": "Debug",
+      "Azure.Core.Http": "Debug",
+      "Worker": "Debug",
+      "Microsoft": "Debug",
+      "Microsoft.Azure.WebJobs": "Debug",
+      "Microsoft.Azure.WebJobs.Host": "Debug",
+      "Microsoft.Azure.WebJobs.Script": "Debug",
+      "System.Net.Http": "Debug",
+      "Default": "Debug"
     },
     "fileLoggingMode": "always"
   },
