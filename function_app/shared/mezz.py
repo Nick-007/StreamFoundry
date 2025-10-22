@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable, Optional, List, Dict
 
 from .config import get
-from .storage import upload_file, upload_bytes, blob_client
+from .storage import upload_file, upload_bytes, blob_client, download_blob_streaming
 
 MEZZ = get("MEZZ_CONTAINER", "mezzanine")
 
@@ -82,11 +82,16 @@ def restore_mezz_to_workdir(stem: str, work_dir: str, *, log: Optional[Callable[
                 try: dst.unlink()
                 except Exception: pass
 
-        # download
+        # download with streaming and size limits
         try:
-            bc = blob_client(MEZZ, f"{stem}/{name}")
-            with open(dst, "wb") as f:
-                bc.download_blob().readinto(f)
+            download_blob_streaming(
+                container=MEZZ,
+                blob=f"{stem}/{name}",
+                dest_path=str(dst),
+                max_mb=2048,  # 2GB limit for mezzanine files
+                chunk_bytes=4194304,  # 4MB chunks
+                log=_log
+            )
             ok_any = True
             # verify checksum
             if expect_sha:

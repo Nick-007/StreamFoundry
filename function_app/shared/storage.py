@@ -4,12 +4,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 try:
     from azure.storage.blob import BlobServiceClient, ContentSettings, BlobLeaseClient
-    from azure.core.exceptions import ResourceExistsError, HttpResponseError
+    from azure.core.exceptions import ResourceExistsError, HttpResponseError, ResourceNotFoundError, ServiceRequestError
 except Exception as e:  # pragma: no cover
     BlobServiceClient = None
     ContentSettings = None
     ResourceExistsError = None
     HttpResponseError = None
+    ResourceNotFoundError = None
+    ServiceRequestError = None
 # Optional: use shared.config.get if present
 
 try:
@@ -358,4 +360,142 @@ def upload_tree_routed(
     _log(f"[upload] hls uploaded={stats['hls']['uploaded']} skipped={stats['hls']['skipped']} | "
          f"dash uploaded={stats['dash']['uploaded']} skipped={stats['dash']['skipped']}")
     return stats
+
+# -------------------- Download helpers --------------------
+
+def download_bytes(container: str, blob: str, *, start: int | None = None, end: int | None = None) -> bytes:
+    """
+    Download a blob as bytes.
+      - If start/end are provided, does a ranged download [start, end] (inclusive).
+      - Raises FileNotFoundError if the blob doesn't exist.
+    """
+    svc = _svc()
+    bc = svc.get_blob_client(container=container, blob=blob)
+
+    # Clear error early with a friendly message
+    try:
+        if not bc.exists():
+            raise FileNotFoundError(f"Blob not found: {container}/{blob}")
+    except ResourceNotFoundError:
+        raise FileNotFoundError(f"Blob not found: {container}/{blob}")
+
+    # Compute range length if both bounds are given
+    length = None
+    if start is not None and end is not None:
+        if end < start:
+            raise ValueError("download_bytes: end must be >= start")
+        length = end - start + 1
+
+    # Light retries for transient failures
+    last_err = None
+    for _ in range(3):
+        try:
+            stream = bc.download_blob(offset=start, length=length, max_concurrency=4)
+            return stream.readall()
+        except (ServiceRequestError, HttpResponseError) as e:
+            last_err = e
+            time.sleep(0.5)
+    # If we get here, all retries failed
+    raise last_err if last_err else RuntimeError("download_bytes failed unexpectedly")
+
+
+def download_text(container: str, blob: str, *, encoding: str = "utf-8") -> str:
+    """
+    Convenience wrapper around download_bytes → str.
+    """
+    return download_bytes(container, blob).decode(encoding, errors="strict")
+
+
+def download_to_path(container: str, blob: str, dest_path: str) -> str:
+    """
+    Download a blob directly to a local file path. Returns the dest_path.
+    """
+    data = download_bytes(container, blob)
+    p = Path(dest_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(data)
+    return str(p)
+
+
+def download_blob_streaming(container: str, blob: str, dest_path: str, *, 
+                           max_mb: int = 2048, chunk_bytes: int = 4194304, 
+                           log: Optional[callable] = None) -> str:
+    """
+    Stream download a blob to a local file path with size limits and chunked processing.
+    Similar to SubmitJob's _download_url_to_temp but for blob storage.
+    
+    Args:
+        container: Source container name
+        blob: Source blob name  
+        dest_path: Local file path to write to
+        max_mb: Maximum file size in MB (default 2GB)
+        chunk_bytes: Chunk size for streaming (default 4MB)
+        log: Optional logging function
+        
+    Returns:
+        The dest_path
+        
+    Raises:
+        ValueError: If file exceeds max_mb limit
+        FileNotFoundError: If blob doesn't exist
+    """
+    svc = _svc()
+    bc = svc.get_blob_client(container=container, blob=blob)
+    
+    # Check if blob exists first
+    try:
+        if not bc.exists():
+            raise FileNotFoundError(f"Blob not found: {container}/{blob}")
+    except ResourceNotFoundError:
+        raise FileNotFoundError(f"Blob not found: {container}/{blob}")
+    
+    # Get blob size from properties for early size check
+    try:
+        props = bc.get_blob_properties()
+        size_bytes = props.size
+        if size_bytes > max_mb * 1024 * 1024:
+            raise ValueError(f"Blob size {size_bytes} exceeds {max_mb} MB limit")
+        if log:
+            log(f"[download] blob size: {size_bytes} bytes")
+    except Exception as e:
+        if log:
+            log(f"[download] could not get blob size: {e}, proceeding with streaming check")
+    
+    # Ensure destination directory exists
+    p = Path(dest_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Stream download with size enforcement
+    total = 0
+    max_bytes = max_mb * 1024 * 1024
+    
+    with open(dest_path, "wb") as f:
+        try:
+            stream = bc.download_blob(max_concurrency=4)
+            for chunk in stream.chunks():
+                if not chunk:
+                    continue
+                total += len(chunk)
+                if total > max_bytes:
+                    f.close()
+                    try:
+                        os.unlink(dest_path)
+                    except Exception:
+                        pass
+                    raise ValueError(f"Download exceeded {max_mb} MB limit")
+                f.write(chunk)
+        except Exception as e:
+            # Clean up partial file on error
+            f.close()
+            try:
+                os.unlink(dest_path)
+            except Exception:
+                pass
+            raise
+    
+    if log:
+        log(f"[download] streamed {total} bytes to {dest_path}")
+    
+    return str(p)
+
 # -------------------- Shaka Packager helpers --------------------
