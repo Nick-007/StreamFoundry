@@ -11,7 +11,8 @@
     },
     "blobs": {
       "maxDegreeOfParallelism": 1,
-      "pollingInterval": "00:02:00"
+      "pollingInterval": "00:02:00",
+      "maxBatchSize": 1
     }
   },
   "logging": {

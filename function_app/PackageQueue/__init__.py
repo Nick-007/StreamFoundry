@@ -12,7 +12,7 @@ from .. import app
 from ..shared.config import get
 from ..shared.logger import StreamLogger, bridge_logger
 from ..shared.storage import (
-    blob_exists, upload_tree_routed, download_blob_streaming,
+    blob_exists, upload_tree_routed,
 )
 from ..shared.mezz import ensure_intermediates_from_mezz
 from ..shared.verify import check_integrity  # your consolidated checker
