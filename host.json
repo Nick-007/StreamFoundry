@@ -1,16 +1,17 @@
 {
   "version": "2.0",
+  "functionTimeout": "01:00:00",
   "extensions": {
     "queues": {
       "maxDequeueCount": 3,
-      "visibilityTimeout": "00:02:00",
-      "maxPollingInterval": "00:01:00",
+      "visibilityTimeout": "00:10:00",
+      "maxPollingInterval": "00:02:00",
       "batchSize": 1,
       "newBatchThreshold": 0
     },
     "blobs": {
       "maxDegreeOfParallelism": 1,
-      "pollingInterval": "00:01:00"
+      "pollingInterval": "00:02:00"
     }
   },
   "logging": {
@@ -21,9 +22,10 @@
       }
     },
     "logLevel": {
-      "queue_ingestor": "Information",
+      "submit": "Warning",
+      "transcode": "Warning",
+      "package": "Warning",
       "Function": "Information",
-      "Function.queue_ingestor": "Information",
       "Host.Results": "Information",
       "Host.Triggers.Queue": "Warning",
       "Azure.Storage": "Warning",

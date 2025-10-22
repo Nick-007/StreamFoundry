@@ -1,11 +1,12 @@
 import time, subprocess, shlex, re, os, shutil, signal
 from pathlib import Path
 from typing import Callable, Optional, Tuple, List, Dict
-
+from .progress import handle_progress
 from .config import get
 from .errors import CmdError
 from .tools import ffmpeg_path
 from .qc import ffprobe_inspect, analyze_media
+from .normalize import normalize_rung_selector
 
 _PROCS = set()
 
@@ -65,10 +66,18 @@ def _run_stream(cmd: str,
                 cwd: Optional[str] = None,
                 timeout_sec: float | None = None,
                 idle_timeout_sec: float = 300.0,
-                heartbeat_sec: float = 30.0) -> int:
+                heartbeat_sec: float = 30.0,
+                debug: bool = False) -> int:
+
+    def debug_log(msg):
+        if debug and on_line:
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            _safe_call(on_line, f"[debug] {timestamp} {msg}")
+
     p = _popen(cmd, cwd=cwd, text=True, bufsize=1)
     start = last_activity = time.time()
     last_heartbeat = 0.0
+    progress_state ={}
 
     def _safe_call(fn, *args, **kwargs):
         if not fn:
@@ -83,9 +92,16 @@ def _run_stream(cmd: str,
     def _emit(line: str):
         nonlocal last_activity
         last_activity = time.time()
-        if "=" in line and on_progress:
+        debug_log(f"Received line: {line}")
+        if "=" in line:
             k, v = line.split("=", 1)
-            _safe_call(on_progress, {k: v})
+            progress_state[k] = v  # Accumulate progress data
+
+            # Trigger full progress callback only when FFmpeg signals a complete update
+            if k == "progress" and v in ("continue", "end") and on_progress:
+                debug_log(f"Progress update: {k}={v}")
+                _safe_call(on_progress, progress_state.copy())
+                progress_state.clear()  # Reset for next update
         elif on_line:
             _safe_call(on_line, line)
 
@@ -108,21 +124,24 @@ def _run_stream(cmd: str,
                     last_heartbeat = now
                     _safe_call(on_line, "[watchdog] packager/ffmpeg still running…")
                 if p.poll() is not None:
+                    debug_log(f"Process exited with code {p.returncode}")
                     break
                 time.sleep(0.1)
         return p.returncode
     finally:
+        debug_log("Cleaning up process reference")
         _PROCS.discard(p)
 
-def _get_bool(x: str, default: bool = False) -> bool:
-    val = str(get(x, "true" if default else "false")).lower()
-    return val in ("1","true","yes","on")
+def _get_bool(k: str, default: bool = False) -> bool:
+    v = get(k)
+    if v is None: return default
+    return str(v).lower() in ("1", "true", "yes", "on")
 
-def _get_int(x: str, d: int) -> int:
+def _get_int(k: str, default: int) -> int:
     try:
-        return int(str(get(x, str(d))))
+        return int(get(k, str(default)))
     except Exception:
-        return d
+        return default
 
 def _make_line_logger(log: Optional[Callable[[str], None]], sink: List[str]):
     def _on_line(s: str):
@@ -135,7 +154,7 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
                   log: Optional[Callable[[str], None]] = None):
     Path(out_mp4).parent.mkdir(parents=True, exist_ok=True)
 
-    gop = max(1, int(round(fps * seg_dur)))
+    
     enc = get("VIDEO_CODEC", "h264_nvenc").strip().lower()
     bt709 = _get_bool("SET_BT709_TAGS")
     nv_preset = get("NVENC_PRESET", "p5")
@@ -143,16 +162,19 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
     nv_look   = get("NVENC_LOOKAHEAD", "32")
     nv_aq     = "1" if _get_bool("NVENC_AQ") else "0"
 
+    gop = max(1, int(round(fps * seg_dur)))
     common = (
         f'-vf "scale=-2:{height}" '
         f'-pix_fmt yuv420p '
-        + (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 ' if bt709 else '')
+        + (f'-color_primaries bt709 -color_trc bt709 -colorspace bt709 -color_range tv ' if bt709 else '')
+        + f'-r {fps} '                         # <— lock framerate (e.g., 24000/1001)
         + f'-g {gop} -keyint_min {gop} -sc_threshold 0 -bf 3 -coder cabac '
-        f'-video_track_timescale 90000 '                                  # <— new
-        f'-force_key_frames "expr:gte(t,n_forced*{seg_dur})" '             # <— new
-        # optional but helps keep timestamps monotonic and clean for VFR sources:
-        f'-fps_mode vfr '
+        f'-video_track_timescale 90000 '
+        # -fps_mode vfr  ← REMOVE
+        f'-force_key_frames "expr:gte(n,n_forced*{gop})" '   # <— frame-based forcing
     )
+
+    log(f"[video] rung={height}p fps={fps:.4f} seg_dur={seg_dur}s gop={gop}")
 
     def _opts_for(codec: str) -> str:
         if codec == "h264_nvenc":
@@ -163,7 +185,7 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
             return (f'-c:v {codec} -b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
                     f'-profile:v high -level 4.1 ')
         else:
-            return (f'-c:v libx264 -preset medium -tune film '
+            return (f'-c:v libx264 -preset medium '
                     f'-b:v {bv} -maxrate {maxrate} -bufsize {bufsize} '
                     f'-profile:v high -level 4.1 ')
 
@@ -187,30 +209,9 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
 
         last: Dict[str, str] = {}
         last_pct = -1
-        t0 = time.time()
-        def _on_prog(d: dict):
-            nonlocal last, last_pct
-            last.update(d)
-            ot = last.get("out_time_ms") or last.get("out_time_us")
-            if not ot:
-                return
-            try:
-                sec = (int(ot) / 1000.0) if "out_time_ms" in last else (int(ot) / 1_000_000.0)
-            except Exception:
-                return
-            if total_duration_sec > 0:
-                pct = max(0, min(100, int((sec / total_duration_sec) * 100)))
-                if pct != last_pct:
-                    last_pct = pct
-                    elapsed = max(1.0, time.time() - t0)
-                    rate = sec / elapsed
-                    eta = int((total_duration_sec - sec) / rate) if rate > 0 else -1
-                    (log or print)(f"[video] {Path(out_mp4).name} {pct}% ({sec:0.1f}/{total_duration_sec:0.1f}s) ETA~{eta}s")
-            else:
-                (log or print)(f"[video] {Path(out_mp4).name} t={sec:0.1f}s")
-
+        _on_prog = lambda d: handle_progress(d, media_type="video", total_duration_sec=total_duration_sec, t0=time.time(), filename={Path(out_mp4).name}, log=log)
         on_line = _make_line_logger(log, logs)
-        rc = _run_stream(cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=900, cwd=str(Path(out_mp4).parent))
+        rc = _run_stream(cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=300, cwd=str(Path(out_mp4).parent))
         return rc, logs
 
     rc, logs = _run_once(enc)
@@ -233,7 +234,7 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
     tail = "\n".join(logs[-80:]) if logs else "(no output)"
     raise CmdError(f"FFmpeg video transcode failed ({height}p): rc={rc}\n--- ffmpeg tail ---\n{tail}")
 
-def _ffmpeg_audio(input_path: str, out_mp4: str, log: Optional[Callable[[str], None]] = None):
+def _ffmpeg_audio(input_path: str, out_mp4: str, total_duration_sec: float = 0.0, log: Optional[Callable[[str], None]] = None):
     Path(out_mp4).parent.mkdir(parents=True, exist_ok=True)
     probe = ffprobe_inspect(input_path)
     a_streams = [s for s in probe.get("streams", []) if s.get("codec_type") == "audio"]
@@ -249,43 +250,72 @@ def _ffmpeg_audio(input_path: str, out_mp4: str, log: Optional[Callable[[str], N
     )
 
     logs: List[str] = []
-    def _on_prog(d: dict):
-        ot = d.get("out_time_ms") or d.get("out_time_us")
-        if not ot:
-            return
-        try:
-            sec = (int(ot) / 1000.0) if "out_time_ms" in d else (int(ot) / 1_000_000.0)
-            (log or print)(f"[audio] t={sec:0.1f}s")
-        except Exception:
-            pass
-
+    _on_prog = lambda d: handle_progress(d, media_type="audio", total_duration_sec=total_duration_sec, t0=time.time(), filename={Path(out_mp4).name}, log=log)
     on_line = _make_line_logger(log, logs)
-    rc = _run_stream(a_cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=600, cwd=str(Path(out_mp4).parent))
+    rc = _run_stream(a_cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=300, cwd=str(Path(out_mp4).parent))
     if rc != 0:
         tail = "\n".join(logs[-60:]) if logs else "(no output)"
         raise CmdError(f"FFmpeg audio transcode failed rc={rc}\n--- ffmpeg audio tail ---\n{tail}")
     (log or print)(f"[audio] done → {out_mp4}")
 
-def transcode_to_cmaf_ladder(input_path: str, workdir: str, log: Optional[Callable[[str], None]] = None) -> Tuple[str, List[Dict], Dict]:
-    Path(workdir).mkdir(parents=True, exist_ok=True)
-    (log or print)(f"[transcode] workdir={workdir}")
+def transcode_to_cmaf_ladder(
+    input_path: str,
+    work_dir: str,
+    *,
+    only_rungs: Optional[List[str]] = None,
+    log: Optional[callable] = None
+) -> Tuple[str, List[Dict], Dict]:
+    """
+    Transcodes input to CMAF-ready MP4 intermediates for the requested rungs.
+    Returns:
+      audio_mp4: str -> <work_dir>/audio.mp4
+      renditions: List[ {name,height,bitrate,video:<path>} ]
+      meta: Dict -> at least {"fps": float, "duration": float, "width": int, "height": int}
+    """
+    def _log(s: str): (log or print)(s)
 
-    # audio first
-    audio_mp4 = str(Path(workdir)/"audio.mp4")
-    (log or print)("[audio] begin")
-    _ffmpeg_audio(input_path, audio_mp4, log)
-    (log or print)("[audio] end")
+    Path(work_dir).mkdir(parents=True, exist_ok=True)
+    audio_mp4 = str(Path(work_dir) / "audio.mp4")
 
-    # source meta
-    probe   = ffprobe_inspect(input_path)
-    meta_in = analyze_media(probe, strict=True)
-    fps     = meta_in["fps"]
+    # --- Probe & QC ---
+    # Use your existing helpers; fall back gently if needed.
     try:
-        duration_sec = float(meta_in["format"]["duration"])
-    except Exception:
-        duration_sec = 0.0
+        probe = ffprobe_inspect(input_path)
+    except Exception as e:
+        raise CmdError(f"ffprobe failed: {e}")
 
-    seg_dur = _get_int('SEG_DUR_SEC', 4)
+    # Derive normalized meta once (duration, width, height, fps, codecs, bitrates…)
+    try:
+        meta = analyze_media(probe, strict=True)
+    except Exception:
+        # Minimal, non-strict fallback if analyze_media raises (should be rare)
+        fmt = (probe or {}).get("format", {}) if isinstance(probe, dict) else {}
+        v = next((s for s in (probe or {}).get("streams", []) if s.get("codec_type") == "video"), {})
+        meta = {
+            "duration": float(fmt.get("duration") or 0.0),
+            "width":    int(v.get("width") or 0),
+            "height":   int(v.get("height") or 0),
+            "fps":      float(v.get("fps") or 0.0),  # may be 0.0; we'll patch below
+        }
+
+    # Single, simple fallback for fps only (no re-parsing avg_frame_rate etc.)
+    if not meta.get("fps") or float(meta["fps"]) <= 0.0:
+        meta["fps"] = float(get("FALLBACK_FPS", "24.0"))
+
+    fps = float(meta["fps"])
+    _log(f"[meta] duration={float(meta.get('duration',0.0)):.1f}s w={int(meta.get('width',0))} h={int(meta.get('height',0))} fps={fps:.2f}")
+
+
+    # --- Audio first (AAC .mp4) ---
+    _log("[audio] begin")
+    rc_a = _ffmpeg_audio(input_path, audio_mp4, meta["duration"], log)
+    if rc_a not in (None, 0):
+        raise CmdError(f"FFmpeg audio transcode failed: rc={rc_a}")
+    _log("[audio] end")
+
+    # --- Ladder (filter by only_rungs if provided) ---
+    seg_dur = _get_int("SEG_DUR_SEC", 4)
+    # Default ladder matches your earlier shape
     ladder = [
         {"name":"240p","height":240,"bv":"300k","maxrate":"360k","bufsize":"600k"},
         {"name":"360p","height":360,"bv":"650k","maxrate":"780k","bufsize":"1300k"},
@@ -293,15 +323,38 @@ def transcode_to_cmaf_ladder(input_path: str, workdir: str, log: Optional[Callab
         {"name":"720p","height":720,"bv":"2500k","maxrate":"2800k","bufsize":"5000k"},
         {"name":"1080p","height":1080,"bv":"4200k","maxrate":"4600k","bufsize":"8000k"},
     ]
-    outs = []
+    if only_rungs:
+        only = normalize_rung_selector(only_rungs=only_rungs)
+        ladder = [r for r in ladder if r["name"].lower() in only]
+        if not ladder:
+            raise CmdError(f"Requested only_rungs={only_rungs} not in ladder")
+
+    # --- Video rungs ---
+    outs: List[Dict] = []
     for r in ladder:
-        label_num = r["name"].split("p")[0]
-        out_mp4 = str(Path(workdir)/f"video_{label_num}.mp4")
-        (log or print)(f"[video:{label_num}] begin → {out_mp4}")
-        _ffmpeg_video(input_path, out_mp4, r["height"], r["bv"], r["maxrate"], r["bufsize"], fps, seg_dur, total_duration_sec=duration_sec, log=log)
-        (log or print)(f"[video:{label_num}] end")
-        outs.append({"name": r["name"], "height": r["height"], "bitrate": r["bv"], "video": out_mp4})
-    return audio_mp4, outs, meta_in
+        label_num = r["name"] #.rstrip("p")     # "240p" -> "240"
+        out_mp4 = str(Path(work_dir) / f"video_{label_num}.mp4")
+        _log(f"[video:{r['name']}] begin → {Path(out_mp4).name}")
+        _ffmpeg_video(
+            input_path, out_mp4, r["height"], r["bv"], r["maxrate"], r["bufsize"],
+            fps, seg_dur, total_duration_sec=meta["duration"], log=log
+        )
+        _log(f"[video:{r['name']}] end")
+        outs.append({
+            "name": r["name"],
+            "height": r["height"],
+            "bitrate": r["bv"],
+            "video": out_mp4
+        })
+
+    # Quick sanity
+    if not Path(audio_mp4).exists():
+        raise CmdError("Audio output missing after transcode")
+    if not outs:
+        raise CmdError("No video renditions produced")
+
+    _log(f"[transcode] audio_mp4={audio_mp4} renditions={len(outs)}")
+    return audio_mp4, outs, meta
 
 def _resolve_packager(log=None) -> str:
     def _log(msg: str):
@@ -337,8 +390,36 @@ def _resolve_packager(log=None) -> str:
     tried_list = ", ".join(tried) if tried else "(no candidates)"
     raise CmdError(f"Shaka Packager not found. Set SHAKA_PACKAGER_PATH or install 'packager'. Tried: {tried_list}")
 
-def package_with_shaka_ladder(renditions: List[Dict], audio_mp4: str, out_dash: str, out_hls: str,
-                              text_tracks: List[Dict] = None, log: Optional[Callable[[str], None]] = None):
+def _assert_unique_outputs(parts: List[str]) -> None:
+    """Minimal duplicate-output guard for shaka descriptors."""
+    # extract init_segment= and segment_template= targets and ensure they don't collide
+    seen = set()
+    for p in parts:
+        for key in ("init_segment=", "segment_template="):
+            if key in p:
+                frag = p.split(key, 1)[1]
+                # up to comma or end
+                val = frag.split(",", 1)[0].strip().strip('"').strip("'")
+                k = (key, val)
+                if k in seen:
+                    raise CmdError(f"Seeing duplicated outputs '{val}' in stream descriptors. Every output must be unique.")
+                seen.add(k)
+
+
+def package_with_shaka_ladder(
+    renditions: List[Dict],
+    audio_mp4: str,
+    out_dash: str,
+    out_hls: str,
+    *,
+    text_tracks: Optional[List[Dict]] = None,
+    log: Optional[callable] = None
+):
+    """
+    Packages given CMAF-ready MP4s into DASH+HLS with Shaka Packager.
+    - Keeps your filename conventions: video_{name}_init.mp4 + video_{name}_$Number$.m4s, audio_init.m4a, audio_$Number$.m4s
+    - Uses --generate_static_live_mpd for VOD-friendly static outputs in current Shaka versions.
+    """
     def _ls(dirpath: Path) -> str:
         try:
             items = []
@@ -354,31 +435,47 @@ def package_with_shaka_ladder(renditions: List[Dict], audio_mp4: str, out_dash: 
     hls_dir  = hls_path.parent
 
     packager = _resolve_packager(log=log)
+    (log or print)(f"[package] using Shaka Packager: {packager}")
     (log or print)(f"[package] DASH → {dash_path}")
     (log or print)(f"[package] HLS  → {hls_path}")
 
-    seg_dur = _get_int("PACKAGER_SEG_DUR_SEC", 4)
+    seg_dur = int(get("PACKAGER_SEG_DUR_SEC", "4"))
     trick = _get_bool("ENABLE_TRICKPLAY")
     trick_factor = _get_int("TRICKPLAY_FACTOR", 4)
 
     # ---- DASH ----
     parts = []
     for r in renditions:
-        label = r["name"]; base = f'video_{label}'
+        # r["name"] like "720p" → base "video_720p"
+        label = r["name"]
+        base  = f'video_{label}'
         parts.append(
-            f'in="{r["video"]}",stream=video,init_segment="{base}_init.mp4",'
-            f'segment_template="{base}_$Number$.m4s"{(",trick_play_factor="+str(trick_factor)) if trick else ""}'
+            f'in="{r["video"]}",stream=video,'
+            f'init_segment="{base}_init.mp4",'
+            f'segment_template="{base}_$Number$.m4s"' +
+            (f',trick_play_factor={trick_factor}' if trick else '')
         )
-    parts.append('in="{a}",stream=audio,init_segment="audio_init.m4a",segment_template="audio_$Number$.m4s"'.format(a=audio_mp4))
+    parts.append(
+        f'in="{audio_mp4}",stream=audio,'
+        f'init_segment="audio_init.m4a",'
+        f'segment_template="audio_$Number$.m4s"'
+    )
     if text_tracks:
         for t in text_tracks:
             parts.append(f'in="{t["path"]}",stream=text,language={t.get("lang","en")}')
+
     _assert_unique_outputs(parts)
 
     dash_cmd = (
         f'{packager} ' + " ".join(parts) +
-        f' --segment_duration {seg_dur} --generate_static_live_mpd --mpd_output=stream.mpd --v=2'
+        f' --segment_duration {seg_dur}'
+        f' --generate_static_live_mpd'         # static VOD semantics with current Shaka
+        f' --mpd_output=stream.mpd'
+        f' --io_cache_size 134217728'          # 128 MiB buffer; helps when IO bursts
+        f' --io_block_size 1048576'            # 1 MiB block
+        f' --v=2'
     )
+
     dash_logs: List[str] = []
     dash_on_line = _make_line_logger(log, dash_logs)
     rc = _run_stream(dash_cmd, on_line=dash_on_line, cwd=str(dash_dir), idle_timeout_sec=600, heartbeat_sec=30)
@@ -394,9 +491,15 @@ def package_with_shaka_ladder(renditions: List[Dict], audio_mp4: str, out_dash: 
     for r in renditions:
         label = r["name"]; base = f'video_{label}'
         parts.append(
-            f'in="{r["video"]}",stream=video,init_segment="{base}_init.mp4",segment_template="{base}_$Number$.m4s"'
+            f'in="{r["video"]}",stream=video,'
+            f'init_segment="{base}_init.mp4",'
+            f'segment_template="{base}_$Number$.m4s"'
         )
-    parts.append('in="{a}",stream=audio,init_segment="audio_init.m4a",segment_template="audio_$Number$.m4s"'.format(a=audio_mp4))
+    parts.append(
+        f'in="{audio_mp4}",stream=audio,'
+        f'init_segment="audio_init.m4a",'
+        f'segment_template="audio_$Number$.m4s"'
+    )
     if text_tracks:
         for t in text_tracks:
             parts.append(f'in="{t["path"]}",stream=text,language={t.get("lang","en")}')
@@ -404,7 +507,11 @@ def package_with_shaka_ladder(renditions: List[Dict], audio_mp4: str, out_dash: 
 
     hls_cmd = (
         f'{packager} ' + " ".join(parts) +
-        f' --segment_duration {seg_dur} --hls_playlist_type VOD --hls_master_playlist_output=master.m3u8 --v=2'
+        f' --segment_duration {seg_dur}'
+        f' --hls_playlist_type VOD'
+        f' --hls_master_playlist_output=master.m3u8'
+        f' --io_cache_size 134217728 --io_block_size 1048576'
+        f' --v=2'
     )
     hls_logs: List[str] = []
     hls_on_line = _make_line_logger(log, hls_logs)
