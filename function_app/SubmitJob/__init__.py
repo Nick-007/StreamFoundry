@@ -177,10 +177,11 @@ def submit_job(req: func.HttpRequest) -> func.HttpResponse:
         job_id = body.get("jobId") or str(uuid.uuid4())
         if desired_name:
             raw_key = _build_raw_key_from_name(desired_name)  # keep subdirs
-            stem = Path(desired_name).stem
         else:
-            stem = job_id
             raw_key = f"{job_id}.mp4"
+
+        # Preserve any virtual folders from the chosen name when deriving the job stem.
+        stem = Path(raw_key).with_suffix("").as_posix()
 
         # StreamLogger → logs/submit/<id>-<ts>.log (blob), + local under TMP_DIR/<id>/dist/logs/
         paths = job_paths(stem)
