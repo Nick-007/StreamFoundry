@@ -13,7 +13,8 @@ DASH = get("DASH_CONTAINER", "dash")
 LOGS = get("LOGS_CONTAINER", "logs")
 PROCESSED = get("PROCESSED_CONTAINER", "processed")
 JOB_QUEUE = get("JOB_QUEUE", "transcode-jobs")
-@app.blob_trigger(arg_name="input_blob", path=f"{RAW}/{{name}}", connection="AzureWebJobsStorage")
+#Temporarily Disable Trigger
+#@app.blob_trigger(arg_name="input_blob", path=f"{RAW}/{{name}}", connection="AzureWebJobsStorage")
 def blob_enqueuer(input_blob: func.InputStream):
     try:
         full = input_blob.name

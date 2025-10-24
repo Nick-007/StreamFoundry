@@ -34,11 +34,12 @@
     "SET_BT709_TAGS": "true",
     "AUDIO_MAIN_KBPS": "128",
     "ENABLE_AUDIO_LOW": "false",
-    "ENABLE_CAPTIONS": "true",
+    "ENABLE_CAPTIONS": "false",
     "ENABLE_TRICKPLAY": "false",
     "TRICKPLAY_FACTOR": "4",
     "THUMB_INTERVAL_SEC": "4",
     "QC_STRICT": "true",
-    "DRM_PLACEHOLDERS": "true"
+    "DRM_PLACEHOLDERS": "true",
+    "TRANSCODE_VISIBILITY_EXTENSION_SEC":300
   }
 }

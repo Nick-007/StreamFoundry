@@ -1,30 +1,34 @@
 # function_app/TranscodeQueue/__init__.py
 from __future__ import annotations
-import json, time, hashlib, base64
+import json, time, hashlib, threading
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Callable
 
 import azure.functions as func
 from azure.functions import QueueMessage
+from pydantic import ValidationError
+from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
 
 # --- shared modules from your repo ---
 from ..shared.config import AppSettings
 from ..shared.logger import StreamLogger, bridge_logger, make_slogger
-from ..shared.schema import IngestPayload
 
 # transcode_queue_normalize.py (example co-located helper)
-from ..shared.normalize import normalize_only_rung
-
 from ..shared.storage import (
-    blob_exists, blob_client, upload_bytes, upload_tree_routed,
+    blob_exists, upload_bytes,
     acquire_lock_with_break, renew_lock, download_blob_streaming,  # your existing lease helpers
 )
 from ..shared.mezz import (
-    ensure_intermediates_from_mezz, upload_mezz_and_manifest,
+    ensure_intermediates_from_mezz, upload_mezz_and_manifest, upload_intermediate_file,
 )
 from ..shared.qc import ffprobe_validate, CmdError
 from ..shared.transcode import transcode_to_cmaf_ladder  # we do NOT import packaging here
+
+from ..shared.ingest import validate_ingest, dump_normalized
+from ..shared.queueing import enqueue, queue_client
+from ..shared.workspace import job_paths
+from ..shared.rungs import ladder_labels, mezz_video_filename, discover_renditions
 
 settings = AppSettings()
 LOGGER = logging.getLogger("transcode")
@@ -41,6 +45,7 @@ LOGS       = settings.LOGS_CONTAINER
 
 TMP_DIR      = settings.TMP_DIR
 LOCK_TTL     = int(settings.LOCK_TTL_SECONDS)
+VISIBILITY_EXTENSION_SEC = int(settings.TRANSCODE_VISIBILITY_EXTENSION_SEC or "0")
 
 # File size limits (similar to SubmitJob)
 MAX_DOWNLOAD_MB = 2048  # 2 GB default
@@ -57,11 +62,6 @@ from .. import app
 
 # ---------- Helpers (restored) ----------
 
-def queue_client(queue_name: str):
-    """Create a QueueClient once; no repeated imports at call-sites."""
-    from azure.storage.queue import QueueClient
-    return QueueClient.from_connection_string(STORAGE_CONN, queue_name)
-
 def send_to_poison(payload: dict, reason: str, log):
     """Send failed job to poison queue with safe payload."""
     try:
@@ -77,12 +77,7 @@ def send_to_poison(payload: dict, reason: str, log):
 
 def enqueue_packaging(job: dict, log):
     """Enqueue a packaging job for a separate worker."""
-    qc = queue_client(PACKAGING_Q)
-    # Serialize and encode the job
-    raw_json = json.dumps(job)
-    encoded_msg = base64.b64encode(raw_json.encode("utf-8")).decode("utf-8")
-    # Send the encoded message
-    qc.send_message(encoded_msg)
+    enqueue(PACKAGING_Q, json.dumps(job))
     log(f"[queue] enqueued packaging → {PACKAGING_Q} (id={job.get('id')}, rungs={job.get('only_rung') or 'all'})")
 
 def _safe_json(obj: Any) -> Any:
@@ -97,33 +92,6 @@ def _safe_json(obj: Any) -> Any:
             return str(obj)
         except Exception:
             return f"<unserializable:{type(obj).__name__}>"
-
-def _normalize(payload: dict) -> dict:
-    data = IngestPayload(**payload)  # schema validation happens here
-
-    # Merge singular/plural selectors without assuming either exists in the schema.
-    sel = []
-    if getattr(data, "only_rung", None) not in (None, "", []):
-        sel.append(data.only_rung)
-    if getattr(data, "only_rungs", None) not in (None, "", []):
-        sel.append(getattr(data, "only_rungs"))
-
-    # Normalize to a set like {"240p","360p",...}; suffix_p=True matches your ladder.
-    only_rung = normalize_only_rung(
-        sel or None,
-        as_set=True,
-        suffix_p=True,
-    )
-
-    return {
-        "in_cont": data.in_.container,
-        "raw_key": data.in_.key,
-        "stem": data.id,
-        "only_rung": only_rung,          # a set of "###p" labels, or empty set if none provided
-        "captions": data.captions or [],
-        "extra": data.extra or {},
-    }
-
 
 def _pull_caption(item: dict, work_dir: str, log) -> Optional[dict]:
     """
@@ -152,10 +120,23 @@ def _pull_caption(item: dict, work_dir: str, log) -> Optional[dict]:
         log(f"[captions] failed: {e}")
         return None
 
-def _call_transcode(inp_path: str, work_dir: str, only_rungs: Optional[List[str]], log:Optional[callable] = None):
+def _call_transcode(
+    inp_path: str,
+    work_dir: str,
+    only_rungs: Optional[List[str]],
+    *,
+    on_audio_done: Optional[Callable[[str], None]] = None,
+    on_rung_done: Optional[Callable[[str, str], None]] = None,
+    log:Optional[callable] = None
+):
     t0 = time.time()
     audio_mp4, renditions, meta = transcode_to_cmaf_ladder(
-        inp_path, work_dir, only_rungs=only_rungs, log=log
+        inp_path,
+        work_dir,
+        only_rungs=only_rungs,
+        on_audio_done=on_audio_done,
+        on_rung_done=on_rung_done,
+        log=log,
     )
     def _log(s: str): (log or print)(s)
     _log(f"[transcode] took={int(time.time()-t0)}s rungs={[r['name'] for r in renditions]}")
@@ -179,6 +160,73 @@ def _start_heartbeat(lock_handle, ttl: int, stop_evt_flag: dict, log):
     t.start()
     return t
 
+def _extend_visibility(
+    qc,
+    message_id: str,
+    pop_receipt: Optional[str],
+    seconds: int,
+    log,
+) -> Optional[str]:
+    """
+    Extend the queue message visibility lease and return the new pop receipt.
+    """
+    if not pop_receipt:
+        return pop_receipt
+    try:
+        updated = qc.update_message(
+            message_id,
+            pop_receipt=pop_receipt,
+            visibility_timeout=seconds,
+        )
+        next_visible = getattr(updated, "next_visible_on", None)
+        log(f"[queue] visibility extended by {seconds}s (next={next_visible})")
+        return updated.pop_receipt
+    except (HttpResponseError, ResourceNotFoundError) as e:
+        code = getattr(e, "error_code", None)
+        if code == "MessageNotFound" or "messagenotfound" in str(e).lower():
+            log("[queue] visibility extend aborted: message no longer exists")
+            return None
+        log(f"[queue] visibility extend failed: {e}")
+        return pop_receipt
+    except Exception as e:
+        log(f"[queue] visibility extend failed: {e}")
+        return pop_receipt
+
+def _start_visibility_heartbeat(
+    qc,
+    message_id: str,
+    receipt_state: dict,
+    seconds: int,
+    stop_flag: dict,
+    log,
+):
+    """
+    Background thread that renews the queue message visibility while work continues.
+    """
+    if seconds <= 0:
+        return None
+    interval = max(5, min(seconds // 2, seconds - 30))
+    if interval <= 0:
+        interval = 5
+
+    def _beat():
+        while not stop_flag.get("stop"):
+            time.sleep(interval)
+            receipt_state["pop_receipt"] = _extend_visibility(
+                qc,
+                message_id,
+                receipt_state.get("pop_receipt"),
+                seconds,
+                log,
+            )
+            if receipt_state.get("pop_receipt") is None:
+                stop_flag["stop"] = True
+                break
+
+    t = threading.Thread(target=_beat, name="queue-visibility-heartbeat", daemon=True)
+    t.start()
+    return t
+
 # ---------- v2 Queue Trigger (transcode only; packaging deferred) ----------
 
 @app.queue_trigger(arg_name="msg", queue_name=TRANSCODE_Q, connection="AzureWebJobsStorage")
@@ -196,10 +244,9 @@ def transcode_queue(msg: QueueMessage):
 
     # set up streaming logs (local + blob)
     stem_for_log = payload.get("id") or "job"
-    root = Path(TMP_DIR) / stem_for_log
-    dist_dir = root / "dist"; dist_dir.mkdir(parents=True, exist_ok=True)
+    log_paths = job_paths(stem_for_log)
 
-    sl = StreamLogger(job_id=stem_for_log, dist_dir=str(dist_dir), container=LOGS, job_type="transcode")
+    sl = StreamLogger(job_id=stem_for_log, dist_dir=str(log_paths.dist_dir), container=LOGS, job_type="transcode")
     sl.start(interval_sec=20)
     log = bridge_logger(LOGGER, sl)
 
@@ -209,17 +256,56 @@ def transcode_queue(msg: QueueMessage):
         ctx={"job_id":stem_for_log, "stage": "transcode_ingest"}
     )
 
-    try:
-        args = _normalize(payload)
-        in_cont = args["in_cont"]; raw_key = args["raw_key"]; stem = args["stem"]
-        only_rung = sorted(args["only_rung"]) if args["only_rung"] else None
-        captions  = args["captions"]
-        extra     = args["extra"]  # in case you add knobs later (e.g. trickplay)
+    qc = None
+    visibility_state = {"pop_receipt": msg.pop_receipt}
+    visibility_stop = None
+    visibility_thread = None
 
-        # workspace
-        root = Path(TMP_DIR) / stem
-        inp_dir  = root / "input"; inp_dir.mkdir(parents=True, exist_ok=True)
-        work_dir = root / "work";  work_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        if VISIBILITY_EXTENSION_SEC > 0:
+            try:
+                qc = queue_client(TRANSCODE_Q)
+                visibility_state["pop_receipt"] = _extend_visibility(
+                    qc,
+                    msg.id,
+                    visibility_state.get("pop_receipt"),
+                    VISIBILITY_EXTENSION_SEC,
+                    log,
+                )
+                visibility_stop = {"stop": False}
+                visibility_thread = _start_visibility_heartbeat(
+                    qc,
+                    msg.id,
+                    visibility_state,
+                    VISIBILITY_EXTENSION_SEC,
+                    visibility_stop,
+                    log,
+                )
+            except Exception as e:
+                log(f"[queue] initial visibility extend failed: {e}")
+                qc = None
+
+        try:
+            ingest = validate_ingest(payload)
+        except ValidationError as ve:
+            log(f"[validate] error: {ve}")
+            send_to_poison(payload, f"ValidationError: {ve}", log)
+            raise
+
+        in_cont = ingest.in_.container
+        raw_key = ingest.in_.key
+        stem = ingest.id
+        if not stem:
+            raise CmdError("Missing job id after validation")
+
+        only_rung = ladder_labels(ingest.only_rung) if ingest.only_rung else None
+        raw_captions = payload.get("captions")
+        captions = raw_captions if raw_captions else [c.model_dump() for c in (ingest.captions or [])]
+        extra = payload.get("extra") or ingest.extra or {}
+
+        paths = job_paths(stem)
+        inp_dir = paths.input_dir
+        work_dir = paths.work_dir
         inp_path = str(inp_dir / Path(raw_key).name)
 
         # ensure input exists
@@ -228,7 +314,7 @@ def transcode_queue(msg: QueueMessage):
 
         # acquire lock
         lock_key = f"{in_cont}/{raw_key}"
-        lock = acquire_lock_with_break(lock_key, ttl=LOCK_TTL, log=log)
+        lock = acquire_lock_with_break(lock_key, ttl=LOCK_TTL)
         if not lock:
             log(f"[lock] busy/healthy lease present; skipping key={lock_key}")
             return
@@ -261,45 +347,76 @@ def transcode_queue(msg: QueueMessage):
         log(f"[captions] count={len(text_tracks)} took={int(time.time()-t0)}s")
 
         # mezz restore first if allowed
-        audio_mp4 = str(Path(work_dir) / "audio.mp4")
-        labels = only_rung or ["240p","360p","480p","720p","1080p"]
-        expected = [audio_mp4] + [str(Path(work_dir)/f"video_{lab[:-1]}.mp4") for lab in labels]
+        audio_mp4 = str(work_dir / "audio.mp4")
+        labels = only_rung or ladder_labels(None)
+        expected = [work_dir / "audio.mp4"] + [work_dir / mezz_video_filename(lab) for lab in labels]
         missing = [p for p in expected if not Path(p).exists()]
 
         restored = False
         if settings.SKIP_TRANSCODE_IF_MEZZ.lower() in ("1","true","yes") and missing:
             log("[mezz] attempting restore of intermediates")
-            if ensure_intermediates_from_mezz(stem=stem, work_dir=str(work_dir), only_rung=only_rung, log=log):
+            if ensure_intermediates_from_mezz(
+                stem=stem,
+                work_dir=str(work_dir),
+                only_rung=only_rung,
+                log=log,
+            ):
                 missing = [p for p in expected if not Path(p).exists()]
                 restored = not missing
                 log("[mezz] restored intermediates" if restored else "[mezz] partial restore")
 
+        manifest_data: Optional[Dict] = None
+
+        def _checkpoint_audio(local_path: str):
+            nonlocal manifest_data
+            manifest_data = upload_intermediate_file(
+                stem=stem,
+                local_path=local_path,
+                manifest=manifest_data,
+                log=log,
+            )
+
+        def _checkpoint_rung(label: str, local_path: str):
+            nonlocal manifest_data
+            manifest_data = upload_intermediate_file(
+                stem=stem,
+                local_path=local_path,
+                manifest=manifest_data,
+                log=log,
+            )
+
         # transcode if needed
         if not restored:
             slog("transcode", "begin", rung=only_rung)
-            audio_mp4, renditions, _ = _call_transcode(inp_path, str(work_dir), only_rung, log)
+            audio_mp4, renditions, _ = _call_transcode(
+                inp_path,
+                str(work_dir),
+                only_rung,
+                on_audio_done=_checkpoint_audio,
+                on_rung_done=_checkpoint_rung,
+                log=log,
+            )
             slog("transcode", "end", rung=only_rung)
         else:
-            renditions = []
-            for lab in labels:
-                v = Path(work_dir)/f"video_{lab[:-1]}.mp4"
-                if v.exists():
-                    renditions.append({"name": lab, "video": str(v)})
+            renditions = discover_renditions(work_dir, labels)
 
         # upload mezz + manifest (safe both for restored and re-encoded)
         try:
-            uploaded = upload_mezz_and_manifest(stem=stem, work_dir=str(work_dir), only_rung=only_rung, log=log)
+            uploaded = upload_mezz_and_manifest(
+                stem=stem,
+                work_dir=str(work_dir),
+                manifest=manifest_data,
+                log=log,
+            )
             log(f"[mezz] uploaded files={len(uploaded.get('files',[]))}")
         except Exception as e:
             log(f"[mezz] upload failed (continuing): {e}")
 
         # enqueue packaging job (separate worker will restore from mezz and package)
-        pkg_msg = {
-            "id": stem,
-            "only_rung": only_rung,              # None → all
-            "captions": captions,                # forward original captions references
-            "extra": extra or {},                # any future knobs (e.g. trickplay)
-        }
+        pkg_msg = dump_normalized(ingest)
+        pkg_msg["only_rung"] = only_rung
+        pkg_msg["captions"] = captions or []
+        pkg_msg["extra"] = extra or {}
         enqueue_packaging(pkg_msg, log)
 
         # publish a light manifest for the job state (optional)
@@ -324,4 +441,8 @@ def transcode_queue(msg: QueueMessage):
         finally:
             raise
     finally:
+        if visibility_stop is not None:
+            visibility_stop["stop"] = True
+        if visibility_thread is not None:
+            visibility_thread.join(timeout=1.0)
         sl.stop()

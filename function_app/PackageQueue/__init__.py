@@ -1,237 +1,95 @@
 # function_app/PackageQueue/__init__.py
 from __future__ import annotations
-import json, time
-from pathlib import Path
-from typing import List, Dict, Optional, Any, Set
-
 import logging
+import json
+from typing import Any, Dict
+
 import azure.functions as func
-from azure.functions import QueueMessage
+from pydantic import ValidationError
+
+# Reuse the single FunctionApp instance defined at the project root
+# (If your app instance lives elsewhere, adjust this import)
 from .. import app
-# --- shared modules from your repo ---
-from ..shared.config import get
-from ..shared.logger import StreamLogger, bridge_logger
-from ..shared.storage import (
-    blob_exists, upload_tree_routed,
+
+# Shared ingestion helpers that wrap your shared/schema.IngestPayload
+from ..shared.ingest import validate_ingest
+from ..shared.logger import StreamLogger, bridge_logger, make_slogger
+from ..shared.workspace import job_paths
+from ..shared.config import AppSettings
+
+settings = AppSettings()
+LOGGER = logging.getLogger("package.queue")
+LOGS_CONTAINER = settings.LOGS_CONTAINER
+
+# Your packaging entrypoint; adjust import/name if different
+# Expecting: def _handle_packaging(payload: IngestPayload, *, log) -> None
+from ..packager import _handle_packaging  # noqa: F401
+
+
+# Bindings
+QNAME = settings.PACKAGING_QUEUE
+CONNECTION = "AzureWebJobsStorage"  # per your requirement: only AzureWebJobsStorage
+
+@app.queue_trigger(
+    arg_name="msg",
+    queue_name=QNAME,
+    connection=CONNECTION,
 )
-from ..shared.mezz import ensure_intermediates_from_mezz
-from ..shared.verify import check_integrity  # your consolidated checker
-from ..shared.qc import CmdError
-from ..shared.transcode import package_with_shaka_ladder
-
-# ---------- Config ----------
-MEZZ       = get("MEZZ_CONTAINER",       "mezzanine")
-DASH       = get("DASH_CONTAINER",       "dash")
-HLS        = get("HLS_CONTAINER",        "hls")
-PROCESSED  = get("PROCESSED_CONTAINER",  "processed")
-LOGS       = get("LOGS_CONTAINER",       "logs")
-
-TMP_DIR        = get("TMP_DIR", "/tmp/ingestor")
-PACKAGING_Q    = get("PACKAGING_QUEUE", "packaging-jobs")
-POISON_Q       = get("PACKAGING_POISON_QUEUE", f"{PACKAGING_Q}-poison")
-STORAGE_CONN   = get("AzureWebJobsStorage")
-
-# File size limits (similar to SubmitJob and TranscodeQueue)
-MAX_DOWNLOAD_MB = int(get("PACKAGE_MAX_DOWNLOAD_MB", "2048"))  # 2 GB default
-CHUNK_BYTES     = int(get("PACKAGE_CHUNK_BYTES", "4194304"))   # 4 MiB default
-
-# Optional remote integrity base (emulator/CDN). If absent, remote check is skipped.
-DASH_BASE_URL  = get("DASH_BASE_URL")  # e.g. http://127.0.0.1:10000/devstoreaccount1/dash
-HLS_BASE_URL   = get("HLS_BASE_URL")   # e.g. http://127.0.0.1:10000/devstoreaccount1/hls
-VERIFY_HARD_FAIL = get("VERIFY_HARD_FAIL", "true").lower() in ("1","true","yes")
-
-
-# ---------- Small helpers (local; mirrors transcode worker style) ----------
-LOGGER = logging.getLogger("package")
-def queue_client(queue_name: str):
-    from azure.storage.queue import QueueClient
-    return QueueClient.from_connection_string(STORAGE_CONN, queue_name)
-
-def send_to_poison(queue_name: str, payload: dict, reason: str, log):
+def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
+    """
+    Packaging worker (Queue Trigger)
+    - Reads JSON message
+    - Validates & normalizes with shared/schema (via shared.ingest)
+    - Invokes the packager core
+    - Any exception is re-raised to allow Azure Queues retry/poison handling
+    """
+    # 1) Decode body
     try:
-        qc = queue_client(queue_name)
-        qc.send_message(json.dumps({
-            "reason": reason,
-            "at": int(time.time()),
-            "payload": _safe_json(payload),
-        }))
-        log(f"[poison] sent to {queue_name}: {reason}")
-    except Exception as e:
-        log(f"[poison] failed to send: {e}")
-
-def _safe_json(obj: Any) -> Any:
-    try:
-        json.dumps(obj); return obj
+        body_raw = msg.get_body().decode("utf-8")
     except Exception:
-        if isinstance(obj, dict):
-            return {str(k): _safe_json(v) for k, v in obj.items()}
-        if isinstance(obj, (list, tuple, set)):
-            return [_safe_json(x) for x in obj]
-        try:
-            return str(obj)
-        except Exception:
-            return f"<unserializable:{type(obj).__name__}>"
+        # Rare, but surface clearly so retries are meaningful
+        LOGGER.exception("Failed to decode queue body as UTF-8")
+        raise
 
-def _parse_only_rung(v) -> List[str] | None:
-    if v is None: return None
-    if isinstance(v, str):
-        s = v.strip(); return [s] if s else None
-    if isinstance(v, (list, tuple, set)):
-        out = [str(x).strip() for x in v if str(x).strip()]
-        return out or None
-    return None
-
-def _discover_renditions(work_dir: Path, only_rung: List[str] | None) -> List[Dict]:
-    """
-    Discover video rung files produced during transcode restore:
-    returns [{"name":"240p","video":"/.../video_240.mp4"}, ...]
-    """
-    # We expect video_{num}.mp4 naming from your transcode.
-    rung_map = {
-        "240p":  "video_240p.mp4",
-        "360p":  "video_360p.mp4",
-        "480p":  "video_480p.mp4",
-        "720p":  "video_720p.mp4",
-        "1080p": "video_1080p.mp4",
-    }
-    if only_rung:
-        rung_map = {k: v for k, v in rung_map.items() if k in only_rung}
-
-    out = []
-    for name, fname in rung_map.items():
-        p = work_dir / fname
-        if p.exists():
-            out.append({"name": name, "video": str(p)})
-    return out
-
-# ---------- v2 Queue Trigger (packaging only) ----------
-
-@app.queue_trigger(arg_name="msg", queue_name=PACKAGING_Q, connection="AzureWebJobsStorage")
-def package_queue(msg: QueueMessage):
-    raw = msg.get_body().decode("utf-8", errors="ignore")
-    if not raw:
-        LOGGER.warning("Packaging payload empty; skipping.")
-        return
-
+    # 2) Parse JSON
     try:
-        payload = json.loads(raw)
-    except Exception as e:
-        LOGGER.error(f"JSON parse failed: {e} raw={raw[:256]}")
-        return
+        body: Dict[str, Any] = json.loads(body_raw)
+    except json.JSONDecodeError:
+        LOGGER.error("Malformed JSON in queue message (len=%s): %r", len(body_raw), body_raw[:512])
+        # Re-raise so this message moves toward poison after retries
+        raise
 
-    stem = payload.get("id")
-    if not stem:
-        LOGGER.error("Packaging payload missing 'id'.")
-        return
+    # 3) Validate & normalize into IngestPayload (Pydantic v2)
+    try:
+        payload = validate_ingest(body)  # uses shared/schema.IngestPayload
+    except ValidationError as ve:
+        # Keep errors concise to avoid gRPC log bloat; still actionable
+        LOGGER.error("ValidationError for packaging job: %s", ve.json()[:4000])
+        raise
 
-    only_rung = _parse_only_rung(payload.get("only_rung"))
-    captions  = payload.get("captions") or []  # if you later want to include text tracks
-    # extra     = payload.get("extra") or {}
+    job_id = getattr(payload, "id", None) or "<unknown>"
+    paths = job_paths(job_id)
 
-    # logging to blob container
-    root = Path(TMP_DIR) / stem
-    dist = root / "dist"
-    dist.mkdir(parents=True, exist_ok=True)
-
-    sl = StreamLogger(job_id=stem, dist_dir=str(dist), container=LOGS, job_type="package")
+    sl = StreamLogger(job_id=job_id, dist_dir=str(paths.dist_dir), container=LOGS_CONTAINER, job_type="package")
     sl.start(interval_sec=20)
-    log = bridge_logger(LOGGER, sl)
+    log_fn = bridge_logger(LOGGER, sl)
+    slog, slog_exc = make_slogger(text_log=log_fn, job_log=sl.job, ctx={"job_id": job_id, "stage": "package"})
+    slog("accepted")
 
+    # 4) Call the packager core
     try:
-        log(f"[package] start id={stem} only_rung={only_rung or 'ALL'}")
-
-        # Work layout
-        work_dir = root / "work"
-        work_dir.mkdir(parents=True, exist_ok=True)
-
-        # Restore intermediates from mezz (must exist—this worker doesn't transcode)
-        log("[mezz] restoring intermediates")
-        restored = ensure_intermediates_from_mezz(
-            stem=stem, work_dir=str(work_dir), only_rung=only_rung, log=log
-        )
-        if not restored:
-            raise CmdError(f"mezz restore failed or nothing to restore for id={stem}")
-
-        # Discover audio + requested video renditions
-        audio_mp4 = str(work_dir / "audio.mp4")
-        if not Path(audio_mp4).exists():
-            raise CmdError("missing audio.mp4 in work_dir after restore")
-
-        renditions = _discover_renditions(work_dir, only_rung)
-        if not renditions:
-            raise CmdError("no video renditions found to package")
-
-        # Paths for outputs
-        dash_path = dist / "dash" / "stream.mpd"
-        hls_path  = dist / "hls"  / "master.m3u8"
-        dash_path.parent.mkdir(parents=True, exist_ok=True)
-        hls_path.parent.mkdir(parents=True,  exist_ok=True)
-
-        sl.job("package", "begin",id=stem)
-        # Package (Shaka) for requested rungs
-        package_with_shaka_ladder(
-            renditions=renditions,
-            audio_mp4=audio_mp4,
-            out_dash=str(dash_path),
-            out_hls=str(hls_path),
-            text_tracks=captions,  # optional: if you restored text into work_dir, map file paths here
-            log=log,
-        )
-        sl.job("package", "end", id=stem)
-        # Local integrity (before upload)
-        try:
-            log("[verify] local DASH/HLS")
-            # Local, pre-upload integrity check (DASH & HLS)
-            check_integrity(
-                stem=stem,                         # job id (used for remote checks; harmless here)
-                local_dist_dir=str(dist),      # parent dir that contains ./dash and ./hls
-                mode="local",                      # "local" | "remote" | "both"
-                fail_hard=True,                    # raise on any missing file
-                log=log,
-            )
-            log("[verify] local ok")
-        except Exception as e:
-            if VERIFY_HARD_FAIL:
-                raise
-            log(f"[verify] local warning: {e}")
-
-        # Upload routed (idempotent)
-        upload_tree_routed(
-            dist_dir=str(dist),
-            stem=stem,
-            hls_container=HLS,
-            dash_container=DASH,
-            strategy="idempotent",
-            log=log,
-        )
-
-        # Remote integrity (after upload) if bases are configured
-        if DASH_BASE_URL or HLS_BASE_URL:
-            try:
-                log("[verify] remote DASH/HLS")
-                dash_url = DASH_BASE_URL.rstrip("/") + f"/{stem}/stream.mpd" if DASH_BASE_URL else None
-                hls_url  = HLS_BASE_URL.rstrip("/")  + f"/{stem}/master.m3u8" if HLS_BASE_URL  else None
-                check_integrity(
-                    stem=stem,
-                    base_url=get("BASE_URL", "http://127.0.0.1:10000/devstoreaccount1"),
-                    containers={"dash": DASH, "hls": HLS},  # your container names
-                    mode="remote",
-                    fail_hard=True,
-                    log=log,
-                )
-                log("[verify] remote ok")
-            except Exception as e:
-                if VERIFY_HARD_FAIL:
-                    raise
-                log(f"[verify] remote warning: {e}")
-        else:
-            log("[verify] remote skipped (no *_BASE_URL configured)")
-
-        log("[package] success")
-
-    except Exception as e:
-        reason = f"{type(e).__name__}: {e}"
-        send_to_poison(POISON_Q, payload, reason, log)
+        # NOTE: Your _handle_packaging should encapsulate:
+        #  - locating mezz/assets
+        #  - shaka packaging (HLS/DASH/CMAF)
+        #  - manifest hygiene
+        #  - verification/integrity checks
+        #  - uploads (routed) and cleanups
+        slog("start")
+        _handle_packaging(payload=payload, log=log_fn)
+        slog("completed")
+    except Exception as exc:
+        # Let Azure handle retries; detailed cause is in the logs
+        slog_exc("failed", exc)
         raise
     finally:
-        sl.stop()
+        sl.stop(flush=True)

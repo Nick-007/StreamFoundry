@@ -207,9 +207,15 @@ def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: 
         (log or print)(f"[video] codec={codec} out={Path(out_mp4).name}")
         logs: List[str] = []
 
-        last: Dict[str, str] = {}
-        last_pct = -1
-        _on_prog = lambda d: handle_progress(d, media_type="video", total_duration_sec=total_duration_sec, t0=time.time(), filename={Path(out_mp4).name}, log=log)
+        start_t = time.time()
+        _on_prog = lambda d: handle_progress(
+            d,
+            media_type="video",
+            total_duration_sec=total_duration_sec,
+            t0=start_t,
+            filename=str(Path(out_mp4).name),
+            log=log,
+        )
         on_line = _make_line_logger(log, logs)
         rc = _run_stream(cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=300, cwd=str(Path(out_mp4).parent))
         return rc, logs
@@ -250,7 +256,15 @@ def _ffmpeg_audio(input_path: str, out_mp4: str, total_duration_sec: float = 0.0
     )
 
     logs: List[str] = []
-    _on_prog = lambda d: handle_progress(d, media_type="audio", total_duration_sec=total_duration_sec, t0=time.time(), filename={Path(out_mp4).name}, log=log)
+    start_t = time.time()
+    _on_prog = lambda d: handle_progress(
+        d,
+        media_type="audio",
+        total_duration_sec=total_duration_sec,
+        t0=start_t,
+        filename=str(Path(out_mp4).name),
+        log=log,
+    )
     on_line = _make_line_logger(log, logs)
     rc = _run_stream(a_cmd, on_line=on_line, on_progress=_on_prog, idle_timeout_sec=300, cwd=str(Path(out_mp4).parent))
     if rc != 0:
@@ -263,6 +277,8 @@ def transcode_to_cmaf_ladder(
     work_dir: str,
     *,
     only_rungs: Optional[List[str]] = None,
+    on_audio_done: Optional[Callable[[str], None]] = None,
+    on_rung_done: Optional[Callable[[str, str], None]] = None,
     log: Optional[callable] = None
 ) -> Tuple[str, List[Dict], Dict]:
     """
@@ -312,6 +328,11 @@ def transcode_to_cmaf_ladder(
     if rc_a not in (None, 0):
         raise CmdError(f"FFmpeg audio transcode failed: rc={rc_a}")
     _log("[audio] end")
+    if on_audio_done:
+        try:
+            on_audio_done(audio_mp4)
+        except Exception as cb_exc:
+            raise CmdError(f"Audio completion callback failed: {cb_exc}") from cb_exc
 
     # --- Ladder (filter by only_rungs if provided) ---
     seg_dur = _get_int("SEG_DUR_SEC", 4)
@@ -340,6 +361,11 @@ def transcode_to_cmaf_ladder(
             fps, seg_dur, total_duration_sec=meta["duration"], log=log
         )
         _log(f"[video:{r['name']}] end")
+        if on_rung_done:
+            try:
+                on_rung_done(r["name"], out_mp4)
+            except Exception as cb_exc:
+                raise CmdError(f"Rung completion callback failed ({r['name']}): {cb_exc}") from cb_exc
         outs.append({
             "name": r["name"],
             "height": r["height"],

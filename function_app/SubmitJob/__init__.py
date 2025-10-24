@@ -18,6 +18,8 @@ from ..shared.logger import (
     StreamLogger, bridge_logger, log_job, log_exception
 )
 from ..shared.normalize import normalize_only_rung
+from ..shared.rungs import receipt_payload
+from ..shared.workspace import job_paths
 
 # ---------------------------
 # Config (env-driven)
@@ -109,27 +111,6 @@ def _build_raw_key_from_name(name: str) -> str:
     return name if name.endswith(".mp4") else f"{name}.mp4"
 
 
-def _receipt(job_id: str, stem: str, raw_key: str) -> Dict:
-    return {
-        "jobId": job_id,
-        "inputBlob": f"{RAW}/{raw_key}",
-        "expectedOutputs": {
-            "mezzanine": {
-                "audio":  f"{MEZZ}/{stem}/audio.mp4",
-                "videos": [
-                    f"{MEZZ}/{stem}/video_240p.mp4",
-                    f"{MEZZ}/{stem}/video_360p.mp4",
-                    f"{MEZZ}/{stem}/video_480p.mp4",
-                    f"{MEZZ}/{stem}/video_720p.mp4",
-                    f"{MEZZ}/{stem}/video_1080p.mp4",
-                ],
-            },
-            "dash": f"{DASH}/{stem}/stream.mpd",
-            "hls":  f"{HLS}/{stem}/master.m3u8",
-        },
-    }
-
-
 def _download_url_to_temp(url: str, *, max_mb: int, chunk_bytes: int, timeout: int, log) -> str:
     """
     Stream a URL to a temp file, enforcing size caps (from header and cumulative).
@@ -202,9 +183,8 @@ def submit_job(req: func.HttpRequest) -> func.HttpResponse:
             raw_key = f"{job_id}.mp4"
 
         # StreamLogger → logs/submit/<id>-<ts>.log (blob), + local under TMP_DIR/<id>/dist/logs/
-        root = Path(TMP_DIR) / stem
-        dist_dir = root / "dist"
-        dist_dir.mkdir(parents=True, exist_ok=True)
+        paths = job_paths(stem)
+        dist_dir = paths.dist_dir
         try:
             sl = StreamLogger(job_id=stem, dist_dir=str(dist_dir), container=LOGS, job_type="submit")
         except TypeError:
@@ -216,7 +196,15 @@ def submit_job(req: func.HttpRequest) -> func.HttpResponse:
 
         # Idempotency: if *final* manifest exists, short-circuit
         if blob_exists(PROCESSED, f"{stem}/manifest.json"):
-            rec = _receipt(job_id, stem, raw_key)
+            rec = receipt_payload(
+                job_id=job_id,
+                stem=stem,
+                raw_container=RAW,
+                raw_key=raw_key,
+                mezz_container=MEZZ,
+                dash_container=DASH,
+                hls_container=HLS,
+            )
             log_job(stem, "submit", "already_processed_manifest_exists")
             sl.stop(flush=True)
             return _json_resp(rec, status=200)
@@ -286,7 +274,16 @@ def submit_job(req: func.HttpRequest) -> func.HttpResponse:
         log_job(stem, "submit", "accepted", queue=JOB_QUEUE, visibility_delay=VISIBILITY_DELAY_SEC)
         log(f"[submit] enqueued → {JOB_QUEUE} payload={payload}")
 
-        rec = _receipt(job_id, stem, raw_key)
+        rec = receipt_payload(
+            job_id=job_id,
+            stem=stem,
+            raw_container=RAW,
+            raw_key=raw_key,
+            mezz_container=MEZZ,
+            dash_container=DASH,
+            hls_container=HLS,
+            only_rung=only_rung_norm,
+        )
         out = {
             "accepted": True,
             "receipt": rec,

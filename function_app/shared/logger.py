@@ -31,7 +31,7 @@ JobFn = Callable[[str, str, Any], None]
 def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 # ---------- existing backwards-compatible job logger (discrete blobs) ----------
-def log_job(video_name: str, content: str):
+def log_job(video_name: str, event_or_content: str, message: Optional[str] = None, **fields: Any):
     """
     Backwards-compatible: writes a single timestamped blob per call.
     Good for discrete events and breadcrumbs.
@@ -39,14 +39,34 @@ def log_job(video_name: str, content: str):
     """
     container = get("LOGS_CONTAINER", "logs")
     blob_path = f"{video_name}/{_ts()}.log"
-    upload_bytes(container, blob_path, content.encode("utf-8"), "text/plain")
+    if message is None and not fields:
+        payload = event_or_content
+        content_type = "text/plain"
+        data = payload.encode("utf-8")
+    else:
+        rec = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "event": event_or_content,
+            "message": message or "",
+            **fields,
+        }
+        payload = json.dumps(rec, ensure_ascii=False, separators=(",", ":"))
+        content_type = "application/json"
+        data = payload.encode("utf-8")
+    upload_bytes(container, blob_path, data, content_type)
 
-def log_exception(video_name: str, exc: Exception):
+def log_exception(video_name: str, exc: Exception | str, **fields: Any):
     """
     Backwards-compatible error helper.
     """
-    content = f"[ERROR] {type(exc).__name__}: {exc}\n{traceback.format_exc()}"
-    log_job(video_name, content)
+    if isinstance(exc, Exception):
+        content = f"[ERROR] {type(exc).__name__}: {exc}\n{traceback.format_exc()}"
+    else:
+        content = str(exc)
+    if fields:
+        log_job(video_name, "exception", content, **fields)
+    else:
+        log_job(video_name, content)
 
 # -----------------------------------------------------------------------------
 # Slogger: unify human text + structured job logs
@@ -190,7 +210,12 @@ class StreamLogger:
         self._thread = threading.Thread(target=self._loop, name="StreamLogger", daemon=True)
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, *, flush: bool = False) -> None:
+        if flush:
+            try:
+                self._flush()
+            except Exception:
+                pass
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=3)

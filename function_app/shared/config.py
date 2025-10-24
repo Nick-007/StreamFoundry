@@ -44,6 +44,7 @@ class AppSettings(BaseSettings):
     LADDER_PROFILE: str
     LOCKS_CONTAINER: str
     LOCK_TTL_SECONDS: str
+    TRANSCODE_VISIBILITY_EXTENSION_SEC: str 
     VIDEO_CODEC: str
     NVENC_PRESET: str
     NVENC_RC: str
