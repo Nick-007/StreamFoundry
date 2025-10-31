@@ -18,7 +18,7 @@ Azure Functions Core Tools
 Core Tools Version:       4.2.2+78afd8b84c8e31f0ddac570ba9e8128eefbd3d4a (64-bit)
 Function Runtime Version: 4.1041.200.25360
 
-[2025-10-07T02:26:14.248Z] Worker process started and initialized.
+[2025-10-21T23:43:58.435Z] Worker process started and initialized.
 
 Functions:
 
@@ -30,679 +30,444 @@ Functions:
 
 	queue_ingestor: queueTrigger
 
-[2025-10-07T02:26:20.765Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-10-07T02:26:42.389Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=9181b775-5bad-4b4e-b123-692914f58356)
-[2025-10-07T02:26:42.405Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 1, InsertedOn: 2025-10-07T02:26:41.000+00:00
-[2025-10-07T02:26:42.685Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:26:42.685Z] Request method: 'HEAD'
-[2025-10-07T02:26:42.685Z] Request headers:
-[2025-10-07T02:26:42.685Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.685Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.685Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.685Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.685Z]     'x-ms-client-request-id': '0ffb8511-a325-11f0-b484-00155d66480d'
-[2025-10-07T02:26:42.685Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.685Z] No body was attached to the request
-[2025-10-07T02:26:42.688Z] Response status: 200
-[2025-10-07T02:26:42.688Z] Response headers:
-[2025-10-07T02:26:42.688Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.688Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:26:42.688Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'content-length': '158008374'
-[2025-10-07T02:26:42.688Z]     'content-type': 'video/mp4'
-[2025-10-07T02:26:42.688Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:26:42.688Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-client-request-id': '0ffb8511-a325-11f0-b484-00155d66480d'
-[2025-10-07T02:26:42.688Z]     'x-ms-request-id': 'dd0ff8f7-b456-45e8-b0c7-e14e120e86f6'
-[2025-10-07T02:26:42.688Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.688Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:26:42.688Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.688Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:26:42.689Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
-[2025-10-07T02:26:42.689Z] Request method: 'PUT'
-[2025-10-07T02:26:42.689Z] Request headers:
-[2025-10-07T02:26:42.689Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.689Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.689Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.689Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.689Z]     'x-ms-client-request-id': '1005d820-a325-11f0-8884-00155d66480d'
-[2025-10-07T02:26:42.689Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.689Z] No body was attached to the request
-[2025-10-07T02:26:42.689Z] Response status: 409
-[2025-10-07T02:26:42.689Z] Response headers:
-[2025-10-07T02:26:42.689Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.689Z]     'x-ms-error-code': 'ContainerAlreadyExists'
-[2025-10-07T02:26:42.689Z]     'x-ms-request-id': '4f88c899-3976-48b5-bea3-45515b50ce4a'
-[2025-10-07T02:26:42.689Z]     'content-type': 'application/xml'
-[2025-10-07T02:26:42.689Z]     'Date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.689Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.689Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:26:42.689Z]     'Transfer-Encoding': 'chunked'
-[2025-10-07T02:26:42.695Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
-[2025-10-07T02:26:42.696Z] Request method: 'HEAD'
-[2025-10-07T02:26:42.696Z] Request headers:
-[2025-10-07T02:26:42.696Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.696Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.696Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.696Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.696Z]     'x-ms-client-request-id': '100bee3f-a325-11f0-ba5d-00155d66480d'
-[2025-10-07T02:26:42.696Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.696Z] No body was attached to the request
-[2025-10-07T02:26:42.721Z] Response status: 200
-[2025-10-07T02:26:42.721Z] Response headers:
-[2025-10-07T02:26:42.721Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.721Z]     'last-modified': 'Tue, 07 Oct 2025 02:21:15 GMT'
-[2025-10-07T02:26:42.721Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'content-length': '0'
-[2025-10-07T02:26:42.721Z]     'content-type': 'application/octet-stream'
-[2025-10-07T02:26:42.721Z]     'etag': '"0x26FFD1BAC202D20"'
-[2025-10-07T02:26:42.721Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-client-request-id': '100bee3f-a325-11f0-ba5d-00155d66480d'
-[2025-10-07T02:26:42.721Z]     'x-ms-request-id': 'd47e8f83-2f5a-4065-8504-6381f8a218f5'
-[2025-10-07T02:26:42.721Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.721Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'x-ms-access-tier-change-time': 'REDACTED'
-[2025-10-07T02:26:42.721Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.721Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:26:42.726Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:26:42.726Z] Request method: 'PUT'
-[2025-10-07T02:26:42.726Z] Request headers:
-[2025-10-07T02:26:42.726Z]     'x-ms-lease-action': 'REDACTED'
-[2025-10-07T02:26:42.726Z]     'x-ms-lease-duration': 'REDACTED'
-[2025-10-07T02:26:42.726Z]     'x-ms-proposed-lease-id': 'REDACTED'
-[2025-10-07T02:26:42.726Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.726Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.726Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.726Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.726Z]     'x-ms-client-request-id': '100f33ed-a325-11f0-a09c-00155d66480d'
-[2025-10-07T02:26:42.726Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.726Z] No body was attached to the request
-[2025-10-07T02:26:42.739Z] Response status: 201
-[2025-10-07T02:26:42.739Z] Response headers:
-[2025-10-07T02:26:42.739Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.739Z]     'etag': '"0x26FFD1BAC202D20"'
-[2025-10-07T02:26:42.739Z]     'last-modified': 'Tue, 07 Oct 2025 02:21:15 GMT'
-[2025-10-07T02:26:42.739Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'x-ms-client-request-id': '100f33ed-a325-11f0-a09c-00155d66480d'
-[2025-10-07T02:26:42.739Z]     'x-ms-request-id': 'd88eced4-3cba-4e4b-9d59-7765990b484b'
-[2025-10-07T02:26:42.739Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.739Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.739Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'Content-Length': '0'
-[2025-10-07T02:26:42.739Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:26:42.739Z] Request method: 'PUT'
-[2025-10-07T02:26:42.739Z] Request headers:
-[2025-10-07T02:26:42.739Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.739Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.739Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.739Z]     'x-ms-client-request-id': '101332be-a325-11f0-8638-00155d66480d'
-[2025-10-07T02:26:42.739Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.739Z] No body was attached to the request
-[2025-10-07T02:26:42.765Z] Response status: 200
-[2025-10-07T02:26:42.765Z] Response headers:
-[2025-10-07T02:26:42.765Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.765Z]     'etag': '"0x221466F49B3D360"'
-[2025-10-07T02:26:42.766Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.766Z]     'x-ms-client-request-id': '101332be-a325-11f0-8638-00155d66480d'
-[2025-10-07T02:26:42.766Z]     'x-ms-request-id': 'c2bdf216-ad4b-4c55-a93b-f3b22ec31a1d'
-[2025-10-07T02:26:42.766Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.766Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.766Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:26:42.766Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.766Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:26:42.766Z]     'Content-Length': '0'
-[2025-10-07T02:26:42.934Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:26:42.934Z] Request method: 'GET'
-[2025-10-07T02:26:42.934Z] Request headers:
-[2025-10-07T02:26:42.934Z]     'x-ms-range': 'REDACTED'
-[2025-10-07T02:26:42.934Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.934Z]     'Accept': 'application/xml'
-[2025-10-07T02:26:42.934Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:26:42.934Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:26:42.934Z]     'x-ms-client-request-id': '102f2fe7-a325-11f0-ba87-00155d66480d'
-[2025-10-07T02:26:42.934Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:26:42.934Z] No body was attached to the request
-[2025-10-07T02:26:42.991Z] Response status: 206
-[2025-10-07T02:26:42.991Z] Response headers:
-[2025-10-07T02:26:42.991Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:26:42.991Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:26:42.991Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'content-length': '33554432'
-[2025-10-07T02:26:42.991Z]     'content-type': 'video/mp4'
-[2025-10-07T02:26:42.991Z]     'content-range': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:26:42.991Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'x-ms-client-request-id': '102f2fe7-a325-11f0-ba87-00155d66480d'
-[2025-10-07T02:26:42.991Z]     'x-ms-request-id': '7730b2b1-78fa-4626-b9f3-9f4a7e395ad6'
-[2025-10-07T02:26:42.991Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'date': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:26:42.991Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'x-ms-blob-content-md5': 'REDACTED'
-[2025-10-07T02:26:42.991Z]     'Connection': 'keep-alive'
-[2025-10-07T02:26:42.992Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:27:31.287Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T052731Z.log'
-[2025-10-07T02:27:31.287Z] Request method: 'PUT'
-[2025-10-07T02:27:31.287Z] Request headers:
-[2025-10-07T02:27:31.287Z]     'Content-Length': '1035'
-[2025-10-07T02:27:31.287Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:27:31.288Z]     'x-ms-blob-content-type': 'REDACTED'
-[2025-10-07T02:27:31.288Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:27:31.288Z]     'Content-Type': 'application/octet-stream'
-[2025-10-07T02:27:31.288Z]     'Accept': 'application/xml'
-[2025-10-07T02:27:31.288Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:27:31.288Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:27:31.288Z]     'x-ms-client-request-id': '2d04430f-a325-11f0-b11f-00155d66480d'
-[2025-10-07T02:27:31.288Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:27:31.288Z] A body is sent with the request
-[2025-10-07T02:27:31.304Z] Response status: 201
-[2025-10-07T02:27:31.304Z] Response headers:
-[2025-10-07T02:27:31.304Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:27:31.304Z]     'etag': '"0x1BECAD9EB4CACB0"'
-[2025-10-07T02:27:31.304Z]     'last-modified': 'Tue, 07 Oct 2025 02:27:31 GMT'
-[2025-10-07T02:27:31.304Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:27:31.304Z]     'x-ms-client-request-id': '2d04430f-a325-11f0-b11f-00155d66480d'
-[2025-10-07T02:27:31.304Z]     'x-ms-request-id': '4f780a87-3a1b-4120-ae4b-89fbf660c364'
-[2025-10-07T02:27:31.304Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:27:31.304Z]     'date': 'Tue, 07 Oct 2025 02:27:31 GMT'
-[2025-10-07T02:27:31.304Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:27:31.304Z]     'Connection': 'keep-alive'
-[2025-10-07T02:27:31.304Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:27:31.306Z]     'Content-Length': '0'
-[2025-10-07T02:27:31.308Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:27:31.310Z] [queue] function complete
-[2025-10-07T02:27:31.362Z] Executed 'Functions.queue_ingestor' (Failed, Id=9181b775-5bad-4b4e-b123-692914f58356, Duration=49028ms)
-[2025-10-07T02:27:31.362Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
-[2025-10-07T02:27:31.362Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:27:31.362Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
-[2025-10-07T02:27:31.362Z]     call_result = await self._loop.run_in_executor(
-[2025-10-07T02:27:31.362Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
-[2025-10-07T02:27:31.362Z]     result = self.fn(*self.args, **self.kwargs)
-[2025-10-07T02:27:31.362Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
-[2025-10-07T02:27:31.362Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
-[2025-10-07T02:27:31.362Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
-[2025-10-07T02:27:31.362Z]     result = function(**args)
-[2025-10-07T02:27:31.362Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
-[2025-10-07T02:27:31.362Z]     r = _process_one_rung_cmaf(
-[2025-10-07T02:27:31.362Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
-[2025-10-07T02:27:31.363Z]     _ffmpeg_video_to_cmaf_segments(
-[2025-10-07T02:27:31.363Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
-[2025-10-07T02:27:31.363Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
-[2025-10-07T02:27:31.363Z] .
-[2025-10-07T02:29:32.561Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=f848d571-5409-42b3-9737-65a40651f7aa)
-[2025-10-07T02:29:32.561Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 2, InsertedOn: 2025-10-07T02:26:41.000+00:00
-[2025-10-07T02:29:32.575Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:29:32.575Z] Request method: 'HEAD'
-[2025-10-07T02:29:32.575Z] Request headers:
-[2025-10-07T02:29:32.575Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.575Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.575Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.575Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.576Z]     'x-ms-client-request-id': '754ef52a-a325-11f0-a677-00155d66480d'
-[2025-10-07T02:29:32.576Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.576Z] No body was attached to the request
-[2025-10-07T02:29:32.583Z] Response status: 200
-[2025-10-07T02:29:32.583Z] Response headers:
-[2025-10-07T02:29:32.583Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.583Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:29:32.583Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'content-length': '158008374'
-[2025-10-07T02:29:32.583Z]     'content-type': 'video/mp4'
-[2025-10-07T02:29:32.583Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:29:32.583Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-client-request-id': '754ef52a-a325-11f0-a677-00155d66480d'
-[2025-10-07T02:29:32.583Z]     'x-ms-request-id': '269128c9-ea1c-476f-a963-33b269ef4920'
-[2025-10-07T02:29:32.583Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.583Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:29:32.583Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.583Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:29:32.594Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
-[2025-10-07T02:29:32.594Z] Request method: 'PUT'
-[2025-10-07T02:29:32.594Z] Request headers:
-[2025-10-07T02:29:32.594Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.594Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.594Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.594Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.594Z]     'x-ms-client-request-id': '75510c2f-a325-11f0-bdc0-00155d66480d'
-[2025-10-07T02:29:32.594Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.594Z] No body was attached to the request
-[2025-10-07T02:29:32.615Z] Response status: 409
-[2025-10-07T02:29:32.615Z] Response headers:
-[2025-10-07T02:29:32.615Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.615Z]     'x-ms-error-code': 'ContainerAlreadyExists'
-[2025-10-07T02:29:32.615Z]     'x-ms-request-id': '33d07829-8615-44df-a0f2-df40f62218e9'
-[2025-10-07T02:29:32.615Z]     'content-type': 'application/xml'
-[2025-10-07T02:29:32.615Z]     'Date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.615Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.615Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:29:32.615Z]     'Transfer-Encoding': 'chunked'
-[2025-10-07T02:29:32.655Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
-[2025-10-07T02:29:32.655Z] Request method: 'HEAD'
-[2025-10-07T02:29:32.655Z] Request headers:
-[2025-10-07T02:29:32.655Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.655Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.655Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.655Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.655Z]     'x-ms-client-request-id': '755573bd-a325-11f0-8886-00155d66480d'
-[2025-10-07T02:29:32.655Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.656Z] No body was attached to the request
-[2025-10-07T02:29:32.663Z] Response status: 200
-[2025-10-07T02:29:32.663Z] Response headers:
-[2025-10-07T02:29:32.663Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.663Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:29:32.663Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'content-length': '0'
-[2025-10-07T02:29:32.663Z]     'content-type': 'application/octet-stream'
-[2025-10-07T02:29:32.663Z]     'etag': '"0x221466F49B3D360"'
-[2025-10-07T02:29:32.663Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-client-request-id': '755573bd-a325-11f0-8886-00155d66480d'
-[2025-10-07T02:29:32.663Z]     'x-ms-request-id': '51b45b26-b656-4525-996b-a5ab56d23b81'
-[2025-10-07T02:29:32.663Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.663Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'x-ms-access-tier-change-time': 'REDACTED'
-[2025-10-07T02:29:32.663Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.663Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:29:32.665Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:29:32.665Z] Request method: 'PUT'
-[2025-10-07T02:29:32.665Z] Request headers:
-[2025-10-07T02:29:32.665Z]     'x-ms-lease-action': 'REDACTED'
-[2025-10-07T02:29:32.665Z]     'x-ms-lease-duration': 'REDACTED'
-[2025-10-07T02:29:32.665Z]     'x-ms-proposed-lease-id': 'REDACTED'
-[2025-10-07T02:29:32.665Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.665Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.665Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.665Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.665Z]     'x-ms-client-request-id': '755cae55-a325-11f0-b75b-00155d66480d'
-[2025-10-07T02:29:32.665Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.665Z] No body was attached to the request
-[2025-10-07T02:29:32.681Z] Response status: 201
-[2025-10-07T02:29:32.681Z] Response headers:
-[2025-10-07T02:29:32.681Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.681Z]     'etag': '"0x221466F49B3D360"'
-[2025-10-07T02:29:32.681Z]     'last-modified': 'Tue, 07 Oct 2025 02:26:42 GMT'
-[2025-10-07T02:29:32.681Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'x-ms-client-request-id': '755cae55-a325-11f0-b75b-00155d66480d'
-[2025-10-07T02:29:32.682Z]     'x-ms-request-id': 'd9f30488-aea1-473e-89c0-9b00de98daf4'
-[2025-10-07T02:29:32.682Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.682Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.682Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'Content-Length': '0'
-[2025-10-07T02:29:32.682Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:29:32.682Z] Request method: 'PUT'
-[2025-10-07T02:29:32.682Z] Request headers:
-[2025-10-07T02:29:32.682Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.682Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.682Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.682Z]     'x-ms-client-request-id': '755f600d-a325-11f0-8c70-00155d66480d'
-[2025-10-07T02:29:32.682Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.682Z] No body was attached to the request
-[2025-10-07T02:29:32.696Z] Response status: 200
-[2025-10-07T02:29:32.696Z] Response headers:
-[2025-10-07T02:29:32.696Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.696Z]     'etag': '"0x22ED9345443C480"'
-[2025-10-07T02:29:32.696Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.696Z]     'x-ms-client-request-id': '755f600d-a325-11f0-8c70-00155d66480d'
-[2025-10-07T02:29:32.696Z]     'x-ms-request-id': '25323945-3e44-48f1-9dd5-5b043f462771'
-[2025-10-07T02:29:32.696Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.696Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.696Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:29:32.696Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.696Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:29:32.696Z]     'Content-Length': '0'
-[2025-10-07T02:29:32.769Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:29:32.769Z] Request method: 'GET'
-[2025-10-07T02:29:32.769Z] Request headers:
-[2025-10-07T02:29:32.769Z]     'x-ms-range': 'REDACTED'
-[2025-10-07T02:29:32.769Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.769Z]     'Accept': 'application/xml'
-[2025-10-07T02:29:32.769Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:29:32.769Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:29:32.769Z]     'x-ms-client-request-id': '756cf724-a325-11f0-a864-00155d66480d'
-[2025-10-07T02:29:32.769Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:29:32.769Z] No body was attached to the request
-[2025-10-07T02:29:32.783Z] Response status: 206
-[2025-10-07T02:29:32.783Z] Response headers:
-[2025-10-07T02:29:32.783Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:29:32.783Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:29:32.783Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'content-length': '33554432'
-[2025-10-07T02:29:32.783Z]     'content-type': 'video/mp4'
-[2025-10-07T02:29:32.783Z]     'content-range': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:29:32.783Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'x-ms-client-request-id': '756cf724-a325-11f0-a864-00155d66480d'
-[2025-10-07T02:29:32.783Z]     'x-ms-request-id': '41583113-30a6-45b9-b244-ea1e035d7948'
-[2025-10-07T02:29:32.783Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'date': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:29:32.783Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'x-ms-blob-content-md5': 'REDACTED'
-[2025-10-07T02:29:32.783Z]     'Connection': 'keep-alive'
-[2025-10-07T02:29:32.783Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:30:21.490Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T053021Z.log'
-[2025-10-07T02:30:21.490Z] Request method: 'PUT'
-[2025-10-07T02:30:21.490Z] Request headers:
-[2025-10-07T02:30:21.490Z]     'Content-Length': '1035'
-[2025-10-07T02:30:21.490Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:30:21.490Z]     'x-ms-blob-content-type': 'REDACTED'
-[2025-10-07T02:30:21.490Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:30:21.490Z]     'Content-Type': 'application/octet-stream'
-[2025-10-07T02:30:21.490Z]     'Accept': 'application/xml'
-[2025-10-07T02:30:21.490Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:30:21.490Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:30:21.490Z]     'x-ms-client-request-id': '9275e96e-a325-11f0-b7b4-00155d66480d'
-[2025-10-07T02:30:21.490Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:30:21.490Z] A body is sent with the request
-[2025-10-07T02:30:21.508Z] Response status: 201
-[2025-10-07T02:30:21.510Z] Response headers:
-[2025-10-07T02:30:21.511Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:30:21.511Z]     'etag': '"0x1B990D129A9DEB0"'
-[2025-10-07T02:30:21.511Z]     'last-modified': 'Tue, 07 Oct 2025 02:30:21 GMT'
-[2025-10-07T02:30:21.511Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:30:21.511Z]     'x-ms-client-request-id': '9275e96e-a325-11f0-b7b4-00155d66480d'
-[2025-10-07T02:30:21.512Z]     'x-ms-request-id': '228ae182-7207-42cd-9ef4-b88eb19cb657'
-[2025-10-07T02:30:21.512Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:30:21.512Z]     'date': 'Tue, 07 Oct 2025 02:30:21 GMT'
-[2025-10-07T02:30:21.512Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:30:21.512Z]     'Connection': 'keep-alive'
-[2025-10-07T02:30:21.512Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:30:21.512Z]     'Content-Length': '0'
-[2025-10-07T02:30:21.515Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:30:21.515Z] [queue] function complete
-[2025-10-07T02:30:21.553Z] Executed 'Functions.queue_ingestor' (Failed, Id=f848d571-5409-42b3-9737-65a40651f7aa, Duration=48999ms)
-[2025-10-07T02:30:21.553Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
-[2025-10-07T02:30:21.553Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:30:21.553Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
-[2025-10-07T02:30:21.553Z]     call_result = await self._loop.run_in_executor(
-[2025-10-07T02:30:21.553Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
-[2025-10-07T02:30:21.553Z]     result = self.fn(*self.args, **self.kwargs)
-[2025-10-07T02:30:21.553Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
-[2025-10-07T02:30:21.553Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
-[2025-10-07T02:30:21.554Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
-[2025-10-07T02:30:21.554Z]     result = function(**args)
-[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
-[2025-10-07T02:30:21.554Z]     r = _process_one_rung_cmaf(
-[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
-[2025-10-07T02:30:21.554Z]     _ffmpeg_video_to_cmaf_segments(
-[2025-10-07T02:30:21.554Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
-[2025-10-07T02:30:21.554Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
-[2025-10-07T02:30:21.554Z] .
-[2025-10-07T02:32:22.155Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=514dfc2b-ecc0-4705-8fe3-b333dcbacd66)
-[2025-10-07T02:32:22.164Z] Trigger Details: MessageId: 7e680398-bc12-48f1-b269-6cd65db38173, DequeueCount: 3, InsertedOn: 2025-10-07T02:26:41.000+00:00
-[2025-10-07T02:32:22.173Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:32:22.173Z] Request method: 'HEAD'
-[2025-10-07T02:32:22.174Z] Request headers:
-[2025-10-07T02:32:22.174Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.174Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.174Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.174Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.174Z]     'x-ms-client-request-id': 'da659fef-a325-11f0-b9b7-00155d66480d'
-[2025-10-07T02:32:22.174Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.174Z] No body was attached to the request
-[2025-10-07T02:32:22.198Z] Response status: 200
-[2025-10-07T02:32:22.198Z] Response headers:
-[2025-10-07T02:32:22.198Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.198Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:32:22.198Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'content-length': '158008374'
-[2025-10-07T02:32:22.198Z]     'content-type': 'video/mp4'
-[2025-10-07T02:32:22.198Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:32:22.198Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-client-request-id': 'da659fef-a325-11f0-b9b7-00155d66480d'
-[2025-10-07T02:32:22.198Z]     'x-ms-request-id': 'e00093c6-a37b-45ef-9ef1-b298cc896c2f'
-[2025-10-07T02:32:22.198Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.198Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:32:22.198Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.198Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:32:22.200Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
-[2025-10-07T02:32:22.200Z] Request method: 'PUT'
-[2025-10-07T02:32:22.200Z] Request headers:
-[2025-10-07T02:32:22.200Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.200Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.200Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.200Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.200Z]     'x-ms-client-request-id': 'da682d4b-a325-11f0-bc16-00155d66480d'
-[2025-10-07T02:32:22.200Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.200Z] No body was attached to the request
-[2025-10-07T02:32:22.223Z] Response status: 409
-[2025-10-07T02:32:22.223Z] Response headers:
-[2025-10-07T02:32:22.223Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.223Z]     'x-ms-error-code': 'ContainerAlreadyExists'
-[2025-10-07T02:32:22.223Z]     'x-ms-request-id': '22cd8f54-f6e3-46f8-ba12-aea9d9a184fe'
-[2025-10-07T02:32:22.223Z]     'content-type': 'application/xml'
-[2025-10-07T02:32:22.223Z]     'Date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.223Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.223Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:32:22.223Z]     'Transfer-Encoding': 'chunked'
-[2025-10-07T02:32:22.235Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
-[2025-10-07T02:32:22.235Z] Request method: 'HEAD'
-[2025-10-07T02:32:22.235Z] Request headers:
-[2025-10-07T02:32:22.235Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.235Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.235Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.235Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.235Z]     'x-ms-client-request-id': 'da6de41e-a325-11f0-858a-00155d66480d'
-[2025-10-07T02:32:22.235Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.235Z] No body was attached to the request
-[2025-10-07T02:32:22.266Z] Response status: 200
-[2025-10-07T02:32:22.266Z] Response headers:
-[2025-10-07T02:32:22.266Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.266Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:32:22.266Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'content-length': '0'
-[2025-10-07T02:32:22.267Z]     'content-type': 'application/octet-stream'
-[2025-10-07T02:32:22.267Z]     'etag': '"0x22ED9345443C480"'
-[2025-10-07T02:32:22.267Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-client-request-id': 'da6de41e-a325-11f0-858a-00155d66480d'
-[2025-10-07T02:32:22.267Z]     'x-ms-request-id': '8a270326-e682-4992-b9c4-358e40686f5c'
-[2025-10-07T02:32:22.267Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.267Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-access-tier': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-access-tier-inferred': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-access-tier-change-time': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.267Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:32:22.267Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:32:22.267Z] Request method: 'PUT'
-[2025-10-07T02:32:22.267Z] Request headers:
-[2025-10-07T02:32:22.267Z]     'x-ms-lease-action': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-lease-duration': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-proposed-lease-id': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.267Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.267Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.267Z]     'x-ms-client-request-id': 'da72823d-a325-11f0-9b39-00155d66480d'
-[2025-10-07T02:32:22.267Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.267Z] No body was attached to the request
-[2025-10-07T02:32:22.303Z] Response status: 201
-[2025-10-07T02:32:22.303Z] Response headers:
-[2025-10-07T02:32:22.303Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.303Z]     'etag': '"0x22ED9345443C480"'
-[2025-10-07T02:32:22.303Z]     'last-modified': 'Tue, 07 Oct 2025 02:29:32 GMT'
-[2025-10-07T02:32:22.303Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:32:22.303Z]     'x-ms-client-request-id': 'da72823d-a325-11f0-9b39-00155d66480d'
-[2025-10-07T02:32:22.303Z]     'x-ms-request-id': 'ab077725-3f4b-480e-9e1c-2c7088579612'
-[2025-10-07T02:32:22.303Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.303Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.303Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.303Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:32:22.303Z]     'Content-Length': '0'
-[2025-10-07T02:32:22.307Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
-[2025-10-07T02:32:22.308Z] Request method: 'PUT'
-[2025-10-07T02:32:22.308Z] Request headers:
-[2025-10-07T02:32:22.308Z]     'x-ms-meta-lock_owner': 'REDACTED'
-[2025-10-07T02:32:22.308Z]     'x-ms-meta-lock_ts': 'REDACTED'
-[2025-10-07T02:32:22.308Z]     'x-ms-lease-id': 'REDACTED'
-[2025-10-07T02:32:22.308Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.308Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.308Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.308Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.308Z]     'x-ms-client-request-id': 'da7a14ff-a325-11f0-bd2a-00155d66480d'
-[2025-10-07T02:32:22.308Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.308Z] No body was attached to the request
-[2025-10-07T02:32:22.330Z] Response status: 200
-[2025-10-07T02:32:22.330Z] Response headers:
-[2025-10-07T02:32:22.330Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.330Z]     'etag': '"0x240AC5645B55CA0"'
-[2025-10-07T02:32:22.330Z]     'last-modified': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.330Z]     'x-ms-client-request-id': 'da7a14ff-a325-11f0-bd2a-00155d66480d'
-[2025-10-07T02:32:22.330Z]     'x-ms-request-id': 'eb5f3661-f075-4f20-9954-fc04875b9899'
-[2025-10-07T02:32:22.330Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.330Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.330Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:32:22.330Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.330Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:32:22.330Z]     'Content-Length': '0'
-[2025-10-07T02:32:22.559Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
-[2025-10-07T02:32:22.559Z] Request method: 'GET'
-[2025-10-07T02:32:22.559Z] Request headers:
-[2025-10-07T02:32:22.559Z]     'x-ms-range': 'REDACTED'
-[2025-10-07T02:32:22.559Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.559Z]     'Accept': 'application/xml'
-[2025-10-07T02:32:22.559Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:32:22.559Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:32:22.559Z]     'x-ms-client-request-id': 'da9f233d-a325-11f0-b06e-00155d66480d'
-[2025-10-07T02:32:22.559Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:32:22.559Z] No body was attached to the request
-[2025-10-07T02:32:22.567Z] Response status: 206
-[2025-10-07T02:32:22.567Z] Response headers:
-[2025-10-07T02:32:22.567Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:32:22.567Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
-[2025-10-07T02:32:22.567Z]     'x-ms-creation-time': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'content-length': '33554432'
-[2025-10-07T02:32:22.567Z]     'content-type': 'video/mp4'
-[2025-10-07T02:32:22.567Z]     'content-range': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'etag': '"0x20502DDECCE6540"'
-[2025-10-07T02:32:22.567Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'x-ms-lease-state': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'x-ms-lease-status': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'x-ms-client-request-id': 'da9f233d-a325-11f0-b06e-00155d66480d'
-[2025-10-07T02:32:22.567Z]     'x-ms-request-id': '865bdfd1-be66-4c62-9857-ccc1dd93be4b'
-[2025-10-07T02:32:22.567Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'accept-ranges': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'date': 'Tue, 07 Oct 2025 02:32:22 GMT'
-[2025-10-07T02:32:22.567Z]     'x-ms-server-encrypted': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'x-ms-blob-content-md5': 'REDACTED'
-[2025-10-07T02:32:22.567Z]     'Connection': 'keep-alive'
-[2025-10-07T02:32:22.568Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:33:28.634Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251007T053328Z.log'
-[2025-10-07T02:33:28.634Z] Request method: 'PUT'
-[2025-10-07T02:33:28.634Z] Request headers:
-[2025-10-07T02:33:28.634Z]     'Content-Length': '1035'
-[2025-10-07T02:33:28.634Z]     'x-ms-blob-type': 'REDACTED'
-[2025-10-07T02:33:28.634Z]     'x-ms-blob-content-type': 'REDACTED'
-[2025-10-07T02:33:28.634Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:33:28.634Z]     'Content-Type': 'application/octet-stream'
-[2025-10-07T02:33:28.634Z]     'Accept': 'application/xml'
-[2025-10-07T02:33:28.634Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
-[2025-10-07T02:33:28.634Z]     'x-ms-date': 'REDACTED'
-[2025-10-07T02:33:28.634Z]     'x-ms-client-request-id': '0202a159-a326-11f0-8188-00155d66480d'
-[2025-10-07T02:33:28.634Z]     'Authorization': 'REDACTED'
-[2025-10-07T02:33:28.634Z] A body is sent with the request
-[2025-10-07T02:33:28.665Z] Response status: 201
-[2025-10-07T02:33:28.665Z] Response headers:
-[2025-10-07T02:33:28.665Z]     'Server': 'Azurite-Blob/3.35.0'
-[2025-10-07T02:33:28.665Z]     'etag': '"0x26A397BC3FC8E80"'
-[2025-10-07T02:33:28.665Z]     'last-modified': 'Tue, 07 Oct 2025 02:33:28 GMT'
-[2025-10-07T02:33:28.665Z]     'content-md5': 'REDACTED'
-[2025-10-07T02:33:28.665Z]     'x-ms-client-request-id': '0202a159-a326-11f0-8188-00155d66480d'
-[2025-10-07T02:33:28.666Z]     'x-ms-request-id': '334e18ac-19b3-4e9d-a782-62dc0668ca09'
-[2025-10-07T02:33:28.666Z]     'x-ms-version': 'REDACTED'
-[2025-10-07T02:33:28.666Z]     'date': 'Tue, 07 Oct 2025 02:33:28 GMT'
-[2025-10-07T02:33:28.666Z]     'x-ms-request-server-encrypted': 'REDACTED'
-[2025-10-07T02:33:28.666Z]     'Connection': 'keep-alive'
-[2025-10-07T02:33:28.666Z]     'Keep-Alive': 'REDACTED'
-[2025-10-07T02:33:28.666Z]     'Content-Length': '0'
-[2025-10-07T02:33:28.667Z] Unhandled error: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:33:28.669Z] [queue] function complete
-[2025-10-07T02:33:28.685Z] Executed 'Functions.queue_ingestor' (Failed, Id=514dfc2b-ecc0-4705-8fe3-b333dcbacd66, Duration=66524ms)
-[2025-10-07T02:33:28.685Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
-[2025-10-07T02:33:28.685Z] Exception: TypeError: derive_k() takes 0 positional arguments but 5 were given
-[2025-10-07T02:33:28.685Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
-[2025-10-07T02:33:28.685Z]     call_result = await self._loop.run_in_executor(
-[2025-10-07T02:33:28.685Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
-[2025-10-07T02:33:28.686Z]     result = self.fn(*self.args, **self.kwargs)
-[2025-10-07T02:33:28.686Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
-[2025-10-07T02:33:28.686Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
-[2025-10-07T02:33:28.686Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
-[2025-10-07T02:33:28.686Z]     result = function(**args)
-[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 250, in queue_ingestor
-[2025-10-07T02:33:28.686Z]     r = _process_one_rung_cmaf(
-[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 157, in _process_one_rung_cmaf
-[2025-10-07T02:33:28.686Z]     _ffmpeg_video_to_cmaf_segments(
-[2025-10-07T02:33:28.686Z]   File "/home/nickg/StreamFoundry/function_app/shared/transcode.py", line 102, in _ffmpeg_video_to_cmaf_segments
-[2025-10-07T02:33:28.686Z]     K = derive_k(seg_dur, budget_sec, rate_media_per_wall, total_duration_sec, n_done)
-[2025-10-07T02:33:28.686Z] .
-[2025-10-07T02:33:28.697Z] Message has reached MaxDequeueCount of 3. Moving message to queue 'transcode-jobs-poison'.
-[2025-10-07T03:24:20.037Z] Worker process started and initialized.
-[2025-10-07T03:24:25.156Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-10-07T03:29:11.586Z] Worker process started and initialized.
-[2025-10-07T03:29:18.314Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-10-07T03:30:53.565Z] Worker process started and initialized.
-[2025-10-07T03:31:00.270Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-10-07T03:33:27.219Z] Worker process started and initialized.
-[2025-10-07T03:33:32.265Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
-[2025-10-07T04:08:13.844Z] Response [ad659d3b-c5d8-4e2b-9610-f84a75b118a3] took 04.2s
-[2025-10-07T04:08:13.868Z] Response [80a0b613-df3a-4493-887d-93f51f8c5a08] took 04.2s
-[2025-10-07T04:08:13.876Z] Response [d77439cf-d799-4345-8f38-093032017ccb] took 04.2s
+[2025-10-21T23:44:03.447Z] Host lock lease acquired by instance ID '000000000000000000000000000BA19C'.
+[2025-10-21T23:46:20.758Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=4b864239-4b19-4370-b57f-4c256e1a9c5d)
+[2025-10-21T23:46:20.774Z] Trigger Details: MessageId: a9b7eb77-6f68-433c-911a-c450b849d867, DequeueCount: 1, InsertedOn: 2025-10-21T23:46:19.000+00:00
+[2025-10-21T23:46:21.156Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-21T23:46:21.156Z] Request method: 'HEAD'
+[2025-10-21T23:46:21.156Z] Request headers:
+[2025-10-21T23:46:21.156Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.156Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.156Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.156Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.156Z]     'x-ms-client-request-id': '254d3fb2-aed8-11f0-8294-00155d77cdfd'
+[2025-10-21T23:46:21.156Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.156Z] No body was attached to the request
+[2025-10-21T23:46:21.158Z] Response status: 200
+[2025-10-21T23:46:21.158Z] Response headers:
+[2025-10-21T23:46:21.158Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.158Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-21T23:46:21.158Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'content-length': '158008374'
+[2025-10-21T23:46:21.158Z]     'content-type': 'video/mp4'
+[2025-10-21T23:46:21.158Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-21T23:46:21.158Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-client-request-id': '254d3fb2-aed8-11f0-8294-00155d77cdfd'
+[2025-10-21T23:46:21.158Z]     'x-ms-request-id': 'f3133c54-6c27-4bd9-a78b-2174e0e68716'
+[2025-10-21T23:46:21.158Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.158Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-21T23:46:21.158Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.158Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:21.159Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
+[2025-10-21T23:46:21.159Z] Request method: 'PUT'
+[2025-10-21T23:46:21.159Z] Request headers:
+[2025-10-21T23:46:21.159Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.159Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.159Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.159Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.159Z]     'x-ms-client-request-id': '255a1782-aed8-11f0-8cb4-00155d77cdfd'
+[2025-10-21T23:46:21.159Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.159Z] No body was attached to the request
+[2025-10-21T23:46:21.174Z] Response status: 409
+[2025-10-21T23:46:21.174Z] Response headers:
+[2025-10-21T23:46:21.175Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.175Z]     'x-ms-error-code': 'ContainerAlreadyExists'
+[2025-10-21T23:46:21.175Z]     'x-ms-request-id': '857ba3ce-1625-47ca-9ac8-078119884c9f'
+[2025-10-21T23:46:21.176Z]     'content-type': 'application/xml'
+[2025-10-21T23:46:21.176Z]     'Date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.176Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.176Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:21.176Z]     'Transfer-Encoding': 'chunked'
+[2025-10-21T23:46:21.345Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
+[2025-10-21T23:46:21.345Z] Request method: 'HEAD'
+[2025-10-21T23:46:21.345Z] Request headers:
+[2025-10-21T23:46:21.346Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.346Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.346Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.346Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.346Z]     'x-ms-client-request-id': '2578c051-aed8-11f0-b7b3-00155d77cdfd'
+[2025-10-21T23:46:21.346Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.346Z] No body was attached to the request
+[2025-10-21T23:46:21.458Z] Response status: 200
+[2025-10-21T23:46:21.458Z] Response headers:
+[2025-10-21T23:46:21.458Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.458Z]     'last-modified': 'Mon, 13 Oct 2025 23:46:32 GMT'
+[2025-10-21T23:46:21.458Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:46:21.458Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-21T23:46:21.458Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'content-length': '0'
+[2025-10-21T23:46:21.459Z]     'content-type': 'application/octet-stream'
+[2025-10-21T23:46:21.459Z]     'etag': '"0x1EF3838857CCC40"'
+[2025-10-21T23:46:21.459Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-client-request-id': '2578c051-aed8-11f0-b7b3-00155d77cdfd'
+[2025-10-21T23:46:21.459Z]     'x-ms-request-id': '739f0420-a8c1-46eb-a103-bf21e15bd66d'
+[2025-10-21T23:46:21.459Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.459Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'x-ms-access-tier-change-time': 'REDACTED'
+[2025-10-21T23:46:21.459Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.459Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:21.489Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-21T23:46:21.489Z] Request method: 'PUT'
+[2025-10-21T23:46:21.489Z] Request headers:
+[2025-10-21T23:46:21.489Z]     'x-ms-lease-action': 'REDACTED'
+[2025-10-21T23:46:21.489Z]     'x-ms-lease-duration': 'REDACTED'
+[2025-10-21T23:46:21.489Z]     'x-ms-proposed-lease-id': 'REDACTED'
+[2025-10-21T23:46:21.489Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.489Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.489Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.489Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.489Z]     'x-ms-client-request-id': '25873404-aed8-11f0-a544-00155d77cdfd'
+[2025-10-21T23:46:21.490Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.490Z] No body was attached to the request
+[2025-10-21T23:46:21.490Z] Response status: 201
+[2025-10-21T23:46:21.490Z] Response headers:
+[2025-10-21T23:46:21.490Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.490Z]     'etag': '"0x1EF3838857CCC40"'
+[2025-10-21T23:46:21.490Z]     'last-modified': 'Mon, 13 Oct 2025 23:46:32 GMT'
+[2025-10-21T23:46:21.490Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-21T23:46:21.490Z]     'x-ms-client-request-id': '25873404-aed8-11f0-a544-00155d77cdfd'
+[2025-10-21T23:46:21.490Z]     'x-ms-request-id': '844f5f15-ecf0-41d2-8d80-96bf9186f0c6'
+[2025-10-21T23:46:21.490Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.490Z]     'date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.490Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.490Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:21.490Z]     'Content-Length': '0'
+[2025-10-21T23:46:21.490Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-21T23:46:21.490Z] Request method: 'PUT'
+[2025-10-21T23:46:21.491Z] Request headers:
+[2025-10-21T23:46:21.491Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-21T23:46:21.491Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-21T23:46:21.491Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-21T23:46:21.491Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.491Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.491Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.491Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.491Z]     'x-ms-client-request-id': '25905734-aed8-11f0-b097-00155d77cdfd'
+[2025-10-21T23:46:21.491Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.491Z] No body was attached to the request
+[2025-10-21T23:46:21.522Z] Response status: 200
+[2025-10-21T23:46:21.522Z] Response headers:
+[2025-10-21T23:46:21.522Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.522Z]     'etag': '"0x1D19EB0C2E079A0"'
+[2025-10-21T23:46:21.522Z]     'last-modified': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.522Z]     'x-ms-client-request-id': '25905734-aed8-11f0-b097-00155d77cdfd'
+[2025-10-21T23:46:21.522Z]     'x-ms-request-id': 'a2ef579c-95c8-41b6-a162-815084c90ca6'
+[2025-10-21T23:46:21.522Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.522Z]     'date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.522Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-21T23:46:21.522Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.522Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:21.522Z]     'Content-Length': '0'
+[2025-10-21T23:46:21.602Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-21T23:46:21.603Z] Request method: 'GET'
+[2025-10-21T23:46:21.603Z] Request headers:
+[2025-10-21T23:46:21.603Z]     'x-ms-range': 'REDACTED'
+[2025-10-21T23:46:21.603Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.603Z]     'Accept': 'application/xml'
+[2025-10-21T23:46:21.603Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:46:21.603Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:46:21.603Z]     'x-ms-client-request-id': '259ba3f3-aed8-11f0-b5ae-00155d77cdfd'
+[2025-10-21T23:46:21.603Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:46:21.603Z] No body was attached to the request
+[2025-10-21T23:46:21.862Z] Response status: 206
+[2025-10-21T23:46:21.862Z] Response headers:
+[2025-10-21T23:46:21.862Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:46:21.862Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-21T23:46:21.862Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'content-length': '33554432'
+[2025-10-21T23:46:21.862Z]     'content-type': 'video/mp4'
+[2025-10-21T23:46:21.862Z]     'content-range': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-21T23:46:21.862Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'x-ms-client-request-id': '259ba3f3-aed8-11f0-b5ae-00155d77cdfd'
+[2025-10-21T23:46:21.862Z]     'x-ms-request-id': '3bb5d158-2509-421a-a272-ac7248d75dab'
+[2025-10-21T23:46:21.862Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'date': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:46:21.862Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'x-ms-blob-content-md5': 'REDACTED'
+[2025-10-21T23:46:21.862Z]     'Connection': 'keep-alive'
+[2025-10-21T23:46:21.862Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:46:39.170Z] [download] input ready path=/tmp/ingestor/bbb/input/bbb.mp4 took=17s
+[2025-10-21T23:48:15.750Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251022T024815Z.log'
+[2025-10-21T23:48:15.750Z] Request method: 'PUT'
+[2025-10-21T23:48:15.750Z] Request headers:
+[2025-10-21T23:48:15.750Z]     'Content-Length': '943'
+[2025-10-21T23:48:15.750Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:48:15.750Z]     'x-ms-blob-content-type': 'REDACTED'
+[2025-10-21T23:48:15.750Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:48:15.750Z]     'Content-Type': 'application/octet-stream'
+[2025-10-21T23:48:15.750Z]     'Accept': 'application/xml'
+[2025-10-21T23:48:15.750Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:48:15.750Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:48:15.750Z]     'x-ms-client-request-id': '69a99525-aed8-11f0-9a72-00155d77cdfd'
+[2025-10-21T23:48:15.750Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:48:15.750Z] A body is sent with the request
+[2025-10-21T23:48:15.780Z] Response status: 201
+[2025-10-21T23:48:15.780Z] Response headers:
+[2025-10-21T23:48:15.780Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:48:15.780Z]     'etag': '"0x21E7200BE12A9A0"'
+[2025-10-21T23:48:15.780Z]     'last-modified': 'Tue, 21 Oct 2025 23:48:15 GMT'
+[2025-10-21T23:48:15.780Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:48:15.780Z]     'x-ms-client-request-id': '69a99525-aed8-11f0-9a72-00155d77cdfd'
+[2025-10-21T23:48:15.780Z]     'x-ms-request-id': '557b9e4a-7976-4ff4-b80d-8e0a402c3781'
+[2025-10-21T23:48:15.780Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:48:15.781Z]     'date': 'Tue, 21 Oct 2025 23:48:15 GMT'
+[2025-10-21T23:48:15.781Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-21T23:48:15.781Z]     'Connection': 'keep-alive'
+[2025-10-21T23:48:15.781Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:48:15.781Z]     'Content-Length': '0'
+[2025-10-21T23:48:15.781Z] Unhandled error: QC: ffmpeg could not open the input; see log above for reason
+[2025-10-21T23:48:15.781Z] [queue] function complete
+[2025-10-21T23:48:16.034Z] Executed 'Functions.queue_ingestor' (Failed, Id=4b864239-4b19-4370-b57f-4c256e1a9c5d, Duration=115443ms)
+[2025-10-21T23:48:16.034Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
+[2025-10-21T23:48:16.034Z] Exception: CmdError: QC: ffmpeg could not open the input; see log above for reason
+[2025-10-21T23:48:16.034Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
+[2025-10-21T23:48:16.034Z]     call_result = await self._loop.run_in_executor(
+[2025-10-21T23:48:16.034Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+[2025-10-21T23:48:16.034Z]     result = self.fn(*self.args, **self.kwargs)
+[2025-10-21T23:48:16.034Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
+[2025-10-21T23:48:16.034Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
+[2025-10-21T23:48:16.034Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
+[2025-10-21T23:48:16.034Z]     result = function(**args)
+[2025-10-21T23:48:16.034Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 310, in queue_ingestor
+[2025-10-21T23:48:16.034Z]     meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
+[2025-10-21T23:48:16.034Z]   File "/home/nickg/StreamFoundry/function_app/shared/qc.py", line 112, in ffprobe_validate
+[2025-10-21T23:48:16.034Z]     raise CmdError("QC: ffmpeg could not open the input; see log above for reason")
+[2025-10-21T23:48:16.034Z] .
+[2025-10-21T23:50:18.042Z] Executing 'Functions.queue_ingestor' (Reason='New queue message detected on 'transcode-jobs'.', Id=1f9a6037-a81e-448a-961b-e646107d92d4)
+[2025-10-21T23:50:18.042Z] Trigger Details: MessageId: a9b7eb77-6f68-433c-911a-c450b849d867, DequeueCount: 2, InsertedOn: 2025-10-21T23:46:19.000+00:00
+[2025-10-21T23:50:18.063Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-21T23:50:18.063Z] Request method: 'HEAD'
+[2025-10-21T23:50:18.063Z] Request headers:
+[2025-10-21T23:50:18.063Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.063Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.063Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.063Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.063Z]     'x-ms-client-request-id': 'b2927bea-aed8-11f0-8371-00155d77cdfd'
+[2025-10-21T23:50:18.063Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.063Z] No body was attached to the request
+[2025-10-21T23:50:18.079Z] Response status: 200
+[2025-10-21T23:50:18.079Z] Response headers:
+[2025-10-21T23:50:18.079Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.079Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-21T23:50:18.079Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'content-length': '158008374'
+[2025-10-21T23:50:18.079Z]     'content-type': 'video/mp4'
+[2025-10-21T23:50:18.079Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-21T23:50:18.079Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-client-request-id': 'b2927bea-aed8-11f0-8371-00155d77cdfd'
+[2025-10-21T23:50:18.079Z]     'x-ms-request-id': '2dae8306-c742-4e30-a9dd-b043f486e0e9'
+[2025-10-21T23:50:18.079Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.079Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-21T23:50:18.079Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.079Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:18.081Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks?restype=REDACTED'
+[2025-10-21T23:50:18.081Z] Request method: 'PUT'
+[2025-10-21T23:50:18.081Z] Request headers:
+[2025-10-21T23:50:18.081Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.081Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.081Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.081Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.081Z]     'x-ms-client-request-id': 'b2947e65-aed8-11f0-9173-00155d77cdfd'
+[2025-10-21T23:50:18.081Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.081Z] No body was attached to the request
+[2025-10-21T23:50:18.115Z] Response status: 409
+[2025-10-21T23:50:18.116Z] Response headers:
+[2025-10-21T23:50:18.116Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.116Z]     'x-ms-error-code': 'ContainerAlreadyExists'
+[2025-10-21T23:50:18.116Z]     'x-ms-request-id': '62238e92-c205-4759-987a-5acb55990b86'
+[2025-10-21T23:50:18.116Z]     'content-type': 'application/xml'
+[2025-10-21T23:50:18.116Z]     'Date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.116Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.116Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:18.116Z]     'Transfer-Encoding': 'chunked'
+[2025-10-21T23:50:18.384Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock'
+[2025-10-21T23:50:18.384Z] Request method: 'HEAD'
+[2025-10-21T23:50:18.384Z] Request headers:
+[2025-10-21T23:50:18.384Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.384Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.384Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.384Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.384Z]     'x-ms-client-request-id': 'b29ad5a1-aed8-11f0-ac35-00155d77cdfd'
+[2025-10-21T23:50:18.384Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.384Z] No body was attached to the request
+[2025-10-21T23:50:18.399Z] Response status: 200
+[2025-10-21T23:50:18.399Z] Response headers:
+[2025-10-21T23:50:18.399Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.399Z]     'last-modified': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:50:18.399Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'content-length': '0'
+[2025-10-21T23:50:18.399Z]     'content-type': 'application/octet-stream'
+[2025-10-21T23:50:18.399Z]     'etag': '"0x1D19EB0C2E079A0"'
+[2025-10-21T23:50:18.399Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-client-request-id': 'b29ad5a1-aed8-11f0-ac35-00155d77cdfd'
+[2025-10-21T23:50:18.399Z]     'x-ms-request-id': 'd77ee040-734b-4f7b-8bfa-84e24096c18b'
+[2025-10-21T23:50:18.399Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.399Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-access-tier': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-access-tier-inferred': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'x-ms-access-tier-change-time': 'REDACTED'
+[2025-10-21T23:50:18.399Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.400Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:18.402Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-21T23:50:18.402Z] Request method: 'PUT'
+[2025-10-21T23:50:18.402Z] Request headers:
+[2025-10-21T23:50:18.402Z]     'x-ms-lease-action': 'REDACTED'
+[2025-10-21T23:50:18.402Z]     'x-ms-lease-duration': 'REDACTED'
+[2025-10-21T23:50:18.402Z]     'x-ms-proposed-lease-id': 'REDACTED'
+[2025-10-21T23:50:18.402Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.402Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.402Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.403Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.403Z]     'x-ms-client-request-id': 'b2c54fa4-aed8-11f0-9403-00155d77cdfd'
+[2025-10-21T23:50:18.403Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.403Z] No body was attached to the request
+[2025-10-21T23:50:18.421Z] Response status: 201
+[2025-10-21T23:50:18.421Z] Response headers:
+[2025-10-21T23:50:18.421Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.421Z]     'etag': '"0x1D19EB0C2E079A0"'
+[2025-10-21T23:50:18.421Z]     'last-modified': 'Tue, 21 Oct 2025 23:46:21 GMT'
+[2025-10-21T23:50:18.421Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-21T23:50:18.421Z]     'x-ms-client-request-id': 'b2c54fa4-aed8-11f0-9403-00155d77cdfd'
+[2025-10-21T23:50:18.421Z]     'x-ms-request-id': '75414523-bbe3-41b3-bf39-9219d163fa71'
+[2025-10-21T23:50:18.421Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.421Z]     'date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.421Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.421Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:18.421Z]     'Content-Length': '0'
+[2025-10-21T23:50:18.422Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/locks/a0a51116af4f705c09474717be520ac88d91e6af.lock?comp=REDACTED'
+[2025-10-21T23:50:18.422Z] Request method: 'PUT'
+[2025-10-21T23:50:18.422Z] Request headers:
+[2025-10-21T23:50:18.422Z]     'x-ms-meta-lock_owner': 'REDACTED'
+[2025-10-21T23:50:18.422Z]     'x-ms-meta-lock_ts': 'REDACTED'
+[2025-10-21T23:50:18.422Z]     'x-ms-lease-id': 'REDACTED'
+[2025-10-21T23:50:18.422Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.422Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.422Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.422Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.422Z]     'x-ms-client-request-id': 'b2c92884-aed8-11f0-aee1-00155d77cdfd'
+[2025-10-21T23:50:18.422Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.422Z] No body was attached to the request
+[2025-10-21T23:50:18.450Z] Response status: 200
+[2025-10-21T23:50:18.450Z] Response headers:
+[2025-10-21T23:50:18.450Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.450Z]     'etag': '"0x20924371BA24F80"'
+[2025-10-21T23:50:18.450Z]     'last-modified': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.450Z]     'x-ms-client-request-id': 'b2c92884-aed8-11f0-aee1-00155d77cdfd'
+[2025-10-21T23:50:18.450Z]     'x-ms-request-id': 'f260a7ca-57a1-4de4-b5ad-1859f5c1100f'
+[2025-10-21T23:50:18.450Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.450Z]     'date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.450Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-21T23:50:18.450Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.450Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:18.450Z]     'Content-Length': '0'
+[2025-10-21T23:50:18.761Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/raw-videos/bbb.mp4'
+[2025-10-21T23:50:18.761Z] Request method: 'GET'
+[2025-10-21T23:50:18.761Z] Request headers:
+[2025-10-21T23:50:18.761Z]     'x-ms-range': 'REDACTED'
+[2025-10-21T23:50:18.761Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.761Z]     'Accept': 'application/xml'
+[2025-10-21T23:50:18.761Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:50:18.761Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:50:18.761Z]     'x-ms-client-request-id': 'b2fd4911-aed8-11f0-a1b4-00155d77cdfd'
+[2025-10-21T23:50:18.761Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:50:18.761Z] No body was attached to the request
+[2025-10-21T23:50:18.798Z] Response status: 206
+[2025-10-21T23:50:18.798Z] Response headers:
+[2025-10-21T23:50:18.798Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:50:18.798Z]     'last-modified': 'Sat, 04 Oct 2025 16:57:38 GMT'
+[2025-10-21T23:50:18.798Z]     'x-ms-creation-time': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'content-length': '33554432'
+[2025-10-21T23:50:18.798Z]     'content-type': 'video/mp4'
+[2025-10-21T23:50:18.798Z]     'content-range': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'etag': '"0x20502DDECCE6540"'
+[2025-10-21T23:50:18.798Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'x-ms-lease-state': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'x-ms-lease-status': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'x-ms-client-request-id': 'b2fd4911-aed8-11f0-a1b4-00155d77cdfd'
+[2025-10-21T23:50:18.798Z]     'x-ms-request-id': 'a7e7fabf-f23d-4bf2-a637-03703256a663'
+[2025-10-21T23:50:18.798Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'accept-ranges': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'date': 'Tue, 21 Oct 2025 23:50:18 GMT'
+[2025-10-21T23:50:18.798Z]     'x-ms-server-encrypted': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'x-ms-blob-content-md5': 'REDACTED'
+[2025-10-21T23:50:18.798Z]     'Connection': 'keep-alive'
+[2025-10-21T23:50:18.798Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:50:28.898Z] [download] input ready path=/tmp/ingestor/bbb/input/bbb.mp4 took=10s
+[2025-10-21T23:52:03.542Z] Request URL: 'http://127.0.0.1:10000/devstoreaccount1/logs/queue/20251022T025203Z.log'
+[2025-10-21T23:52:03.542Z] Request method: 'PUT'
+[2025-10-21T23:52:03.542Z] Request headers:
+[2025-10-21T23:52:03.542Z]     'Content-Length': '943'
+[2025-10-21T23:52:03.542Z]     'x-ms-blob-type': 'REDACTED'
+[2025-10-21T23:52:03.542Z]     'x-ms-blob-content-type': 'REDACTED'
+[2025-10-21T23:52:03.543Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:52:03.543Z]     'Content-Type': 'application/octet-stream'
+[2025-10-21T23:52:03.543Z]     'Accept': 'application/xml'
+[2025-10-21T23:52:03.543Z]     'User-Agent': 'azsdk-python-storage-blob/12.20.0 Python/3.12.3 (Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39)'
+[2025-10-21T23:52:03.543Z]     'x-ms-date': 'REDACTED'
+[2025-10-21T23:52:03.543Z]     'x-ms-client-request-id': 'f16ffba3-aed8-11f0-8d8a-00155d77cdfd'
+[2025-10-21T23:52:03.543Z]     'Authorization': 'REDACTED'
+[2025-10-21T23:52:03.543Z] A body is sent with the request
+[2025-10-21T23:52:03.609Z] Response status: 201
+[2025-10-21T23:52:03.609Z] Response headers:
+[2025-10-21T23:52:03.609Z]     'Server': 'Azurite-Blob/3.35.0'
+[2025-10-21T23:52:03.609Z]     'etag': '"0x1E5373F15C74750"'
+[2025-10-21T23:52:03.609Z]     'last-modified': 'Tue, 21 Oct 2025 23:52:03 GMT'
+[2025-10-21T23:52:03.609Z]     'content-md5': 'REDACTED'
+[2025-10-21T23:52:03.609Z]     'x-ms-client-request-id': 'f16ffba3-aed8-11f0-8d8a-00155d77cdfd'
+[2025-10-21T23:52:03.609Z]     'x-ms-request-id': 'f95ce582-d1db-4180-bdbe-6e4299293475'
+[2025-10-21T23:52:03.609Z]     'x-ms-version': 'REDACTED'
+[2025-10-21T23:52:03.609Z]     'date': 'Tue, 21 Oct 2025 23:52:03 GMT'
+[2025-10-21T23:52:03.609Z]     'x-ms-request-server-encrypted': 'REDACTED'
+[2025-10-21T23:52:03.609Z]     'Connection': 'keep-alive'
+[2025-10-21T23:52:03.609Z]     'Keep-Alive': 'REDACTED'
+[2025-10-21T23:52:03.609Z]     'Content-Length': '0'
+[2025-10-21T23:52:03.621Z] Unhandled error: QC: ffmpeg could not open the input; see log above for reason
+[2025-10-21T23:52:03.628Z] [queue] function complete
+[2025-10-21T23:52:03.723Z] Executed 'Functions.queue_ingestor' (Failed, Id=1f9a6037-a81e-448a-961b-e646107d92d4, Duration=105680ms)
+[2025-10-21T23:52:03.723Z] System.Private.CoreLib: Exception while executing function: Functions.queue_ingestor. System.Private.CoreLib: Result: Failure
+[2025-10-21T23:52:03.723Z] Exception: CmdError: QC: ffmpeg could not open the input; see log above for reason
+[2025-10-21T23:52:03.723Z] Stack:   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 676, in _handle__invocation_request
+[2025-10-21T23:52:03.723Z]     call_result = await self._loop.run_in_executor(
+[2025-10-21T23:52:03.723Z]   File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+[2025-10-21T23:52:03.723Z]     result = self.fn(*self.args, **self.kwargs)
+[2025-10-21T23:52:03.723Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/dispatcher.py", line 1006, in _run_sync_func
+[2025-10-21T23:52:03.723Z]     return ExtensionManager.get_sync_invocation_wrapper(context,
+[2025-10-21T23:52:03.723Z]   File "/usr/local/lib/node_modules/azure-functions-core-tools/bin/workers/python/3.12/LINUX/X64/azure_functions_worker/extension.py", line 211, in _raw_invocation_wrapper
+[2025-10-21T23:52:03.723Z]     result = function(**args)
+[2025-10-21T23:52:03.723Z]   File "/home/nickg/StreamFoundry/function_app/QueueIngestor/__init__.py", line 310, in queue_ingestor
+[2025-10-21T23:52:03.723Z]     meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
+[2025-10-21T23:52:03.723Z]   File "/home/nickg/StreamFoundry/function_app/shared/qc.py", line 112, in ffprobe_validate
+[2025-10-21T23:52:03.723Z]     raise CmdError("QC: ffmpeg could not open the input; see log above for reason")
+[2025-10-21T23:52:03.723Z] .

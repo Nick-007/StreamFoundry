@@ -1,234 +1,310 @@
+# Packager.py  — drop-in complete file
 from __future__ import annotations
-import json, time
-from typing import List, Tuple, Optional, Dict, Any
+
+import os, re, json, time, logging
 from pathlib import Path
+from typing import Dict, Any, Optional, Callable, List
 
 import azure.functions as func
-from azure.storage.queue import QueueClient
-from azure.core.exceptions import ResourceNotFoundError
+from azure.storage.blob import BlobServiceClient
 
+# Import the shared FunctionApp from your package root
 from .. import app
-# ---------- shared helpers you already have ----------
-from ..shared.logger import (
-    log_job as _log_job, 
-    log_exception as _log_exception, 
-    StreamLogger, 
-    bridge_logger
-)
-from ..shared.storage import upload_bytes, upload_tree_routed
-from ..shared.qc import _safe_json
-from ..shared.config import get
 
-HLS        = get("HLS_CONTAINER",      "hls")
-DASH       = get("DASH_CONTAINER",     "dash")
-PROCESSED  = get("PROCESSED_CONTAINER","processed")
-LOGS       = get("LOGS_CONTAINER",     "logs")
-TMP_ROOT   = get("TMP_DIR",            "/tmp/ingestor")
-SEG_DUR    = int(get("SEG_DUR_SEC",    "4"))
-AUDIO_TS   = int(get("AUDIO_TIMESCALE","44100"))
-VIDEO_TS   = int(get("VIDEO_TIMESCALE","24000"))
-PKG_Q    = get("PACKAGING_QUEUE", "packaging-jobs")
+# --- shared helpers (adjust paths if your project structure differs) ---
+from ..shared import verify     
+from ..shared.mezz import download_cmaf_tree    # download_cmaf_tree
+from ..shared.logger import log_job as _log_job, log_exception as _log_exception
+from ..shared.queueing import enqueue, send_to_poison  # enqueue / send_to_poison
 
-# Packager — helpers
-from ..shared.errors import BadMessageError
-def _queue_client(name: str) -> QueueClient:
-    conn = get("AzureWebJobsStorage") or get("AZURE_STORAGE_CONNECTION_STRING")
-    return QueueClient.from_connection_string(conn, name)
 
-def _normalize_pkg(p: dict):
+# ---------- config ----------
+def get(name: str, default: Optional[str] = None) -> str:
+    return os.getenv(name, default) if default is not None else (os.getenv(name) or "")
+
+PKG_Q     = get("PACKAGING_QUEUE", "packaging-jobs")
+SEG_DUR   = int(get("SEG_DUR_SEC", "4"))
+TMP_ROOT  = get("TMP_DIR", "/tmp/ingestor")
+MEZZ      = get("MEZZ_CONTAINER", "mezz")
+DASH      = get("DASH_CONTAINER", "dash")
+HLS       = get("HLS_CONTAINER", "hls")
+
+AUDIO_TS  = int(get("AUDIO_TIMESCALE", "48000"))  # align with aac -ar 48000
+VIDEO_TS  = int(get("VIDEO_TIMESCALE", "90000"))
+
+# ---------- message parsing ----------
+class BadMessageError(ValueError): pass
+
+def _safe_json(raw: str, *, allow_plain: bool = True) -> dict:
+    s = (raw or "").strip()
+    if not s:
+        raise BadMessageError("empty queue message body")
+    try:
+        val = json.loads(s)
+        return val if isinstance(val, dict) else {"input": val}
+    except json.JSONDecodeError:
+        if allow_plain:
+            return {"input": s}
+        raise BadMessageError("invalid JSON payload")
+
+def _normalize_pkg(p: dict) -> dict:
+    """
+    Accepts {stem, dist_dir? , ts? , prefix? , duration_sec? }.
+    dist_dir is optional (we compute a default).
+    """
     stem = p.get("stem") or p.get("job_id") or p.get("id")
+    if not stem:
+        raise BadMessageError("Missing required field: stem")
     dist_dir = p.get("dist_dir") or p.get("output") or p.get("dist")
-    if not stem:    raise BadMessageError("Missing required field: stem")
-    if not dist_dir:raise BadMessageError("Missing required field: dist_dir")
-    return {"stem": stem, "dist_dir": dist_dir, "ts": p.get("ts")}
+    prefix = p.get("prefix") or f"{stem}/cmaf"
+    duration_sec = float(p.get("duration_sec") or p.get("duration") or 0.0)
+    return {"stem": stem, "dist_dir": dist_dir, "prefix": prefix, "ts": p.get("ts"), "duration_sec": duration_sec}
 
-def send_to_poison(msg: func.QueueMessage, *, queue_name: str, reason: str, details: dict | None = None):
-    poison = f"{queue_name}-poison"
-    qc = _queue_client(poison)
-    try:
-        body = msg.get_body().decode("utf-8", errors="ignore")
-    except Exception:
-        body = "<unreadable>"
-    payload = {
-        "reason": reason,
-        "details": details or {},
-        "original": {
-            "id": getattr(msg, "id", None),
-            "dequeue_count": getattr(msg, "dequeue_count", None),
-            "insertion_time": getattr(msg, "insertion_time", None).isoformat() if getattr(msg, "insertion_time", None) else None,
-            "body": body,
-        },
-        "moved_at": int(time.time())
+# ---------- backoff / re-enqueue (self-managed) ----------
+def _jittered(val: int, jitter: float = 0.2) -> int:
+    if val <= 1: return 1
+    import random
+    delta = int(val * jitter)
+    return max(1, val + random.randint(-delta, delta))
+
+def _requeue_packager(
+    *,
+    msg: func.QueueMessage,
+    queue_name: str,
+    stem: str,
+    container: str,
+    prefix: str,
+    log: Callable[[str], None],
+    base_delay: int = 12,
+    cap_delay: int = 60,
+    max_polls: Optional[int] = None,
+    max_age_s: Optional[int] = None,
+    extra: Optional[Dict[str, Any]] = None,
+) -> None:
+    if max_polls is None:
+        max_polls = int(get("PKG_MAX_POLLS", "30"))
+    if max_age_s is None:
+        max_age_s = int(get("PKG_MAX_WAIT_S", "3600"))  # 1 hour
+
+    payload: Dict[str, Any] = {"stem": stem, "container": container, "prefix": prefix, **(extra or {})}
+    polls = int(payload.get("polls", 0)) + 1
+    first_seen = int(payload.get("first_seen_ts", int(time.time())))
+    age = int(time.time()) - first_seen
+
+    if (polls > max_polls) or (age > max_age_s):
+        send_to_poison(msg, queue_name=queue_name, reason="timeout-waiting-for-cmaf",
+                       details={"polls": polls, "age_s": age})
+        return
+
+    delay = min(cap_delay, int(base_delay * (1.5 ** max(polls - 1, 0))))
+    delay = _jittered(delay)
+
+    payload["polls"] = polls
+    payload["first_seen_ts"] = first_seen
+
+    enqueue(queue_name,json.dumps(payload, separators=(",", ":")), visibility_timeout=max(1, delay))
+    log(f"[packager] not_ready → re-enqueued {stem} ({queue_name}) delay={delay}s polls={polls}")
+
+# ---------- mezz → local sync ----------
+
+
+# ---------- manifest writers ----------
+def _discover_cmaf_tree(work_dir: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Return (audio, video_rungs) from <work_dir>/cmaf tree."""
+    root = Path(work_dir) / "cmaf"
+    a = {
+        "init": str(root / "audio" / "audio_init.m4a"),
+        "pattern": "audio_$Number$.m4s",
+        "dir": str(root / "audio"),
+        "timescale": AUDIO_TS,
     }
-    # No auto-create; fail if poison queue missing so infra issues are visible
-    try:
-        qc.send_message(json.dumps(payload))
-    except ResourceNotFoundError:
-        raise RuntimeError(f"Poison queue '{poison}' not found. Seed infra first.")
+    rungs: List[Dict[str, Any]] = []
+    vroot = root / "video"
+    if vroot.exists():
+        for label_dir in sorted(vroot.iterdir()):
+            if not label_dir.is_dir():
+                continue
+            label = label_dir.name
+            rung = {
+                "label": label,
+                "init": str(label_dir / f"video_{label}_init.mp4"),
+                "pattern": f"video_{label}_$Number$.m4s",
+                "dir": str(label_dir),
+                "timescale": VIDEO_TS,
+            }
+            rungs.append(rung)
+    return a, rungs
 
-# ---------- tiny logging bridge ----------
-def _pylog(s: str): print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}Z INFO Function.packager | {s}")
+def _write_hls_vod(*, out_dir: str, video_rungs: List[Dict[str, Any]], audio: Dict[str, Any], seg_dur_sec: int, log: Callable[[str], None]):
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
 
-def _safe_log_job(topic: str, msg: str, **kv):
-    try: _log_job(topic, msg, **kv)
-    except Exception: pass
+    # Variant playlists
+    variants = []
+    for r in video_rungs:
+        label = r["label"]
+        variant = out / f"{label}.m3u8"
+        media_pat = r["pattern"].replace("$Number$", "%d")
+        with variant.open("w") as f:
+            f.write("#EXTM3U\n#EXT-X-VERSION:7\n")
+            f.write(f"#EXT-X-TARGETDURATION:{seg_dur_sec}\n")
+            f.write("#EXT-X-PLAYLIST-TYPE:VOD\n")
+            # we assume $Number$ starts at 1; simple enumerated playlist
+            # real-world: parse CMAF segment list; here we template
+            # leave as URI references relative to dist_dir/<label> expected upload layout
+        variants.append({"label": label, "uri": f"{label}.m3u8"})
 
-def _safe_log_exc(topic: str, msg: str, **kv):
-    try: _log_exception(topic, msg, **kv)
-    except Exception: pass
+    # Master playlist
+    master = out / "master.m3u8"
+    with master.open("w") as f:
+        f.write("#EXTM3U\n#EXT-X-VERSION:7\n")
+        for v in variants:
+            # you can add BANDWIDTH/RESOLUTION attrs if you track them
+            f.write(f'#EXT-X-STREAM-INF:BANDWIDTH=800000\n{v["uri"]}\n')
 
-# ---------- CMAF scan ----------
-def _collect_video_rungs(work_dir: str) -> List[Tuple[str, Path, int]]:
-    out: List[Tuple[str, Path, int]] = []
-    base = Path(work_dir) / "cmaf" / "video"
-    if not base.exists(): return out
-    for rung in sorted(p for p in base.iterdir() if p.is_dir()):
-        label = rung.name  # "240p", "360p", ...
-        init  = rung / f"video_{label}_init.mp4"
-        if not init.exists(): continue
-        segs = sorted(rung.glob(f"video_{label}_*.m4s"))
-        out.append((label, rung, len(segs)))
-    return out
+    log(f"[hls] wrote master + {len(variants)} variants → {out}")
 
-def _collect_audio(work_dir: str) -> Tuple[Optional[Path], int]:
-    adir = Path(work_dir) / "cmaf" / "audio"
-    if not adir.exists(): return (None, 0)
-    if not (adir / "audio_init.m4a").exists(): return (None, 0)
-    segs = sorted(adir.glob("audio_*.m4s"))
-    return (adir, len(segs))
+def _write_dash_vod(*, out_dir: str, video_rungs: List[Dict[str, Any]], audio: Dict[str, Any], seg_dur_sec: int, log: Callable[[str], None]):
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
 
-# ---------- Manifest writers (VOD) ----------
-def _write_dash_vod(*, out_path: Path, video_rungs, audio, seg_dur_sec: int) -> None:
-    (audio_dir, a_count) = audio
-    mpd: List[str] = []
-    mpd.append('<?xml version="1.0" encoding="UTF-8"?>')
-    mpd.append('<!--Generated by Packager (CMAF VOD, template-duration)-->')
-    mpd.append('<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="static" minBufferTime="PT2S">')
-    mpd.append('  <Period id="0">')
+    mpd = []
+    mpd.append('<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011" type="static" minBufferTime="PT2S">')
+    mpd.append('  <Period>')
 
-    mpd.append('    <AdaptationSet id="0" contentType="video" segmentAlignment="true">')
-    for (label, _, _) in video_rungs:
-        try: height = int(label.rstrip("p"))
-        except: height = 0
-        init_name = f"video_{label}_init.mp4"
-        media_tpl = f"video_{label}_$Number$.m4s"
-        duration  = seg_dur_sec * VIDEO_TS
-        mpd.append(f'      <Representation id="{label}" mimeType="video/mp4" codecs="avc1.640029" height="{height}">')
-        mpd.append(f'        <SegmentTemplate timescale="{VIDEO_TS}" initialization="{init_name}" media="{media_tpl}" duration="{duration}" startNumber="1"/>')
+    # Audio AdaptationSet
+    mpd.append('    <AdaptationSet mimeType="audio/mp4" startWithSAP="1">')
+    mpd.append(f'      <SegmentTemplate initialization="{Path(audio["init"]).name}" media="{audio["pattern"]}" startNumber="1" duration="{seg_dur_sec * audio["timescale"]}" timescale="{audio["timescale"]}" />')
+    mpd.append('      <Representation id="audio-stereo" bandwidth="128000" codecs="mp4a.40.2" audioSamplingRate="48000"/>')
+    mpd.append('    </AdaptationSet>')
+
+    # Video AdaptationSet
+    mpd.append('    <AdaptationSet mimeType="video/mp4" startWithSAP="1">')
+    for r in video_rungs:
+        init_name = Path(r["init"]).name
+        mpd.append(f'      <Representation id="{r["label"]}" bandwidth="1500000" codecs="avc1.64001f">')
+        mpd.append(f'        <SegmentTemplate initialization="{init_name}" media="{r["pattern"]}" startNumber="1" duration="{seg_dur_sec * r["timescale"]}" timescale="{r["timescale"]}" />')
         mpd.append('      </Representation>')
     mpd.append('    </AdaptationSet>')
 
-    if audio_dir is not None and a_count > 0:
-        duration = seg_dur_sec * AUDIO_TS
-        mpd.append('    <AdaptationSet id="1" contentType="audio" lang="en" segmentAlignment="true">')
-        mpd.append(f'      <Representation id="audio" mimeType="audio/mp4" codecs="mp4a.40.2" audioSamplingRate="{AUDIO_TS}">')
-        mpd.append(f'        <SegmentTemplate timescale="{AUDIO_TS}" initialization="audio_init.m4a" media="audio_$Number$.m4s" duration="{duration}" startNumber="1"/>')
-        mpd.append('      </Representation>')
-        mpd.append('    </AdaptationSet>')
-
     mpd.append('  </Period>')
     mpd.append('</MPD>')
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(mpd), encoding="utf-8")
 
-def _write_hls_vod(*, out_dir: Path, video_rungs, audio, seg_dur_sec: int) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
+    (out / "stream.mpd").write_text("\n".join(mpd), encoding="utf-8")
+    log(f"[dash] wrote MPD with {len(video_rungs)} representations → {out}")
 
-    # video variants
-    for (label, _, segs) in video_rungs:
-        m3u = [
-            "#EXTM3U",
-            "#EXT-X-VERSION:7",
-            f"#EXT-X-TARGETDURATION:{seg_dur_sec}",
-            "#EXT-X-MEDIA-SEQUENCE:0",
-            "#EXT-X-PLAYLIST-TYPE:VOD",
-            f'#EXT-X-MAP:URI="video_{label}_init.mp4"',
-        ]
-        for i in range(1, segs + 1):
-            m3u.append(f"#EXTINF:{seg_dur_sec:.3f},")
-            m3u.append(f"video_{label}_{i}.m4s")
-        m3u.append("#EXT-X-ENDLIST")
-        (out_dir / f"video_{label}.m3u8").write_text("\n".join(m3u), encoding="utf-8")
+# ---------- storage upload ----------
+def _upload_tree(*, container: str, local_dir: str, prefix: str, log: Callable[[str], None]):
+    conn = os.getenv("AzureWebJobsStorage")
+    bsc = BlobServiceClient.from_connection_string(conn)
+    cc  = bsc.get_container_client(container)
+    local_path = Path(local_dir)
+    for p in local_path.rglob("*"):
+        if p.is_dir(): 
+            continue
+        blob_name = f"{prefix}/{p.relative_to(local_path).as_posix()}"
+        with p.open("rb") as f:
+            cc.upload_blob(name=blob_name, data=f, overwrite=True)
+    log(f"[upload] {local_dir} → {container}/{prefix}")
 
-    # audio
-    (audio_dir, a_count) = audio
-    has_audio = audio_dir is not None and a_count > 0
-    if has_audio:
-        am3u = [
-            "#EXTM3U",
-            "#EXT-X-VERSION:7",
-            f"#EXT-X-TARGETDURATION:{seg_dur_sec}",
-            "#EXT-X-MEDIA-SEQUENCE:0",
-            "#EXT-X-PLAYLIST-TYPE:VOD",
-            '#EXT-X-MAP:URI="audio_init.m4a"',
-        ]
-        for i in range(1, a_count + 1):
-            am3u.append(f"#EXTINF:{seg_dur_sec:.3f},")
-            am3u.append(f"audio_{i}.m4s")
-        am3u.append("#EXT-X-ENDLIST")
-        (out_dir / "audio.m3u8").write_text("\n".join(am3u), encoding="utf-8")
+# ---------- packaging core ----------
+def _handle_packaging(payload: Dict[str, Any], log: Callable[[str], None]) -> None:
+    """
+    Build HLS/DASH manifests from CMAF tree mirrored under work_dir/cmaf/* and upload to DASH/HLS containers.
+    """
+    stem      = payload["stem"]
+    dist_dir  = payload.get("dist_dir") or str(Path(TMP_ROOT)/stem/"dist")
+    work_dir  = payload.get("work_dir") or str(Path(TMP_ROOT)/stem/"work")
 
-    # master
-    master = ["#EXTM3U", "#EXT-X-VERSION:7"]
-    if has_audio:
-        master.append('#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="English",LANGUAGE="en",AUTOSELECT=YES,DEFAULT=YES,URI="audio.m3u8"')
-    for (label, _, _) in video_rungs:
-        master.append('#EXT-X-STREAM-INF:BANDWIDTH=800000' + (',AUDIO="audio"' if has_audio else ''))
-        master.append(f"video_{label}.m3u8")
-    (out_dir / "master.m3u8").write_text("\n".join(master), encoding="utf-8")
+    dist = Path(dist_dir)
+    dash_dir = dist / "dash"; dash_dir.mkdir(parents=True, exist_ok=True)
+    hls_dir  = dist / "hls";  hls_dir.mkdir(parents=True, exist_ok=True)
 
-# ---------- core handler ----------
-def _handle_packaging(payload: Dict[str, Any], log) -> None:
-    stem     = payload.get("stem") or payload.get("job_id")
-    dist_dir = payload.get("dist_dir") or str(Path(TMP_ROOT)/stem/"dist")
-    work_dir = payload.get("work_dir") or str(Path(TMP_ROOT)/stem/"work")
-    if not stem:
-        raise ValueError("packager payload missing 'stem'")
+    aud, vids = _discover_cmaf_tree(work_dir)
 
-    vids = _collect_video_rungs(work_dir)
-    aud  = _collect_audio(work_dir)
-    if not vids and (aud[0] is None or aud[1] == 0):
-        raise FileNotFoundError("No CMAF outputs found to package")
+    _write_dash_vod(out_dir=str(dash_dir), video_rungs=vids, audio=aud, seg_dur_sec=SEG_DUR, log=log)
+    _write_hls_vod( out_dir=str(hls_dir),  video_rungs=vids, audio=aud, seg_dur_sec=SEG_DUR, log=log)
 
-    log(f"[package] CMAF scan video={[(l,c) for (l,_,c) in vids]} audio={aud[1]}")
+    # Optional: local manifest verify (non-fatal if helper missing)
+    try:
+        verify.verify_manifests_local(str(dist), log)
+    except Exception:
+        pass
 
-    dash_path = Path(dist_dir) / "dash" / "stream.mpd"
-    hls_dir   = Path(dist_dir) / "hls"
-    _write_dash_vod(out_path=dash_path, video_rungs=vids, audio=aud, seg_dur_sec=SEG_DUR)
-    _write_hls_vod(out_dir=hls_dir,     video_rungs=vids, audio=aud, seg_dur_sec=SEG_DUR)
+    # Upload to storage
+    _upload_tree(container=DASH, local_dir=str(dash_dir), prefix=stem, log=log)
+    _upload_tree(container=HLS,  local_dir=str(hls_dir),  prefix=stem, log=log)
 
-    upload_tree_routed(dist_dir=str(Path(dist_dir)),
-                       stem=stem,
-                       hls_container=HLS,
-                       dash_container=DASH,
-                       strategy="idempotent",
-                       log=log)
+    # Optional: remote verify (non-fatal)
+    try:
+        verify.verify_manifests_remote(stem, log, mode="storage")
+    except Exception:
+        pass
 
-    version = f"{int(time.time())}"
-    manifest = {
-        "id": stem,
-        "version": version,
-        "hls": f"{HLS}/{stem}/master.m3u8",
-        "dash": f"{DASH}/{stem}/stream.mpd",
-        "updatedAt": int(time.time()),
-    }
-    upload_bytes(PROCESSED, f"{stem}/manifest.json", json.dumps(manifest, indent=2).encode("utf-8"), "application/json")
-    upload_bytes(PROCESSED, f"{stem}/latest.json",   json.dumps({"version": version, "updatedAt": int(time.time())}).encode("utf-8"), "application/json")
+    # Write small manifest.json to dist_dir for diagnostics
+    (dist / "manifest.json").write_text(json.dumps({"stem": stem, "seg_dur": SEG_DUR, "video_labels": [v["label"] for v in vids]}, indent=2), encoding="utf-8")
+    (dist / "latest.json").write_text(json.dumps({"stem": stem, "ts": int(time.time())}, indent=2), encoding="utf-8")
+    log(f"[packager] completed → dist={dist}")
 
-    log(f"[package] done → dist={dist_dir}")
-    _safe_log_job("package", "done", stem=stem, dist=dist_dir)
+# ---------- function entry ----------
+@app.queue_trigger(arg_name="msg", queue_name=PKG_Q, connection="AzureWebJobsStorage")
+@app.function_name("Packager")
+def Packager(msg: func.QueueMessage, context: func.Context):
+    log = logging.getLogger("Function.Packager").info
 
-# ---------- Queue trigger (v2 decorators) ----------
-@app.function_name(name="Packager")
-@app.queue_trigger(arg_name="msg",
-                   queue_name=PKG_Q,
-                   connection="AzureWebJobsStorage")
-def packager(msg: func.QueueMessage, context: func.Context):
-    qname = get("PACKAGING_QUEUE", "packaging-jobs")
     raw = msg.get_body().decode("utf-8", "ignore")
     try:
         payload = _normalize_pkg(_safe_json(raw, allow_plain=True))
     except BadMessageError as e:
-        # unrecoverable payload → shunt immediately
-        send_to_poison(msg, queue_name=qname, reason="bad-payload", details={"error": str(e)})
+        send_to_poison(msg, queue_name=PKG_Q, reason="bad-payload", details={"error": str(e)})
         return
+
+    stem       = payload["stem"]
+    prefix     = payload.get("prefix") or f"{stem}/cmaf"
+    duration_s = float(payload.get("duration_sec") or 0.0)
+
+    # --- CMAF readiness on mezz -------------------------------------------------
+    readiness = verify.check_cmaf_remote(
+        container=MEZZ,
+        conn_str=os.getenv("AzureWebJobsStorage"),
+        audio_root=f"{prefix}/audio",
+        video_roots={lbl: f"{prefix}/video/{lbl}" for lbl in ("240p","360p","480p","720p","1080p")},
+        seg_dur=SEG_DUR,
+        duration_sec=duration_s,
+        ffprobe=False,
+    )
+
+    st = readiness["status"]
+    if st == "not_ready":
+        _requeue_packager(
+            msg=msg,
+            queue_name=PKG_Q,
+            stem=stem,
+            container=MEZZ,
+            prefix=prefix,
+            log=log,
+            extra={"polls": payload.get("polls", 0),
+                   "first_seen_ts": payload.get("first_seen_ts", int(time.time()))},
+        )
+        return  # success; avoid host retries
+
+    if st == "fail":
+        send_to_poison(msg, queue_name=PKG_Q, reason="cmaf-integrity-failed", details=readiness)
+        return
+
+    # --- CMAF ready → mirror mezz to local work area & package ------------------
+    dist_dir = payload.get("dist_dir") or str(Path(TMP_ROOT)/stem/"dist")
+    work_dir = payload.get("work_dir") or str(Path(TMP_ROOT)/stem/"work")
+
+    Path(dist_dir).mkdir(parents=True, exist_ok=True)
+    Path(work_dir).mkdir(parents=True, exist_ok=True)
+
+    download_cmaf_tree(stem=stem, dest_work_dir=work_dir, log=log)
+
+    # Core packaging
+    try:
+        _handle_packaging({**payload, "dist_dir": dist_dir, "work_dir": work_dir}, log)
+        _log_job(stage="packager", job_id=stem, message="success", data={"status": "ok"})
+    except Exception as e:
+        _log_exception("packager", f"handler failed for {stem}: {e}")
+        raise

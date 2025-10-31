@@ -1,19 +1,21 @@
 # function_app/QueueIngestor/__init__.py
 from __future__ import annotations
 
-import os, json, time, hashlib, threading, logging
+import os, json, time, threading, logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 
 import azure.functions as func
-from azure.storage.queue import QueueClient
 from azure.core.exceptions import ResourceNotFoundError
 
 # ---------- Function App (v2 decorators) ----------
 from .. import app
 
 # ---------- shared helpers (your existing modules) ----------
+from ..shared.queueing import _maybe_reenqueue_ingest, _enqueue_packaging_if_ready
+from ..shared.verify import check_cmaf_local
 from ..shared.config import get
+from ..shared.mezz import upload_cmaf_tree
 from ..shared.logger import (
     log_job as _log_job_base,
     log_exception as _log_exception_base,
@@ -28,15 +30,11 @@ from ..shared.qc import ffprobe_validate, _safe_json
 from ..shared.transcode import (
     _ffmpeg_audio_to_cmaf_segments,
     _ffmpeg_video_to_cmaf_segments,
-    derive_k,
 )
-# Integrity checker (expects check_integrity.py to be in function_app/shared/)
-from ..shared.verify import integrity_local, integrity_remote, integrity_cmaf_local
+
 # Containers / Queues
 IN       = get("RAW_CONTAINER", "raw-videos")
-HLS      = get("HLS_CONTAINER",   "hls")
-DASH     = get("DASH_CONTAINER",  "dash")
-MEZZ     = get("MEZZ_CONTAINER",  "mezzanine")
+MEZZ     = get("MEZZ_CONTAINER",  "mezz")
 LOGS     = get("LOGS_CONTAINER",  "logs")
 INGEST_Q = get("JOB_QUEUE",    "transcode-jobs")   # queue this function listens to
 PKG_Q    = get("PACKAGING_QUEUE", "packaging-jobs")
@@ -98,40 +96,40 @@ def _log_job_report(*, container: str, stem: str, kind: str, stage: str, report:
         log(f"[report] failed to write report for {stem} {kind} {stage}: {e}")
 
 # -----------------------------
-# Enqueue packaging job (if ready)
-# -----------------------------
-def _enqueue_packaging_if_ready(*, stem: str, dist_dir: str, log):
-    if not PKG_CONN:
-        raise RuntimeError("AzureWebJobsStorage app setting is missing")
-    body = json.dumps({"stem": stem, "dist_dir": dist_dir, "ts": int(time.time())}, separators=(",", ":"))
-    try:
-        QueueClient.from_connection_string(PKG_CONN, PKG_Q).send_message(body)
-        log(f"[queue] packaging enqueued for {stem} → {PKG_Q}")
-    except ResourceNotFoundError:
-        # Let this fail loudly; infra is seed-owned
-        raise RuntimeError(f"Queue '{PKG_Q}' not found. Run seed script.")
-
-# -----------------------------
 # One CMAF “rung” per invocation (audio once, then least-complete video)
 # -----------------------------
 def _process_one_rung_cmaf(
     *,
     input_path: str,
     work_dir: str,
+    stem: str,
     meta: Dict[str, Any],
     seg_dur: int,
     log,
     rung_budget_sec: Optional[int] = None,
 ) -> Dict[str, Any]:
+    """
+    Produce exactly one rung (audio first, then least-complete video rung).
+    After each rung, run consolidated CMAF readiness over the *entire* local CMAF tree:
+      - status 'fail'  -> raise (host retries)
+      - status 'ok' or 'not_ready' -> return (caller decides re-enqueue behavior)
+    """
+    
     rung_budget_sec = rung_budget_sec or int(get("RUNG_BUDGET_SEC", "1400"))  # < host timeout
     t0 = time.time()
 
-    # --- derive duration early (from ffprobe meta) ---
+    # --- derive duration/fps early (from ffprobe meta) ---
     duration_sec = float(meta.get("duration_sec") or meta.get("duration") or 0.0)
-    fps = float(meta.get("fps") or 24.0)
+    fps          = float(meta.get("fps") or 24.0)
 
-    # Audio first (idempotent)
-    audio_dir = Path(work_dir) / "cmaf" / "audio"
+    cmaf_root = Path(work_dir) / "cmaf"
+    audio_dir = cmaf_root / "audio"
+    video_root = cmaf_root / "video"
+    ladder_labels = ("240p","360p","480p","720p","1080p")
+
+    # ----------------
+    # 1) AUDIO (first)
+    # ----------------
     audio_init = audio_dir / "audio_init.m4a"
     if not audio_init.exists():
         log("[audio] begin (CMAF)")
@@ -145,18 +143,35 @@ def _process_one_rung_cmaf(
             log=log,
         )
         log("[audio] end (CMAF)")
-        rep = integrity_cmaf_local(
-            root=str(audio_dir),
-            kind="audio", label=None,
-            seg_prefix="audio_", init_name="audio_init.m4a",
-            seg_dur=seg_dur, duration_sec=duration_sec,
-            log=log
-        )
-        if rep["status"] == "fail":
-            raise RuntimeError("audio CMAF integrity failed")
-        return {"kind": "audio", "label": "stereo", "K": 0}  # audio doesn’t use GOP; keep shape
 
-    # Ladder (same as your MP4 ladder, now CMAF’d)
+        # Integrity/readiness over the whole CMAF tree (local)
+        readiness = check_cmaf_local(
+            audio_root=str(audio_dir),
+            video_roots={lbl: str(video_root / lbl) for lbl in ladder_labels},
+            seg_dur=seg_dur,
+            duration_sec=duration_sec,
+            ffprobe=True,                 # cheap header probe on inits
+            ffprobe_on_init_only=True,
+        )
+        if readiness["status"] == "fail":
+            raise RuntimeError("audio CMAF integrity failed")
+
+        upload_cmaf_tree(stem=stem, local_cmaf_root=str(Path(work_dir)/"cmaf"), log=log)
+        _log_job_report(
+            container=LOGS, stem=stem, kind="audio", stage="cmaf",
+            report=readiness, log=log
+        )
+        return {
+            "kind": "audio",
+            "label": "stereo",
+            "K": 0,                       # audio helper returns a dict, but K is for video pacing
+            "readiness": readiness["status"],
+            "segments_expected": readiness["segments_expected"],
+        }
+
+    # ----------------------------
+    # 2) VIDEO (least-complete rung)
+    # ----------------------------
     ladder = [
         {"name":"240p",  "height":240,  "bv":"300k",  "maxrate":"360k",  "bufsize":"600k"},
         {"name":"360p",  "height":360,  "bv":"650k",  "maxrate":"780k",  "bufsize":"1300k"},
@@ -166,14 +181,14 @@ def _process_one_rung_cmaf(
     ]
 
     def rung_progress(label: str) -> int:
-        vdir = Path(work_dir) / "cmaf" / "video" / label
+        vdir = video_root / label
         if not vdir.exists():
             return 0
         return len(list(vdir.glob(f"video_{label}_*.m4s")))
 
     target = sorted(ladder, key=lambda r: rung_progress(r["name"]))[0]
     label = target["name"]
-    vdir  = Path(work_dir) / "cmaf" / "video" / label
+    vdir  = video_root / label
     vdir.mkdir(parents=True, exist_ok=True)
 
     budget_left = max(60, rung_budget_sec - int(time.time() - t0))
@@ -193,19 +208,31 @@ def _process_one_rung_cmaf(
         budget_sec=budget_left,
         log=log,
     )
-    
     log(f"[video:{label}] end")
-    # Bubble up how many segments were emitted this run (res["K"])
-    rep = integrity_cmaf_local(
-        root=str(vdir),
-        kind="video", label=label,
-        seg_prefix=f"video_{label}_", init_name=f"video_{label}_init.mp4",
-        seg_dur=seg_dur, duration_sec=duration_sec,
-        log=log
+
+    # Integrity/readiness over the whole CMAF tree (local)
+    readiness = check_cmaf_local(
+        audio_root=str(audio_dir),
+        video_roots={lbl: str(video_root / lbl) for lbl in ladder_labels},
+        seg_dur=seg_dur,
+        duration_sec=duration_sec,
+        ffprobe=True,
+        ffprobe_on_init_only=True,
     )
-    if rep["status"] == "fail":
+    if readiness["status"] == "fail":
         raise RuntimeError(f"video {label} CMAF integrity failed")
-    return {"kind": "video", "label": label, "K": res.get("K", 0)}
+    upload_cmaf_tree(stem=stem, local_cmaf_root=str(Path(work_dir)/"cmaf"), log=log)
+    _log_job_report(
+        container=LOGS, stem=stem, kind="video", stage="cmaf",
+        report=readiness, log=log
+    )
+    return {
+        "kind": "video",
+        "label": label,
+        "K": int(res.get("K", 0)),
+        "readiness": readiness["status"],
+        "segments_expected": readiness["segments_expected"],
+    }
 
 # -----------------------------
 # Queue Trigger (v2 DECORATOR MODEL)
@@ -287,6 +314,7 @@ def queue_ingestor(msg: func.QueueMessage) -> None:
         r = _process_one_rung_cmaf(
             input_path=inp_path,
             work_dir=work_dir,
+            stem=stem,
             meta=meta_in,
             seg_dur=seg_dur,
             log=log,
@@ -300,6 +328,20 @@ def queue_ingestor(msg: func.QueueMessage) -> None:
         log("[queue] success (rung completed; more work will resume on next dequeue)")
         pylog("[queue] success (rung completed; more work will resume on next dequeue)")
 
+        # readiness was computed earlier via verify.check_cmaf_local(...)
+        if r.get('readiness') != "ok":
+            _maybe_reenqueue_ingest(
+                msg=msg,                              # the current queue message object
+                queue_name=INGEST_Q,
+                payload={                             # original ingest payload (+ we’ll add counters)
+                    "container": in_cont,
+                    "blob": raw_key,
+                    "job_id": stem
+                },
+                log=log,
+                delay_sec=3                           # small fixed delay
+            )
+    
     except Exception as e:
         _log_exception("queue", f"Unhandled error: {e}")
         pylog(f"Unhandled error: {e}")

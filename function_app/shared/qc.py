@@ -1,5 +1,6 @@
 from __future__ import annotations
-import json, subprocess, shlex, time
+import json, subprocess, shlex, time, ast
+from .errors import BadMessageError
 from typing import Dict, Optional, Any
 from .tools import ffmpeg_path, ffprobe_path
 from .errors import CmdError

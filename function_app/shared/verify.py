@@ -1,9 +1,12 @@
 import os, re, math
 from . import check_integrity as ci
 from pathlib import Path
-from typing import List, Dict, Optional, Callable
+from typing import List, Dict, Optional, Callable, Iterable, Tuple, Any
 from .errors import CmdError
 from .qc import ffprobe_inspect, analyze_media 
+from azure.storage.blob import BlobServiceClient
+
+    
 def verify_transcode_outputs(audio_mp4, renditions, meta, *, log=None, re_probe_outputs=False):
     # Use provided meta if it looks complete; otherwise derive once
     need = ("duration","width","height")
@@ -312,3 +315,227 @@ def integrity_remote(
         raise CmdError("[check] HLS remote(storage) integrity failed")
     else:
         log("[check] HLS remote(storage) OK")
+
+# =============================================================
+# Consolidated CMAF readiness (local filesystem | Azure Blob)
+# =============================================================
+
+_SEG_RE2 = re.compile(r"^(?P<prefix>.+)_(?P<num>\d+)\.m4s$")
+
+def _contiguous(_nums: Iterable[int]) -> bool:
+    _nums = list(_nums)
+    return (not _nums) or (_nums[0] == 1 and all(_nums[i] == _nums[i-1] + 1 for i in range(1, len(_nums))))
+
+def _count_local(dirpath: Path, prefix: str) -> Tuple[int, list[int], list[str]]:
+    issues: list[str] = []
+    nums: list[int] = []
+    if not dirpath.exists():
+        return 0, [], [f"missing dir {dirpath}"]
+    for p in dirpath.glob(f"{prefix}*.m4s"):
+        m = _SEG_RE2.match(p.name)
+        if not m or m.group("prefix") != prefix.rstrip("_"):
+            continue
+        if p.stat().st_size <= 0:
+            issues.append(f"zero-byte seg: {p.name}")
+        try:
+            nums.append(int(m.group("num")))
+        except Exception:
+            issues.append(f"bad seg index: {p.name}")
+    nums.sort()
+    return len(nums), nums, issues
+
+def _count_blob(bsc: "BlobServiceClient", container: str, prefix: str, seg_prefix: str) -> Tuple[int, list[int], list[str]]:
+    issues: list[str] = []
+    nums: list[int] = []
+    cc = bsc.get_container_client(container)
+    for b in cc.list_blobs(name_starts_with=f"{prefix}/"):
+        name = b.name.split("/")[-1]
+        if not name.startswith(seg_prefix) or not name.endswith(".m4s"):
+            continue
+        m = _SEG_RE2.match(name)
+        if not m or m.group("prefix") != seg_prefix.rstrip("_"):
+            continue
+        try:
+            nums.append(int(m.group("num")))
+        except Exception:
+            issues.append(f"bad seg index: {name}")
+    nums.sort()
+    return len(nums), nums, issues
+
+def check_cmaf_readiness(
+    *,
+    mode: str,                            # "local" | "blob"
+    audio_root: str,                      # local path or blob prefix (no trailing slash)
+    video_roots: Dict[str, str],          # label -> local path or blob prefix
+    seg_dur: int,
+    duration_sec: float,
+    audio_init: str = "audio_init.m4a",
+    video_init_fmt: str = "video_{label}_init.mp4",
+    audio_seg_prefix: str = "audio_",
+    video_seg_prefix_fmt: str = "video_{label}_",
+    container: Optional[str] = None,      # required for mode="blob"
+    conn_str: Optional[str] = None,       # required for mode="blob"
+    ffprobe: bool = False,
+    ffprobe_on_init_only: bool = True,
+) -> Dict[str, Any]:
+    """
+    Unified CMAF completeness/integrity gate for local FS and Azure Blob.
+    Returns a dict with:
+      {
+        "ok": bool,
+        "status": "ok" | "not_ready" | "fail",
+        "segments_expected": int,
+        "audio": {"present": bool, "segments": int, "issues": [], "status": "..."},
+        "video": {"labels": { "<label>": {"present": bool, "segments": int, "issues": [], "status": "..."} } },
+        "issues": []
+      }
+    """
+    out: Dict[str, Any] = {
+        "ok": True, "status": "ok", "issues": [],
+        "segments_expected": int(math.ceil(max(0.0, float(duration_sec)) / float(seg_dur))),
+        "audio": {}, "video": {"labels": {}},
+    }
+    expected = out["segments_expected"]
+
+    bsc = None
+    if mode == "blob":
+        if BlobServiceClient is None:
+            raise RuntimeError("azure-storage-blob not available")
+        if not container or not conn_str:
+            raise RuntimeError("mode='blob' requires container and conn_str")
+        bsc = BlobServiceClient.from_connection_string(conn_str)
+
+    # ---------- audio ----------
+    a_present = False
+    a_segments = 0
+    a_issues: list[str] = []
+    if mode == "local":
+        rootp = Path(audio_root)
+        a_present = (rootp / audio_init).exists()
+        n, nums, issues = _count_local(rootp, audio_seg_prefix)
+    else:
+        cc = bsc.get_container_client(container)  # type: ignore
+        a_present = any(True for _ in cc.list_blobs(name_starts_with=f"{audio_root}/{audio_init}"))
+        n, nums, issues = _count_blob(bsc, container, audio_root, audio_seg_prefix)  # type: ignore
+    a_segments, a_issues = n, list(issues)
+    if n and not _contiguous(nums):
+        a_issues.append("segment index gap")
+
+    if mode == "local" and ffprobe and a_present:
+        try:
+            # reuse your existing lightweight probe
+            from .qc import ffprobe_inspect
+            meta = ffprobe_inspect(str(Path(audio_root) / audio_init))
+            if not any(s.get("codec_type") == "audio" for s in meta.get("streams", [])):
+                a_issues.append("ffprobe: no audio stream in init")
+            if not ffprobe_on_init_only and n > 0:
+                first = Path(audio_root) / f"{audio_seg_prefix}{nums[0]}.m4s"
+                last  = Path(audio_root) / f"{audio_seg_prefix}{nums[-1]}.m4s"
+                for pth, tag in ((first, "first-seg"), (last, "last-seg")):
+                    m2 = ffprobe_inspect(str(pth))
+                    if not any(s.get("codec_type") == "audio" for s in m2.get("streams", [])):
+                        a_issues.append(f"ffprobe: no audio stream in {tag}")
+        except Exception:
+            pass  # ffprobe optional
+
+    if not a_present or a_segments == 0:
+        a_status = "not_ready"
+    elif a_segments < expected:
+        a_status = "not_ready"
+    elif a_issues:
+        a_status = "fail"
+    else:
+        a_status = "ok"
+    out["audio"] = {"present": a_present, "segments": a_segments, "issues": a_issues, "status": a_status}
+
+    # ---------- video per label ----------
+    v_any_fail = False
+    v_any_not_ready = (a_status != "ok")
+    for label, v_root in video_roots.items():
+        seg_prefix = video_seg_prefix_fmt.format(label=label)
+        init_name  = video_init_fmt.format(label=label)
+        if mode == "local":
+            vdir = Path(v_root)
+            present = (vdir / init_name).exists()
+            n, nums, seg_issues = _count_local(vdir, seg_prefix)
+        else:
+            cc = bsc.get_container_client(container)  # type: ignore
+            present = any(True for _ in cc.list_blobs(name_starts_with=f"{v_root}/{init_name}"))
+            n, nums, seg_issues = _count_blob(bsc, container, v_root, seg_prefix)  # type: ignore
+
+        if n and not _contiguous(nums):
+            seg_issues.append("segment index gap")
+
+        if mode == "local" and ffprobe and present:
+            try:
+                from .qc import ffprobe_inspect
+                vm = ffprobe_inspect(str((Path(v_root) / init_name)))
+                if not any(s.get("codec_type") == "video" for s in vm.get("streams", [])):
+                    seg_issues.append("ffprobe: no video stream in init")
+                if not ffprobe_on_init_only and n > 0:
+                    first = Path(v_root) / f"{seg_prefix}{nums[0]}.m4s"
+                    last  = Path(v_root) / f"{seg_prefix}{nums[-1]}.m4s"
+                    for pth, tag in ((first, "first-seg"), (last, "last-seg")):
+                        m2 = ffprobe_inspect(str(pth))
+                        if not any(s.get("codec_type") == "video" for s in m2.get("streams", [])):
+                            seg_issues.append(f"ffprobe: no video stream in {tag}")
+            except Exception:
+                pass
+
+        status = "ok"
+        if not present or n == 0 or n < expected:
+            status = "not_ready"
+            v_any_not_ready = True
+        if seg_issues:
+            status = "fail"
+            v_any_fail = True
+
+        out["video"]["labels"][label] = {
+            "present": present, "segments": n, "issues": seg_issues, "status": status
+        }
+
+    if v_any_fail or a_status == "fail":
+        out["ok"] = False
+        out["status"] = "fail"
+    elif v_any_not_ready:
+        out["ok"] = False
+        out["status"] = "not_ready"
+    else:
+        out["ok"] = True
+        out["status"] = "ok"
+
+    return out
+
+# Clear public wrappers (ergonomic)
+def check_cmaf_local(*, audio_root, video_roots, seg_dur, duration_sec, **kw):
+    return check_cmaf_readiness(
+        mode="local",
+        audio_root=audio_root,
+        video_roots=video_roots,
+        seg_dur=seg_dur,
+        duration_sec=duration_sec,
+        **kw
+    )
+
+def check_cmaf_remote(*, container, conn_str, audio_root, video_roots, seg_dur, duration_sec, **kw):
+    return check_cmaf_readiness(
+        mode="blob",
+        container=container,
+        conn_str=conn_str,
+        audio_root=audio_root,
+        video_roots=video_roots,
+        seg_dur=seg_dur,
+        duration_sec=duration_sec,
+        **kw
+    )
+
+# Clear names for manifest verifiers (pass-through to existing)
+def verify_manifests_local(dist_dir: str, log: Callable[[str], None]):
+    return integrity_local(dist_dir=dist_dir, log=log)
+
+def verify_manifests_remote(stem: str, log: Callable[[str], None], **opts):
+    return integrity_remote(stem=stem, log=log, **opts)
+
+# Back-compat shim (deprecated): keep old name working
+def integrity_cmaf_local(*args, **kwargs):
+    return check_cmaf_local(*args, **kwargs)

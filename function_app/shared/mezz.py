@@ -7,7 +7,7 @@ from typing import Callable, Optional, List, Dict
 from .config import get
 from .storage import upload_file, upload_bytes, blob_client
 
-MEZZ = get("MEZZ_CONTAINER", "mezzanine")
+MEZZ = get("MEZZ_CONTAINER", "mezz")
 
 def _sha256(path: str, chunk: int = 2**20) -> str:
     h = hashlib.sha256()
@@ -117,3 +117,55 @@ def ensure_intermediates_from_mezz(stem: str, work_dir: str, *, require_all: boo
         if not restored and require_all:
             return False
     return True
+
+# --- CMAF helpers (upload/download the CMAF tree under MEZZ/<stem>/cmaf/...) ---
+
+def upload_cmaf_tree(*, stem: str, local_cmaf_root: str, log: Optional[Callable[[str], None]] = None) -> None:
+    """
+    Recursively upload CMAF tree rooted at local_cmaf_root to MEZZ/<stem>/cmaf/...
+      local_cmaf_root typically = "<work_dir>/cmaf"
+    """
+    def _log(s: str): (log or print)(s)
+    root = Path(local_cmaf_root)
+    if not root.exists():
+        raise FileNotFoundError(f"CMAF root not found: {local_cmaf_root}")
+
+    # e.g. MEZZ/<stem>/cmaf/audio/..., MEZZ/<stem>/cmaf/video/<label>/...
+    prefix = f"{stem}/cmaf"
+    for p in root.rglob("*"):
+        if p.is_file():
+            rel = p.relative_to(root).as_posix()
+            dst = f"{prefix}/{rel}"
+            # content-type is optional; Azure infers. You can specialize if you like.
+            upload_file(MEZZ, dst, str(p))
+    _log(f"[mezz:cmaf] uploaded {local_cmaf_root} → {MEZZ}/{prefix}")
+
+def download_cmaf_tree(*, stem: str, dest_work_dir: str, log: Optional[Callable[[str], None]] = None) -> str:
+    """
+    Mirror MEZZ/<stem>/cmaf/* to <dest_work_dir>/cmaf/* .
+    Returns the local CMAF root path.
+    """
+    def _log(s: str): (log or print)(s)
+    from azure.storage.blob import BlobServiceClient
+    conn = os.getenv("AzureWebJobsStorage")
+    bsc = BlobServiceClient.from_connection_string(conn)
+    cc  = bsc.get_container_client(MEZZ)
+
+    base = Path(dest_work_dir) / "cmaf"
+    (base / "audio").mkdir(parents=True, exist_ok=True)
+    (base / "video").mkdir(parents=True, exist_ok=True)
+
+    prefix = f"{stem}/cmaf"
+    for blob in cc.list_blobs(name_starts_with=f"{prefix}/"):
+        rel = blob.name[len(prefix)+1:]  # strip "<prefix>/"
+        out_path = base / rel
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            if out_path.exists() and out_path.stat().st_size == int(blob.size or 0):
+                continue
+        except Exception:
+            pass
+        with open(out_path, "wb") as f:
+            cc.download_blob(blob.name).readinto(f)
+    _log(f"[mezz:cmaf] mirrored {MEZZ}/{prefix} → {base}")
+    return str(base)
