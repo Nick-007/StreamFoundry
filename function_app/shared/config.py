@@ -59,6 +59,7 @@ class AppSettings(BaseSettings):
     THUMB_INTERVAL_SEC: str
     QC_STRICT: str
     DRM_PLACEHOLDERS: str
+    PIPELINE_ROUTES: str = Field(default="")
 
     class Config:
         case_sensitive = True

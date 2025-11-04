@@ -36,12 +36,71 @@ docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-
 
 ---
 
-## Local Run
+## Quickstart
+
 ```bash
-# from the repo root
+# 1) install seeding + app deps
+python -m pip install -r infra/local/requirements.txt
+python -m pip install -r requirements.txt
+
+# 2) start Azurite (if it's not already running)
+docker run -p 10000:10000 -p 10001:10001 -p 10002:10002   mcr.microsoft.com/azure-storage/azurite
+
+# 3) seed queues + containers from local.settings.json
+bash infra/local/seeder.sh
+
+# 4) run the Functions host
 func start
 ```
 
+> Need a full reset? `bash scripts/dev/reset-azurite.sh` wipes local queues/containers.
+
+> Tip: `POST /api/submit?mode=status` returns the current processing status without enqueuing a job. Add `includeStatus=true` to the normal submit to receive status info alongside the receipt.
+
+---
+
+
+## Configuration (see `local.settings.json` → `Values`)
+| Key | Default | Notes |
+|---|---|---|
+| `AzureWebJobsStorage` | `UseDevelopmentStorage=true` | Single storage var for everything |
+| `RAW_CONTAINER` | `raw-videos` | Ingest container (blob trigger enqueues) |
+| `MEZZ_CONTAINER` | `mezzanine` | CMAF MP4s (audio + video rungs) |
+| `DASH_CONTAINER` | `dash` | DASH MPD + segments |
+| `HLS_CONTAINER` | `hls` | HLS master + segments + thumbnails |
+| `PROCESSED_CONTAINER` | `processed` | Job manifests + latest pointer |
+| `LOGS_CONTAINER` | `logs` | Append‑style job logs |
+| `JOB_QUEUE` | `transcode-jobs` | Work queue |
+| `FFMPEG_PATH` | `ffmpeg` | Override if needed |
+| `SHAKA_PACKAGER_PATH` | `packager` | Override if needed |
+| `SEG_DUR_SEC` | `4` | Segment duration (seconds) |
+| `PACKAGER_SEG_DUR_SEC` | `4` | Must match encoder segments |
+| `VIDEO_CODEC` | `h264_nvenc` | Fallback: `libx264` |
+| `NVENC_PRESET` | `p5` | |
+| `NVENC_RC` | `vbr_hq` | |
+| `NVENC_LOOKAHEAD` | `32` | |
+| `NVENC_AQ` | `1` | Spatial AQ on |
+| `SET_BT709_TAGS` | `true` | SDR tagging |
+| `AUDIO_MAIN_KBPS` | `128` | Single AAC track |
+| `ENABLE_CAPTIONS` | `true` | Accept WebVTT sidecars |
+| `ENABLE_TRICKPLAY` | `true` | Also writes thumbnails & VTT |
+| `TRICKPLAY_FACTOR` | `4` | For DASH trick-play index |
+| `THUMB_INTERVAL_SEC` | `4` | Thumb extraction interval |
+| `QC_STRICT` | `true` | ffprobe gate (codec/fps/WH) |
+| `DRM_PLACEHOLDERS` | `true` | Reserved for future DRM wiring |
+| `PIPELINE_ROUTES` | `` | JSON routes from extension → queue (`{"transcode":{"extensions":[".mp4"],"queue":"transcode-jobs"}}`) |
+
+**HTTP submit payload**
+```jsonc
+{
+  "source": "<URL or 'container/blob'>",
+  "name": "optional-output-stem",
+  "captions": [
+    { "lang": "en", "source": "<URL or 'container/blob.vtt'>" }
+  ]
+}
+```
+-- Execute
 ### Submit a job (HTTP)
 ```bash
 curl -s -X POST http://localhost:7071/api/submit \
@@ -72,54 +131,19 @@ logs/
 
 ---
 
-## Configuration (see `local.settings.json` → `Values`)
-| Key | Default | Notes |
-|---|---|---|
-| `AzureWebJobsStorage` | `UseDevelopmentStorage=true` | Single storage var for everything |
-| `RAW_CONTAINER` | `raw-videos` | Ingest container (blob trigger enqueues) |
-| `MEZZ_CONTAINER` | `mezzanine` | CMAF MP4s (audio + video rungs) |
-| `DASH_CONTAINER` | `dash` | DASH MPD + segments |
-| `HLS_CONTAINER` | `hls` | HLS master + segments + thumbnails |
-| `PROCESSED_CONTAINER` | `processed` | Job manifests + latest pointer |
-| `LOGS_CONTAINER` | `logs` | Append‑style job logs |
-| `JOB_QUEUE` | `transcode-jobs` | Work queue |
-| `FFMPEG_PATH` | `ffmpeg` | Override if needed |
-| `SHAKA_PACKAGER_PATH` | `packager` | Override if needed |
-| `SEG_DUR_SEC` | `4` | Segment duration (seconds) |
-| `PACKAGER_SEG_DUR_SEC` | `4` | Must match encoder segments |
-| `VIDEO_CODEC` | `h264_nvenc` | Fallback: `libx264` |
-| `NVENC_PRESET` | `p5` | |
-| `NVENC_RC` | `vbr_hq` | |
-| `NVENC_LOOKAHEAD` | `32` | |
-| `NVENC_AQ` | `1` | Spatial AQ on |
-| `SET_BT709_TAGS` | `true` | SDR tagging |
-| `AUDIO_MAIN_KBPS` | `128` | Single AAC track |
-| `ENABLE_CAPTIONS` | `true` | Accept WebVTT sidecars |
-| `ENABLE_TRICKPLAY` | `true` | Also writes thumbnails & VTT |
-| `TRICKPLAY_FACTOR` | `4` | For DASH trick-play index |
-| `THUMB_INTERVAL_SEC` | `4` | Thumb extraction interval |
-| `QC_STRICT` | `true` | ffprobe gate (codec/fps/WH) |
-| `DRM_PLACEHOLDERS` | `true` | Reserved for future DRM wiring |
-
-**HTTP submit payload**
-```jsonc
-{
-  "source": "<URL or 'container/blob'>",
-  "name": "optional-output-stem",
-  "captions": [
-    { "lang": "en", "source": "<URL or 'container/blob.vtt'>" }
-  ]
-}
-```
-
----
-
-## Operational Notes
+-## Operational Notes
+- **Signed manifests**: `python scripts/dev/build_manifest.py --fingerprint v_<hash> --stem <path>` generates container SAS, embeds them into DASH/HLS manifests, and saves the signed URLs back to the raw blob's metadata.
+- **SAS manifests**: `python scripts/dev/embed_sas.py <manifest> --token "sv=..." --base <url>` produces `.sas` copies with signed URLs for external players.
+- **Blob tooling**: `python scripts/dev/storage.py sas|set-access|containers ...` to generate SAS tokens or tweak container access.
+- **Queues**: `python scripts/dev/queues.py list|peek|clear <queue>` to inspect or drain backlog.
 - **Scale‑out**: Add more Function workers or distribute jobs via Azure Batch; choose **1–2 concurrent encodes per T4**.
+- **Inspection**: Run `./scripts/sfinspect.py manifest <stem>` to review manifests, fingerprints, and content-hash indexes without browsing storage by hand.
+- **Raw metadata**: every status update stamps `sf-status`, `sf-version`, `sf-manifest`, `sf-fingerprint`, `sf-content-hash`, `sf-status-updated` (epoch), and `sf-status-reason` (e.g., `submit_enqueued`, `transcode_processing`, `packaging_complete`) onto the source blob so repositories can answer status queries locally.
 - **Idempotency**: Worker checks `processed/<stem>/manifest.json` and uses a **lease lock** (`processed/<stem>/_lock`) to avoid duplicate work.
 - **Content fingerprint**: `sha256(input bytes + profile knobs)` → publish under `v_<fingerprint>/...`; update `latest.json` atomically.
 - **Cache/headers**: manifests `Cache-Control: public, max-age=60`; segments/captions/thumbnails `public, max-age=43200`.
 - **Observability**: Logs in `logs/`; wire Application Insights in `host.json`/portal for queue depth, failures, and GPU utilization dashboards.
+- **Concurrency tuning**: Increase `FUNCTIONS_WORKER_PROCESS_COUNT` (and queue `batchSize`) to fan jobs across CPU/GPU on a single host; default is conservative (1).
 
 ---
 
@@ -140,6 +164,14 @@ logs/
 
 ## Cleanup
 Set Storage lifecycle policies to transition old **mezzanine/segments** to cool/archival and prune stale `v_*` versions when `latest.json` moves forward.
+
+---
+
+## Roadmap & WIP
+- **Captions**: Packaging currently expects pre-converted WebVTT files. Automatic SRT→VTT conversion and Shaka descriptor fixes (uniform `segment_template` usage) are planned.
+- **Manifest richness**: `processed/<stem>/manifest.json` is intentionally concise. Future revisions will include codec/bitrate metadata and health flags for downstream clients.
+- **Partial packaging**: Packaging still runs after all rungs finish; incremental packaging per rung is under investigation.
+- **Concurrency guidance**: Vertical scaling relies on `FUNCTIONS_WORKER_PROCESS_COUNT` and queue `batchSize`. Additional docs and guardrails will ship with the next tuning pass.
 ---
 
 ## Deployment Guide (Azure Batch GPU Pool)
@@ -319,23 +351,3 @@ This scales Spot nodes with queue pressure while keeping 1 dedicated node for st
 - Use **Managed Identity** to fetch SAS for task env vars.  
 - Lock down Storage with **Private Endpoints** and allow Batch nodes via **Private Link** or VNet rules.  
 - Restrict ACR pull with scoped tokens; rotate secrets regularly.
-
-## Quickstart (Local)
-
-```bash
-# 1) Install deps for the seed script
-python -m pip install -r infra/local/requirements.txt
-
-# 2) (optional) copy env template and tweak
-cp infra/local/.env.example infra/local/.env
-
-# 3) Create containers & queue (names read from local.settings.json)
-bash infra/local/seed-storage.sh
-# or
-pwsh infra/local/seed-storage.ps1
-# or
-python infra/local/seed-storage.py
-
-# 4) Smoke tests (when your Functions host is running)
-bash scripts/dev/curl-health.sh
-bash scripts/dev/curl-submit.sh

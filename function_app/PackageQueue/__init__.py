@@ -24,6 +24,7 @@ LOGS_CONTAINER = settings.LOGS_CONTAINER
 # Your packaging entrypoint; adjust import/name if different
 # Expecting: def _handle_packaging(payload: IngestPayload, *, log) -> None
 from ..packager import _handle_packaging  # noqa: F401
+from ..shared.status import set_raw_status
 
 
 # Bindings
@@ -52,6 +53,9 @@ def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
         raise
 
     # 2) Parse JSON
+    if not body_raw:
+        LOGGER.warning("Empty message body on %s; releasing", QNAME)
+        return
     try:
         body: Dict[str, Any] = json.loads(body_raw)
     except json.JSONDecodeError:
@@ -77,6 +81,11 @@ def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
     slog("accepted")
 
     # 4) Call the packager core
+    raw_container = payload.in_.container or settings.RAW_CONTAINER
+    raw_key = payload.in_.key
+    extra_meta = payload.extra or {}
+    pipeline_id = extra_meta.get("pipeline", "transcode")
+
     try:
         # NOTE: Your _handle_packaging should encapsulate:
         #  - locating mezz/assets
@@ -85,11 +94,24 @@ def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
         #  - verification/integrity checks
         #  - uploads (routed) and cleanups
         slog("start")
+        try:
+            set_raw_status(
+                raw_container,
+                raw_key,
+                status="processing",
+                pipeline=pipeline_id,
+                reason="packaging_start",
+            )
+        except Exception:
+            pass
         _handle_packaging(payload=payload, log=log_fn)
         slog("completed")
     except Exception as exc:
-        # Let Azure handle retries; detailed cause is in the logs
         slog_exc("failed", exc)
+        try:
+            set_raw_status(raw_container, raw_key, status="failed", pipeline=pipeline_id, reason="packaging_failed")
+        except Exception:
+            pass
         raise
     finally:
         sl.stop(flush=True)

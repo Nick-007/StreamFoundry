@@ -16,6 +16,7 @@ obj/
 
 # Azurite state
 _azurite/
+_azurite.old/
 .azurite/
 
 # Transcoding pipeline outputs (ephemeral)

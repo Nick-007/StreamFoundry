@@ -1,6 +1,6 @@
 # function_app/TranscodeQueue/__init__.py
 from __future__ import annotations
-import json, time, hashlib, threading
+import json, time, threading
 import logging
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Callable
@@ -16,19 +16,43 @@ from ..shared.logger import StreamLogger, bridge_logger, make_slogger
 
 # transcode_queue_normalize.py (example co-located helper)
 from ..shared.storage import (
-    blob_exists, upload_bytes,
+    blob_exists,
     acquire_lock_with_break, renew_lock, download_blob_streaming,  # your existing lease helpers
 )
 from ..shared.mezz import (
     ensure_intermediates_from_mezz, upload_mezz_and_manifest, upload_intermediate_file,
 )
 from ..shared.qc import ffprobe_validate, CmdError
-from ..shared.transcode import transcode_to_cmaf_ladder  # we do NOT import packaging here
+from ..shared.transcode import transcode_to_cmaf_ladder, default_ladder  # we do NOT import packaging here
 
 from ..shared.ingest import validate_ingest, dump_normalized
 from ..shared.queueing import enqueue, queue_client
 from ..shared.workspace import job_paths
 from ..shared.rungs import ladder_labels, mezz_video_filename, discover_renditions
+from ..shared.fingerprint import (
+    fingerprint_from_content_hash,
+    version_for_fingerprint,
+    profile_signature,
+    file_content_hash,
+)
+from ..shared.content_index import (
+    load_content_index,
+    upsert_fingerprint_entry,
+    register_stem_alias,
+    find_matching_fingerprint,
+)
+from ..shared.fingerprint_index import (
+    upsert_fingerprint_metadata,
+    record_stem_alias,
+    load_fingerprint_record,
+)
+from ..shared.publish import (
+    build_outputs,
+    upload_manifests,
+    upload_prepackage_state,
+)
+from ..shared.status import set_raw_status
+from ..shared.pipelines import select_pipeline_for_blob
 
 settings = AppSettings()
 LOGGER = logging.getLogger("transcode")
@@ -40,7 +64,6 @@ RAW        = settings.RAW_CONTAINER
 MEZZ       = settings.MEZZ_CONTAINER
 DASH       = settings.DASH_CONTAINER
 HLS        = settings.HLS_CONTAINER
-PROCESSED  = settings.PROCESSED_CONTAINER
 LOGS       = settings.LOGS_CONTAINER
 
 TMP_DIR      = settings.TMP_DIR
@@ -61,6 +84,74 @@ STORAGE_CONN  = settings.AzureWebJobsStorage
 from .. import app
 
 # ---------- Helpers (restored) ----------
+
+
+def _canonical_captions_list(items: Any) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    if not items:
+        return out
+    for entry in items:
+        if isinstance(entry, dict):
+            lang = (entry.get("lang") or "").strip()
+            source = str(entry.get("source") or "").strip()
+            if not lang and not source:
+                continue
+            out.append({"lang": lang, "source": source})
+    out.sort(key=lambda d: (d.get("lang", ""), d.get("source", "")))
+    return out
+
+
+def _ladder_for_selection(only_rung: Optional[List[str]]) -> List[Dict[str, str]]:
+    ladder = default_ladder()
+    if only_rung:
+        allowed = {str(r).lower() for r in only_rung}
+        ladder = [r for r in ladder if r["name"].lower() in allowed]
+    return ladder
+
+
+def _ladder_signature(ladder_cfg: Iterable[Dict[str, str]]) -> str:
+    return "|".join(
+        f"{r['name']}:{r['height']}:{r['bv']}:{r['maxrate']}:{r['bufsize']}"
+        for r in ladder_cfg
+    )
+
+
+def _build_profile_components(
+    *,
+    only_rung: Optional[List[str]],
+    captions: Any,
+) -> tuple[str, List[Dict[str, str]], list[dict[str, str]], List[str], Dict[str, Any], Dict[str, Any]]:
+    ladder_cfg = _ladder_for_selection(only_rung)
+    canon_caps = _canonical_captions_list(captions)
+    coverage = [r["name"] for r in ladder_cfg]
+    profile_knobs: Dict[str, Any] = {
+        "seg_dur_sec": str(settings.SEG_DUR_SEC),
+        "packager_seg_dur_sec": str(settings.PACKAGER_SEG_DUR_SEC),
+        "video_codec": str(settings.VIDEO_CODEC),
+        "nvenc_preset": str(settings.NVENC_PRESET),
+        "nvenc_rc": str(settings.NVENC_RC),
+        "nvenc_lookahead": str(settings.NVENC_LOOKAHEAD),
+        "nvenc_aq": str(settings.NVENC_AQ),
+        "set_bt709_tags": str(settings.SET_BT709_TAGS),
+        "audio_main_kbps": str(settings.AUDIO_MAIN_KBPS),
+        "only_rung": ",".join(only_rung) if only_rung else "ALL",
+        "ladder": _ladder_signature(ladder_cfg),
+        "enable_trickplay": str(settings.ENABLE_TRICKPLAY),
+        "trickplay_factor": str(settings.TRICKPLAY_FACTOR),
+        "enable_captions": str(settings.ENABLE_CAPTIONS),
+        "captions": json.dumps(canon_caps, sort_keys=True, separators=(",", ":")),
+        "ladder_profile": str(settings.LADDER_PROFILE),
+    }
+    profile_sig = profile_signature(profile_knobs)
+    fingerprint_knobs = {
+        "profile": profile_sig,
+        "coverage": coverage,
+        "captions": canon_caps,
+    }
+    encode_config = dict(profile_knobs)
+    encode_config["coverage"] = coverage
+    encode_config["profileSignature"] = profile_sig
+    return profile_sig, ladder_cfg, canon_caps, coverage, fingerprint_knobs, encode_config
 
 def send_to_poison(payload: dict, reason: str, log):
     """Send failed job to poison queue with safe payload."""
@@ -298,6 +389,38 @@ def transcode_queue(msg: QueueMessage):
         if not stem:
             raise CmdError("Missing job id after validation")
 
+        pipeline_id = (payload.get("extra") or {}).get("pipeline") or "transcode"
+        if pipeline_id != "transcode":
+            route = select_pipeline_for_blob(raw_key)
+            target_queue = (route or {}).get("queue")
+            if target_queue and target_queue != TRANSCODE_Q:
+                enqueue(target_queue, json.dumps(payload))
+                log(f"[dispatch] rerouted {raw_key} to {target_queue} (pipeline={pipeline_id})")
+                try:
+                    set_raw_status(
+                        in_cont,
+                        raw_key,
+                        status="queued",
+                        pipeline=pipeline_id,
+                        reason="transcode_rerouted",
+                    )
+                except Exception:
+                    pass
+            else:
+                log(f"[dispatch] unsupported pipeline={pipeline_id} for {raw_key}")
+                try:
+                    set_raw_status(
+                        in_cont,
+                        raw_key,
+                        status="ignored",
+                        pipeline=pipeline_id,
+                        reason="transcode_unsupported",
+                    )
+                except Exception:
+                    pass
+            sl.stop()
+            return
+
         only_rung = ladder_labels(ingest.only_rung) if ingest.only_rung else None
         raw_captions = payload.get("captions")
         captions = raw_captions if raw_captions else [c.model_dump() for c in (ingest.captions or [])]
@@ -335,6 +458,107 @@ def transcode_queue(msg: QueueMessage):
         )
         log(f"[download] input ready path={inp_path} took={int(time.time()-t0)}s")
 
+        content_hash = file_content_hash(inp_path)
+        profile_sig, ladder_cfg, canon_caps, coverage_rungs, fingerprint_knobs, encode_config = _build_profile_components(
+            only_rung=only_rung,
+            captions=captions,
+        )
+        fingerprint = fingerprint_from_content_hash(content_hash, fingerprint_knobs)
+        version = version_for_fingerprint(fingerprint)
+        log(f"[fingerprint] content={content_hash} profile={profile_sig} version={version}")
+
+        content_doc = load_content_index(content_hash)
+        match = find_matching_fingerprint(
+            content_doc,
+            profile_signature=profile_sig,
+            requested_rungs=coverage_rungs,
+            requested_captions=canon_caps,
+        )
+        if match:
+            fingerprint = match["fingerprint"]
+            version = version_for_fingerprint(fingerprint)
+            fp_record = load_fingerprint_record(fingerprint)
+            outputs = fp_record.get("outputs")
+            if not outputs:
+                canonical_stem = next(iter((fp_record.get("stems") or {}).keys()), stem)
+                outputs = build_outputs(
+                    version,
+                    canonical_stem=canonical_stem,
+                    dash_container=DASH,
+                    hls_container=HLS,
+                    dash_base_url=settings.DASH_BASE_URL,
+                    hls_base_url=settings.HLS_BASE_URL,
+                )
+            existing_aliases = set((match.get("stems") or [])) | set((fp_record.get("stems") or {}).keys())
+            existing_aliases.add(stem)
+            manifest_payload = upload_manifests(
+                stem=stem,
+                version=version,
+                fingerprint=fingerprint,
+                source_hash=content_hash,
+                outputs=outputs,
+                renditions=match.get("coverage") or coverage_rungs,
+                captions=canon_caps,
+                aliases=existing_aliases,
+                log=log,
+            )
+            record_stem_alias(
+                fingerprint,
+                stem=stem,
+                manifest_blob=f"{stem}/manifest.json",
+                requested_rungs=coverage_rungs,
+                requested_captions=canon_caps,
+            )
+            register_stem_alias(content_hash, fingerprint, stem)
+            try:
+                set_raw_status(
+                    in_cont,
+                    raw_key,
+                    status="complete",
+                    pipeline=pipeline_id,
+                    version=version,
+                    manifest=f"{PROCESSED}/{stem}/manifest.json",
+                    fingerprint=fingerprint,
+                    content_hash=content_hash,
+                    reason="transcode_reuse",
+                )
+            except Exception:
+                pass
+            upload_prepackage_state(
+                stem=stem,
+                version=version,
+                fingerprint=fingerprint,
+                source_hash=content_hash,
+                state="reused_existing",
+                renditions=manifest_payload["renditions"],
+                log=log,
+            )
+            log("[queue] reuse success; packaging skipped")
+            return
+
+        upsert_fingerprint_entry(
+            content_hash,
+            fingerprint=fingerprint,
+            profile_signature=profile_sig,
+            coverage=coverage_rungs,
+            captions=canon_caps,
+            state="pending",
+            stems=[stem],
+        )
+        register_stem_alias(content_hash, fingerprint, stem)
+        try:
+            set_raw_status(
+                in_cont,
+                raw_key,
+                status="processing",
+                pipeline=pipeline_id,
+                fingerprint=fingerprint,
+                content_hash=content_hash,
+                reason="transcode_processing",
+            )
+        except Exception:
+            pass
+
         # QC (tools + smoke + probe + analyze) — strict
         meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
 
@@ -348,7 +572,7 @@ def transcode_queue(msg: QueueMessage):
 
         # mezz restore first if allowed
         audio_mp4 = str(work_dir / "audio.mp4")
-        labels = only_rung or ladder_labels(None)
+        labels = coverage_rungs or ladder_labels(None)
         expected = [work_dir / "audio.mp4"] + [work_dir / mezz_video_filename(lab) for lab in labels]
         missing = [p for p in expected if not Path(p).exists()]
 
@@ -356,7 +580,7 @@ def transcode_queue(msg: QueueMessage):
         if settings.SKIP_TRANSCODE_IF_MEZZ.lower() in ("1","true","yes") and missing:
             log("[mezz] attempting restore of intermediates")
             if ensure_intermediates_from_mezz(
-                stem=stem,
+                stem=version,
                 work_dir=str(work_dir),
                 only_rung=only_rung,
                 log=log,
@@ -370,7 +594,7 @@ def transcode_queue(msg: QueueMessage):
         def _checkpoint_audio(local_path: str):
             nonlocal manifest_data
             manifest_data = upload_intermediate_file(
-                stem=stem,
+                stem=version,
                 local_path=local_path,
                 manifest=manifest_data,
                 log=log,
@@ -379,7 +603,7 @@ def transcode_queue(msg: QueueMessage):
         def _checkpoint_rung(label: str, local_path: str):
             nonlocal manifest_data
             manifest_data = upload_intermediate_file(
-                stem=stem,
+                stem=version,
                 local_path=local_path,
                 manifest=manifest_data,
                 log=log,
@@ -403,7 +627,7 @@ def transcode_queue(msg: QueueMessage):
         # upload mezz + manifest (safe both for restored and re-encoded)
         try:
             uploaded = upload_mezz_and_manifest(
-                stem=stem,
+                stem=version,
                 work_dir=str(work_dir),
                 manifest=manifest_data,
                 log=log,
@@ -416,26 +640,39 @@ def transcode_queue(msg: QueueMessage):
         pkg_msg = dump_normalized(ingest)
         pkg_msg["only_rung"] = only_rung
         pkg_msg["captions"] = captions or []
-        pkg_msg["extra"] = extra or {}
+        extra_payload = dict(extra or {})
+        extra_payload["fingerprint"] = fingerprint
+        extra_payload["version"] = version
+        extra_payload["content_hash"] = content_hash
+        extra_payload["profile_signature"] = profile_sig
+        extra_payload["canonical_captions"] = canon_caps
+        extra_payload["ladder_signature"] = _ladder_signature(ladder_cfg)
+        extra_payload["coverage"] = coverage_rungs
+        extra_payload["encode_config"] = encode_config
+        extra_payload["requested_rungs"] = coverage_rungs
+        pkg_msg["extra"] = extra_payload
         enqueue_packaging(pkg_msg, log)
 
-        # publish a light manifest for the job state (optional)
-        version = hashlib.sha1(str(time.time()).encode("utf-8")).hexdigest()[:8]
-        manifest = {
-            "id": stem,
-            "version": version,
-            "state": "queued_for_packaging",
-            "rungs": [r["name"] for r in renditions] if renditions else labels,
-        }
-        upload_bytes(PROCESSED, f"{stem}/prepackage.json",
-                     json.dumps(manifest, indent=2).encode("utf-8"),
-                     "application/json")
+        upload_prepackage_state(
+            stem=stem,
+            version=version,
+            fingerprint=fingerprint,
+            source_hash=content_hash,
+            state="queued_for_packaging",
+            renditions=[r["name"] for r in renditions] if renditions else labels,
+            log=log,
+        )
 
         log("[queue] success (packaging enqueued)")
 
     except Exception as e:
         reason = f"{type(e).__name__}: {e}"
         slog_exc("Transcode Failed",e)
+        try:
+            if raw_key:
+                set_raw_status(in_cont, raw_key, status="failed", pipeline=pipeline_id)
+        except Exception:
+            pass
         try:
             send_to_poison(payload, reason, log)
         finally:

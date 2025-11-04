@@ -185,6 +185,34 @@ def upload_bytes(container: str, blob: str, data: bytes, content_type: Optional[
         kw["content_settings"] = ContentSettings(content_type=content_type)
     blob_client(container, blob).upload_blob(data, **kw)
 
+
+def set_blob_metadata(
+    container: str,
+    blob: str,
+    metadata: Dict[str, Any],
+    *,
+    merge: bool = True,
+) -> None:
+    """Update blob metadata (case-normalised, values coerced to strings)."""
+    bc = blob_client(container, blob)
+    new_md = {}
+    for key, value in (metadata or {}).items():
+        if value is None:
+            continue
+        k = str(key).lower()
+        new_md[k] = str(value)
+
+    if not merge:
+        bc.set_blob_metadata(new_md)
+        return
+
+    try:
+        existing = bc.get_blob_properties().metadata or {}
+    except Exception:
+        existing = {}
+    existing.update(new_md)
+    bc.set_blob_metadata(existing)
+
 # -------------------- TTL lease locks --------------------
 def _locks_container() -> str:
     # Prefer config.get, fall back to env, default "locks"

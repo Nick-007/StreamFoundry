@@ -149,6 +149,19 @@ def _make_line_logger(log: Optional[Callable[[str], None]], sink: List[str]):
         (log or print)(s)
     return _on_line
 
+
+_DEFAULT_LADDER: List[Dict[str, str]] = [
+    {"name": "240p", "height": 240, "bv": "300k", "maxrate": "360k", "bufsize": "600k"},
+    {"name": "360p", "height": 360, "bv": "650k", "maxrate": "780k", "bufsize": "1300k"},
+    {"name": "480p", "height": 480, "bv": "900k", "maxrate": "1000k", "bufsize": "1800k"},
+    {"name": "720p", "height": 720, "bv": "2500k", "maxrate": "2800k", "bufsize": "5000k"},
+    {"name": "1080p", "height": 1080, "bv": "4200k", "maxrate": "4600k", "bufsize": "8000k"},
+]
+
+
+def default_ladder() -> List[Dict[str, str]]:
+    return [dict(r) for r in _DEFAULT_LADDER]
+
 def _ffmpeg_video(input_path: str, out_mp4: str, height: int, bv: str, maxrate: str, bufsize: str,
                   fps: float, seg_dur: int, total_duration_sec: float = 0.0,
                   log: Optional[Callable[[str], None]] = None):
@@ -336,14 +349,7 @@ def transcode_to_cmaf_ladder(
 
     # --- Ladder (filter by only_rungs if provided) ---
     seg_dur = _get_int("SEG_DUR_SEC", 4)
-    # Default ladder matches your earlier shape
-    ladder = [
-        {"name":"240p","height":240,"bv":"300k","maxrate":"360k","bufsize":"600k"},
-        {"name":"360p","height":360,"bv":"650k","maxrate":"780k","bufsize":"1300k"},
-        {"name":"480p","height":480,"bv":"900k","maxrate":"1000k","bufsize":"1800k"},
-        {"name":"720p","height":720,"bv":"2500k","maxrate":"2800k","bufsize":"5000k"},
-        {"name":"1080p","height":1080,"bv":"4200k","maxrate":"4600k","bufsize":"8000k"},
-    ]
+    ladder = default_ladder()
     if only_rungs:
         only = normalize_rung_selector(only_rungs=only_rungs)
         ladder = [r for r in ladder if r["name"].lower() in only]
