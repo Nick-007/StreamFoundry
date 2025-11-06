@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Embed a SAS token into manifest files (DASH MPD or HLS master).
+Embed a SAS token into manifest files (DASH MPD, HLS playlists, or WebVTT thumbnails).
 
 Usage:
   python scripts/dev/embed_sas.py --token "sv=..." dist/dash/stream.mpd \
@@ -8,6 +8,9 @@ Usage:
 
   python scripts/dev/embed_sas.py --token "sv=..." dist/hls/master.m3u8 \
       --base "http://127.0.0.1:10000/devstoreaccount1/hls/v_.../"
+
+  python scripts/dev/embed_sas.py --token "sv=..." dist/hls/thumbnails/thumbnails.vtt \
+      --base "http://127.0.0.1:10000/devstoreaccount1/hls/v_.../thumbnails/"
 
 It creates .sas copies alongside the originals (stream.mpd.sas, master.m3u8.sas)
 with absolute URLs that include the query string `?token`.
@@ -69,7 +72,7 @@ def embed_to_m3u8(path: Path, base_url: str, token: str) -> Path:
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             stripped = line.strip()
-            if stripped.startswith("#EXT-X-MAP") or stripped.startswith("#EXT-X-KEY"):
+            if stripped.startswith("#EXT-X-MAP") or stripped.startswith("#EXT-X-KEY") or stripped.startswith("#EXT-X-MEDIA"):
                 def repl(match: re.Match[str]) -> str:
                     prefix, original, suffix = match.groups()
                     target = original if original.startswith("http") else urljoin(base, original)
@@ -84,6 +87,25 @@ def embed_to_m3u8(path: Path, base_url: str, token: str) -> Path:
             else:
                 lines.append(line if line.endswith("\n") else line + "\n")
 
+    output = path.with_suffix(path.suffix + ".sas")
+    output.write_text("".join(lines), encoding="utf-8")
+    return output
+
+
+def embed_thumbnails_vtt(path: Path, base_url: str, token: str) -> Path:
+    base = base_url.rstrip("/") + "/"
+    lines = []
+    with path.open(encoding="utf-8") as fh:
+        for raw_line in fh:
+            line = raw_line.rstrip("\n")
+            stripped = line.strip()
+            if stripped and not stripped.startswith("WEBVTT") and "#xywh=" in stripped:
+                prefix, suffix = stripped.split("#", 1)
+                target = prefix if prefix.startswith("http") else urljoin(base, prefix)
+                updated = _append_token(target, token)
+                lines.append(f"{updated}#{suffix}\n")
+            else:
+                lines.append(raw_line if raw_line.endswith("\n") else raw_line + "\n")
     output = path.with_suffix(path.suffix + ".sas")
     output.write_text("".join(lines), encoding="utf-8")
     return output
@@ -119,8 +141,10 @@ def main() -> None:
         out = embed_to_mpd(path, base, token)
     elif suffix == ".m3u8":
         out = embed_to_m3u8(path, base, token)
+    elif suffix == ".vtt":
+        out = embed_thumbnails_vtt(path, base, token)
     else:
-        parser.error("Unsupported manifest type; expected .mpd or .m3u8")
+        parser.error("Unsupported manifest type; expected .mpd, .m3u8, or .vtt")
 
     print(f"[embed] wrote {out}")
 

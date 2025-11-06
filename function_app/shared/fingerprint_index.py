@@ -99,6 +99,7 @@ def upsert_fingerprint_metadata(
     mezz_prefix: Optional[str],
     outputs: Dict[str, Any],
     encode_config: Dict[str, Any],
+    trickplay: Optional[Dict[str, Any]] = None,
     state: str,
     canonical_stem: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -114,6 +115,8 @@ def upsert_fingerprint_metadata(
     } if mezz_prefix else {}
     record["outputs"] = outputs
     record["encodeConfig"] = encode_config
+    if trickplay:
+        record["trickplay"] = trickplay
     record["state"] = state
     record.setdefault("stems", {})
     if canonical_stem:

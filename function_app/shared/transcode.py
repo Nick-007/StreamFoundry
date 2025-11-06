@@ -492,10 +492,6 @@ def package_with_shaka_ladder(
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
-    if text_tracks:
-        for t in text_tracks:
-            parts.append(f'in="{t["path"]}",stream=text,language={t.get("lang","en")}')
-
     _assert_unique_outputs(parts)
 
     dash_cmd = (
@@ -532,9 +528,6 @@ def package_with_shaka_ladder(
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
-    if text_tracks:
-        for t in text_tracks:
-            parts.append(f'in="{t["path"]}",stream=text,language={t.get("lang","en")}')
     _assert_unique_outputs(parts)
 
     hls_cmd = (

@@ -127,6 +127,13 @@ def blob_exists(container: str, blob: str) -> bool:
     except ResourceExistsError:
         return False
 
+def list_blobs(container: str, prefix: str) -> Iterable[Any]:
+    """
+    Yield blobs under the specified prefix. Returns azure BlobProperties objects.
+    """
+    client = _svc().get_container_client(container=container)
+    return client.list_blobs(name_starts_with=prefix)
+
 def copy_blob(src_container: str, src_blob: str,
               dst_container: str, dst_blob: str,
               overwrite: bool = True) -> None:

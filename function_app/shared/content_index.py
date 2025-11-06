@@ -80,6 +80,7 @@ def upsert_fingerprint_entry(
     profile_signature: str,
     coverage: Iterable[str],
     captions: Iterable[Dict[str, Any]],
+    trickplay: Optional[Dict[str, Any]] = None,
     state: str,
     stems: Optional[Iterable[str]] = None,
 ) -> Dict[str, Any]:
@@ -101,11 +102,15 @@ def upsert_fingerprint_entry(
             "createdAt": _now(),
             "stems": sorted({str(s) for s in (stems or [])}),
         }
+        if trickplay is not None:
+            entry["trickplay"] = trickplay
         fingerprints.append(entry)
     else:
         entry["profile"] = profile_signature
         entry["coverage"] = cov_sorted
         entry["captions"] = caps_norm
+        if trickplay is not None:
+            entry["trickplay"] = trickplay
         entry["state"] = state
         existing_stems = set(entry.get("stems") or [])
         for s in (stems or []):

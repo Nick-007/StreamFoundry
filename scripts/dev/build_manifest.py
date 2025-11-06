@@ -21,10 +21,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import shutil
 import re
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Set
 from urllib.parse import urlparse
 
-from azure.storage.blob import BlobServiceClient, ContentSettings
+from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceNotFoundError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,7 +36,7 @@ from scripts.dev.storage import (  # type: ignore
     parse_connection_string,
     set_blob_metadata,
 )
-from scripts.dev.embed_sas import embed_to_m3u8, embed_to_mpd  # type: ignore
+from scripts.dev.embed_sas import embed_to_m3u8, embed_to_mpd, embed_thumbnails_vtt  # type: ignore
 from azure.storage.blob import generate_container_sas, ContainerSasPermissions
 
 
@@ -84,8 +84,6 @@ def main() -> None:
     parser.add_argument("--output-dir", help="Directory where .sas manifests should be written (defaults to dist/signed/...)")
     parser.add_argument("--print-manifest", choices=("dash", "hls", "both"),
                         help="Write the signed manifest(s) to stdout instead of just saving to disk")
-    parser.add_argument("--upload-signed", action="store_true",
-                        help="Upload the signed manifests to the scratch container and print their HTTP URLs")
     args = parser.parse_args()
 
     settings = load_settings()
@@ -94,8 +92,6 @@ def main() -> None:
     hls_container = os.getenv("HLS_CONTAINER") or settings.get("HLS_CONTAINER", "hls")
     dash_base_url = os.getenv("DASH_BASE_URL") or settings.get("DASH_BASE_URL")
     hls_base_url = os.getenv("HLS_BASE_URL") or settings.get("HLS_BASE_URL")
-    signed_container = os.getenv("SIGNED_CONTAINER") or settings.get("SIGNED_CONTAINER", "signed-manifests")
-    signed_base_url = os.getenv("SIGNED_BASE_URL") or settings.get("SIGNED_BASE_URL")
 
     conn = load_connection_string()
     svc = BlobServiceClient.from_connection_string(conn)
@@ -128,15 +124,7 @@ def main() -> None:
     else:
         raise SystemExit("BASE_URL or HLS_BASE_URL must be configured")
 
-    if args.upload_signed:
-        if signed_base_url:
-            hls_master_prefix = f"{signed_base_url.rstrip('/')}/{args.fingerprint}/{stem_path}"
-        elif base_url:
-            hls_master_prefix = f"{base_url.rstrip('/')}/{signed_container}/{args.fingerprint}/{stem_path}"
-        else:
-            raise SystemExit("BASE_URL or SIGNED_BASE_URL must be configured for upload")
-    else:
-        hls_master_prefix = hls_prefix
+    hls_master_prefix = hls_prefix
 
     def resolve_manifest(
         requested_path: Optional[str],
@@ -173,32 +161,37 @@ def main() -> None:
 
     dash_copy: Optional[Path] = None
     hls_copy: Optional[Path] = None
+    thumbnails_out: Optional[Path] = None
+    thumbnails_copy: Optional[Path] = None
 
-    def extract_playlist_entries(manifest_text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
-        direct: Dict[str, str] = {}
-        attribute: Dict[str, str] = {}
+    def extract_playlist_entries(manifest_text: str) -> Tuple[Set[str], Set[str], Set[str]]:
+        direct: Set[str] = set()
+        attribute: Set[str] = set()
+        captions: Set[str] = set()
+        attr_pattern = re.compile(r'URI="([^"]+)"')
         for line in manifest_text.splitlines():
             stripped = line.strip()
             if not stripped:
                 continue
             if stripped.startswith("#"):
-                match = re.search(r'URI="([^"]+\.m3u8)"', stripped)
-                if match:
-                    uri = match.group(1)
+                for uri in attr_pattern.findall(stripped):
                     parsed = urlparse(uri)
                     name = Path(parsed.path).name
-                    attribute[uri] = name
+                    ext = Path(name).suffix.lower()
+                    if ext == ".m3u8":
+                        attribute.add(name)
+                    elif ext == ".vtt":
+                        captions.add(name)
                 continue
             if ".m3u8" in stripped:
                 parsed = urlparse(stripped)
                 name = Path(parsed.path).name
-                direct[stripped] = name
-        return direct, attribute
+                direct.add(name)
+        return direct, attribute, captions
 
     variant_outputs: Dict[str, Path] = {}
     variant_copies: Dict[str, Path] = {}
-    scratch_master_bytes: Optional[bytes] = None
-
+    caption_outputs: Dict[str, Path] = {}
     with tempfile.TemporaryDirectory(prefix="sf-manifest-") as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
         workspace_root = None
@@ -223,40 +216,12 @@ def main() -> None:
 
         dash_out = embed_to_mpd(dash_manifest, dash_prefix, dash_token)
         master_text = hls_manifest.read_text(encoding="utf-8")
-        direct_entries, attribute_entries = extract_playlist_entries(master_text)
+        direct_entries, attribute_entries, caption_entries = extract_playlist_entries(master_text)
         hls_out = embed_to_m3u8(hls_manifest, hls_master_prefix, hls_token)
 
-        if args.upload_signed:
-            if not signed_base_url and not base_url:
-                raise SystemExit("SIGNED_BASE_URL or BASE_URL must be configured to publish signed variants")
-            signed_variant_prefix = (
-                f"{signed_base_url.rstrip('/')}/{args.fingerprint}/{stem_path}"
-                if signed_base_url
-                else f"{base_url.rstrip('/')}/{signed_container}/{args.fingerprint}/{stem_path}"
-            )
-            master_signed_text = hls_out.read_text(encoding="utf-8")
-            uri_pattern = re.compile(r'URI="([^"]+)"')
-            scratch_lines = []
-            for line in master_signed_text.splitlines():
-                stripped = line.strip()
-                if stripped in direct_entries:
-                    scratch_lines.append(f"{signed_variant_prefix}/{direct_entries[stripped]}")
-                    continue
-
-                def _rewrite(match: re.Match[str]) -> str:
-                    original = match.group(1)
-                    name = attribute_entries.get(original)
-                    if not name:
-                        return match.group(0)
-                    return f'URI="{signed_variant_prefix}/{name}"'
-
-                updated = uri_pattern.sub(_rewrite, line)
-                scratch_lines.append(updated)
-            scratch_master_bytes = ("\n".join(scratch_lines) + "\n").encode("utf-8")
-
         # Process variant playlists (video/audio) to embed SAS for segments.
-        all_playlist_names = {name for name in direct_entries.values()} | {name for name in attribute_entries.values()}
-        for name in sorted(all_playlist_names):
+        all_playlist_names = sorted(direct_entries | attribute_entries)
+        for name in all_playlist_names:
             variant_blob = "/".join(
                 part for part in (args.fingerprint.strip("/"), stem_path, name) if part
             )
@@ -269,6 +234,39 @@ def main() -> None:
             )
             variant_out = embed_to_m3u8(variant_path, hls_prefix, hls_token)
             variant_outputs[name] = variant_out
+
+        for name in sorted(caption_entries):
+            try:
+                caption_path = resolve_manifest(
+                    None,
+                    f"dist/hls/captions/{name}",
+                    container=hls_container,
+                    filename=f"captions/{name}",
+                    workspace_root=workspace_root,
+                )
+                caption_outputs[name] = caption_path
+            except SystemExit:
+                continue
+            except Exception:
+                continue
+
+        thumbnails_manifest: Optional[Path] = None
+        try:
+            thumbnails_manifest = resolve_manifest(
+                None,
+                "dist/hls/thumbnails/thumbnails.vtt",
+                container=hls_container,
+                filename="thumbnails/thumbnails.vtt",
+                workspace_root=workspace_root,
+            )
+        except SystemExit:
+            thumbnails_manifest = None
+        except Exception:
+            thumbnails_manifest = None
+
+        if thumbnails_manifest and thumbnails_manifest.exists():
+            thumbnail_prefix = f"{hls_prefix}/thumbnails"
+            thumbnails_out = embed_thumbnails_vtt(thumbnails_manifest, thumbnail_prefix, hls_token)
 
         if args.output_dir:
             output_dir = Path(args.output_dir).expanduser()
@@ -288,8 +286,24 @@ def main() -> None:
             shutil.copy2(path, copy_path)
             variant_copies[name] = copy_path
 
+        if caption_outputs:
+            captions_dir = output_dir / "captions"
+            captions_dir.mkdir(parents=True, exist_ok=True)
+            for name, path in caption_outputs.items():
+                copy_path = captions_dir / name
+                shutil.copy2(path, copy_path)
+
+        if thumbnails_out:
+            thumb_dir = output_dir / "thumbnails"
+            thumb_dir.mkdir(parents=True, exist_ok=True)
+            thumbnails_copy = thumb_dir / thumbnails_out.name
+            shutil.copy2(thumbnails_out, thumbnails_copy)
+
     dash_url = f"{dash_prefix}/stream.mpd?{dash_token}"
     hls_url = f"{hls_prefix}/master.m3u8?{hls_token}"
+    trickplay_url = None
+    if thumbnails_out:
+        trickplay_url = f"{hls_prefix}/thumbnails/thumbnails.vtt?{hls_token}"
 
     print("[build] DASH manifest:", dash_out)
     print("[build] HLS manifest:", hls_out)
@@ -297,71 +311,9 @@ def main() -> None:
     print("[build] Saved HLS manifest copy:", hls_copy)
     print("[build] DASH URL:", dash_url)
     print("[build] HLS URL:", hls_url)
-
-    scratch_urls = {}
-    if args.upload_signed:
-        if not signed_container:
-            raise SystemExit("SIGNED_CONTAINER must be configured to upload signed manifests")
-        container_client = svc.get_container_client(signed_container)
-
-        def _upload(copy: Optional[Path], *, content_type: str, label: str, target_name: str, data: Optional[bytes] = None) -> None:
-            if copy is None and data is None:
-                return
-            if copy is not None and not copy.exists():
-                if data is None:
-                    return
-            blob_path = "/".join(
-                part for part in (args.fingerprint.strip("/"), stem_path, target_name) if part
-            )
-            blob_client = container_client.get_blob_client(blob_path)
-            try:
-                blob_client.upload_blob(
-                    data if data is not None else copy.read_bytes(),
-                    overwrite=True,
-                    content_settings=ContentSettings(content_type=content_type),
-                    timeout=300,
-                )
-            except Exception as exc:
-                print(f"[build] WARN: failed to upload {label} manifest ({exc})")
-                return
-            if signed_base_url:
-                url = f"{signed_base_url.rstrip('/')}/{blob_path}"
-            elif base_url:
-                url = f"{base_url.rstrip('/')}/{signed_container}/{blob_path}"
-            else:
-                url = None
-            scratch_urls[label] = url or blob_client.url
-            print(f"[build] uploaded {label} manifest to {blob_client.url}")
-
-        _upload(
-            dash_copy,
-            content_type="application/dash+xml",
-            label="dash",
-            target_name="stream.mpd",
-        )
-        _upload(
-            hls_copy if scratch_master_bytes is None else None,
-            content_type="application/vnd.apple.mpegurl",
-            label="hls",
-            target_name="master.m3u8",
-            data=scratch_master_bytes,
-        )
-        for name, copy_path in variant_copies.items():
-            _upload(
-                copy_path,
-                content_type="application/vnd.apple.mpegurl",
-                label=name,
-                target_name=name,
-            )
-
-    if scratch_urls:
-        if "dash" in scratch_urls:
-            print("[build] Scratch DASH URL:", scratch_urls["dash"])
-        if "hls" in scratch_urls:
-            print("[build] Scratch HLS URL:", scratch_urls["hls"])
-        for key, value in scratch_urls.items():
-            if key not in {"dash", "hls"}:
-                print(f"[build] Scratch {key} URL:", value)
+    if thumbnails_out:
+        print("[build] Trick-play VTT:", thumbnails_out)
+        print("[build] Trick-play URL:", trickplay_url)
 
     if args.print_manifest in ("dash", "both") and dash_copy:
         print("\n[build] DASH manifest contents:\n")
@@ -379,6 +331,8 @@ def main() -> None:
             "sf_dash_url": dash_url,
             "sf_hls_url": hls_url,
         }
+        if trickplay_url:
+            metadata["sf_trickplay_vtt"] = trickplay_url
         try:
             set_blob_metadata(args.raw_container, args.raw_key, metadata, merge=True)
             print(f"[build] Updated metadata for {args.raw_container}/{args.raw_key}")

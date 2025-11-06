@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json, sys, io
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from azure.storage.queue import QueueServiceClient
 from azure.storage.blob import BlobServiceClient
@@ -18,13 +18,13 @@ except Exception as e:
 # Known/real resources in your app:
 QUEUE_NAME = "transcode-jobs"
 # List your BlobTrigger containers here; add more if your app uses them.
-# (We saw 'raw-videos' in your logs; do not include any azure-webjobs-* internals.)
-BLOBTRIGGER_CONTAINERS = ["raw-videos"]
+# (We saw 'raw' in your logs; do not include any azure-webjobs-* internals.)
+BLOBTRIGGER_CONTAINERS = ["raw"]
 
 # Seed blob name + content
 SEED_BLOB_NAME = "__seed__.keep"
 SEED_CONTENT = b"# seed blob to force BlobTrigger registration\n"
-SEED_METADATA = {"seed": "true", "created": datetime.utcnow().isoformat()}
+SEED_METADATA = {"seed": "true", "created": datetime.now(timezone.utc).isoformat()}
 
 def ensure_queue():
     qs = QueueServiceClient.from_connection_string(CONN)

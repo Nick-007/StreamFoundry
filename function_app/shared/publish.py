@@ -45,6 +45,7 @@ def upload_manifests(
     outputs: Dict[str, Dict[str, str]],
     renditions: Iterable[str],
     captions: Optional[Iterable[Dict[str, Any]]] = None,
+    trickplay: Optional[Dict[str, Any]] = None,
     aliases: Optional[Iterable[str]] = None,
     log=None,
 ) -> Dict[str, Any]:
@@ -65,6 +66,8 @@ def upload_manifests(
         "renditions": sorted({str(r) for r in renditions}),
         "captions": list(captions or []),
     }
+    if trickplay:
+        manifest_payload["trickplay"] = trickplay
     if aliases:
         manifest_payload["aliases"] = sorted({str(a) for a in aliases})
 

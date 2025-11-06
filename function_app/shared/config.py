@@ -57,6 +57,13 @@ class AppSettings(BaseSettings):
     ENABLE_TRICKPLAY: str
     TRICKPLAY_FACTOR: str
     THUMB_INTERVAL_SEC: str
+    THUMB_WIDTH: str = Field(default="320")
+    THUMB_HEIGHT: str = Field(default="180")
+    THUMB_TILE_COLS: str = Field(default="5")
+    THUMB_TILE_ROWS: str = Field(default="5")
+    TRICKPLAY_SPRITE_FORMAT: str = Field(default="jpg")
+    TRICKPLAY_SPRITE_QUALITY: str = Field(default="80")
+    TRICKPLAY_MAX_SPRITES: str = Field(default="50")
     QC_STRICT: str
     DRM_PLACEHOLDERS: str
     PIPELINE_ROUTES: str = Field(default="")

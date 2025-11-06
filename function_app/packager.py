@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import time
+import shutil
 import requests
 from pathlib import Path
-from typing import Dict, List, Optional, Iterable
+from typing import Any, Dict, List, Optional, Iterable
 
 # Typed payload (your shared schema model)
 from .shared.schema import IngestPayload
@@ -15,6 +16,7 @@ from .shared.verify import check_integrity
 from .shared.storage import (
     upload_tree_routed,
     download_blob_streaming,
+    list_blobs,
 )
 from .shared.config import get
 from .shared.qc import CmdError
@@ -27,9 +29,183 @@ from .shared.content_index import upsert_fingerprint_entry, register_stem_alias,
 from .shared.publish import build_outputs, upload_manifests
 from .shared.status import set_raw_status
 from .shared.urls import build_asset_urls
+from .shared.trickplay import generate_trickplay_assets
+import pysubs2
 
 CAPTION_MAX_MB = 50
 CAPTION_CHUNK_BYTES = 4_194_304
+
+
+def _maybe_convert_caption(path: Path, *, log) -> Optional[Path]:
+    if path.suffix.lower() not in (".srt",):
+        return None
+    try:
+        subs = pysubs2.load(str(path))
+        out_path = path.with_suffix(".vtt")
+        subs.save(str(out_path), format="webvtt")
+        log(f"[captions] converted {path.name} -> {out_path.name}")
+        return out_path
+    except Exception as exc:
+        log(f"[captions] conversion failed for {path.name}: {exc}")
+        return None
+
+
+def _discover_caption_sidecars(
+    *,
+    raw_container: str,
+    raw_key: str,
+    log,
+) -> List[Dict[str, str]]:
+    """
+    Scan the raw container for STEM_<lang>.vtt|srt companions that live alongside the source.
+    Prefers VTT when both are present.
+    """
+    if not raw_key:
+        return []
+
+    if "/" in raw_key:
+        dir_prefix, filename = raw_key.rsplit("/", 1)
+        dir_prefix = dir_prefix.strip("/")
+        if dir_prefix:
+            dir_prefix = dir_prefix + "/"
+    else:
+        dir_prefix = ""
+        filename = raw_key
+
+    base_name = Path(filename).stem
+    prefix = f"{dir_prefix}{base_name}_"
+    try:
+        blobs = list_blobs(raw_container, prefix=prefix)
+    except Exception as exc:
+        log(f"[captions] failed to list sidecars: {exc}")
+        return []
+
+    best_per_lang: Dict[str, Dict[str, str]] = {}
+    for item in blobs:
+        name = getattr(item, "name", "")
+        if not name or not name.lower().startswith(prefix.lower()):
+            continue
+        file_name = Path(name).name
+        stem_part = Path(file_name).stem
+        lang_part = stem_part[len(base_name) + 1 :] if stem_part.startswith(f"{base_name}_") else ""
+        if len(lang_part) != 2 or not lang_part.isalpha():
+            continue
+        lang_code = lang_part.lower()
+        suffix = Path(file_name).suffix.lower()
+        if suffix not in (".vtt", ".srt"):
+            continue
+        entry = {"lang": lang_code, "source": f"{raw_container}/{name}"}
+        current = best_per_lang.get(lang_code)
+        if current:
+            # Prefer VTT over SRT
+            if current["source"].lower().endswith(".vtt"):
+                continue
+            if suffix == ".vtt":
+                best_per_lang[lang_code] = entry
+        else:
+            best_per_lang[lang_code] = entry
+
+    discovered = sorted(best_per_lang.values(), key=lambda d: d["lang"])
+    if discovered:
+        log(
+            "[captions] auto-discovered sidecars: "
+            + ", ".join(f"{c['lang']}:{c['source']}" for c in discovered)
+        )
+    return discovered
+
+
+def _stage_captions_for_hls(
+    caption_tracks: Iterable[Dict[str, str]],
+    hls_dir: Path,
+    *,
+    log,
+) -> Dict[str, str]:
+    staged: Dict[str, str] = {}
+    if not caption_tracks:
+        return staged
+
+    captions_dir = hls_dir / "captions"
+    captions_dir.mkdir(parents=True, exist_ok=True)
+
+    for track in caption_tracks:
+        lang = (track.get("lang") or "").strip().lower() or f"lang{len(staged)}"
+        src = Path(track.get("path") or "")
+        if not src.exists():
+            log(f"[captions] skipping missing file {src}")
+            continue
+        if src.suffix.lower() != ".vtt":
+            log(f"[captions] skipping non-VTT track {src.name}")
+            continue
+
+        target_name = f"{lang}.vtt"
+        dest = captions_dir / target_name
+        counter = 1
+        while dest.exists():
+            target_name = f"{lang}_{counter}.vtt"
+            dest = captions_dir / target_name
+            counter += 1
+
+        shutil.copy2(src, dest)
+        staged[lang] = dest.name
+        log(f"[captions] staged {src.name} → {dest}")
+
+    return staged
+
+
+def _inject_captions_into_master(master_path: Path, captions_map: Dict[str, str], *, log) -> None:
+    if not captions_map:
+        return
+
+    lines = master_path.read_text(encoding="utf-8").splitlines()
+    filtered = [
+        line
+        for line in lines
+        if not (line.startswith("#EXT-X-MEDIA") and "TYPE=SUBTITLES" in line)
+    ]
+
+    insert_idx = len(filtered)
+    for idx, line in enumerate(filtered):
+        if line.startswith("#EXT-X-STREAM-INF"):
+            insert_idx = idx
+            break
+
+    media_lines: List[str] = []
+    for lang, filename in sorted(captions_map.items()):
+        uri = f"captions/{filename}"
+        display = lang.upper()
+        media_lines.append(
+            f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{display}",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="{lang}",URI="{uri}"'
+        )
+
+    updated = filtered[:insert_idx] + media_lines + filtered[insert_idx:]
+
+    for idx, line in enumerate(updated):
+        if line.startswith("#EXT-X-STREAM-INF"):
+            if 'SUBTITLES="' in line:
+                continue
+            if 'CLOSED-CAPTIONS=' in line:
+                updated[idx] = line.replace('CLOSED-CAPTIONS=NONE', 'CLOSED-CAPTIONS=NONE,SUBTITLES="subs"')
+            else:
+                updated[idx] = line + ',SUBTITLES="subs"'
+
+    master_path.write_text("\n".join(updated) + "\n", encoding="utf-8")
+    log(f"[captions] injected {len(captions_map)} subtitle track(s) into HLS master")
+
+
+def _select_trickplay_source(renditions: Iterable[Dict[str, str]]) -> Optional[Dict[str, str]]:
+    best: Optional[Dict[str, str]] = None
+    best_height = -1
+    for rend in renditions or []:
+        label = str(rend.get("name") or "")
+        digits = "".join(ch for ch in label if ch.isdigit())
+        try:
+            height = int(digits) if digits else 0
+        except Exception:
+            height = 0
+        if height >= best_height:
+            best = rend
+            best_height = height
+    return best
 
 
 def _prepare_caption_tracks(
@@ -97,6 +273,11 @@ def _prepare_caption_tracks(
                 log(f"[captions] wrote {dest.name}")
         except Exception as exc:
             log(f"[captions] failed for {src}: {exc}")
+            continue
+
+        converted = _maybe_convert_caption(Path(dest), log=log)
+        if converted:
+            tracks[-1]["path"] = str(converted)
     return tracks
 
 
@@ -133,6 +314,23 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         {"lang": c.lang, "source": str(c.source)} for c in (payload.captions or [])
     ]
     extra_meta = dict(payload.extra or {})
+    raw_container = (payload.in_.container or "").strip() if payload.in_ else ""
+    raw_key = payload.in_.key if payload.in_ else ""
+    if not raw_container:
+        raw_container = get("RAW_CONTAINER", "raw")
+    auto_sidecars = _discover_caption_sidecars(
+        raw_container=raw_container,
+        raw_key=raw_key or "",
+        log=log,
+    )
+    existing_langs = {spec.get("lang"): spec for spec in caption_specs if spec.get("lang")}
+    for entry in auto_sidecars:
+        lang = entry.get("lang")
+        if not lang:
+            continue
+        if lang not in existing_langs:
+            caption_specs.append(entry)
+            existing_langs[lang] = entry
     fingerprint = extra_meta.get("fingerprint")
     version = extra_meta.get("version")
     if fingerprint and not version:
@@ -164,6 +362,18 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
                 )
         norm_caps.sort(key=lambda d: (d.get("lang", ""), d.get("source", "")))
         canonical_captions = norm_caps
+        for entry in caption_specs:
+            lang = (entry.get("lang") or "").strip()
+            if not lang:
+                continue
+            if not any(c.get("lang") == lang for c in canonical_captions):
+                canonical_captions.append(
+                    {
+                        "lang": lang,
+                        "source": str(entry.get("source") or "").strip(),
+                    }
+                )
+        canonical_captions.sort(key=lambda d: (d.get("lang", ""), d.get("source", "")))
     else:
         canonical_captions = [
             {
@@ -192,7 +402,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
     DASH_BASE_URL = get("DASH_BASE_URL", "")
     HLS_BASE_URL  = get("HLS_BASE_URL",  "")
     PROCESSED = get("PROCESSED_CONTAINER", "processed")
-    RAW = get("RAW_CONTAINER", "raw-videos")
+    RAW = get("RAW_CONTAINER", "raw")
 
     paths = job_paths(stem)
     work_dir = paths.work_dir
@@ -231,6 +441,52 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
     dash_path.parent.mkdir(parents=True, exist_ok=True)
     hls_path.parent.mkdir(parents=True,  exist_ok=True)
 
+    # --- trick-play assets ---
+    trick_manifest: Optional[Dict[str, Any]] = None
+    trick_source = _select_trickplay_source(renditions)
+    if trick_source:
+        try:
+            trick_dir = hls_path.parent / "thumbnails"
+            result = generate_trickplay_assets(
+                trick_source["video"],
+                str(trick_dir),
+                log=log,
+            )
+            if result.enabled and result.vtt:
+                sprites_meta = [
+                    {
+                        "path": f"thumbnails/{artifact.sprite}",
+                        "columns": artifact.columns,
+                        "rows": artifact.rows,
+                        "frames": artifact.frame_count,
+                    }
+                    for artifact in (result.sprites or [])
+                ]
+                trick_manifest = {
+                    "vtt": f"thumbnails/{result.vtt}",
+                    "interval": result.interval_sec,
+                    "tile": {
+                        "width": result.tile_width,
+                        "height": result.tile_height,
+                    },
+                    "frames": result.frame_total,
+                    "sprites": sprites_meta,
+                }
+                log("[trick-play] assets ready")
+            elif result.enabled:
+                log("[trick-play] generation produced no assets; skipping manifest entry")
+            else:
+                log("[trick-play] disabled by configuration")
+        except CmdError as exc:
+            log(f"[trick-play] generation failed: {exc}")
+        except Exception as exc:
+            log(f"[trick-play] unexpected error: {exc}")
+    else:
+        log("[trick-play] skipped (no suitable rendition)")
+
+    if trick_manifest:
+        encode_config["trickplay"] = trick_manifest
+
     # --- package with Shaka ---
     log("[package] shaka begin")
     package_with_shaka_ladder(
@@ -242,6 +498,10 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         log=log,
     )
     log("[package] shaka end")
+
+    staged_captions = _stage_captions_for_hls(caption_tracks, hls_path.parent, log=log)
+    if staged_captions:
+        _inject_captions_into_master(hls_path, staged_captions, log=log)
 
     # --- local integrity (pre-upload) ---
     try:
@@ -321,6 +581,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         mezz_prefix=version,
         outputs=outputs,
         encode_config=encode_config,
+        trickplay=trick_manifest,
         state="published",
         canonical_stem=stem,
     )
@@ -331,6 +592,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         profile_signature=str(profile_sig),
         coverage=rendered_rungs,
         captions=canonical_captions,
+        trickplay=trick_manifest,
         state="published",
         stems=[stem],
     )
@@ -360,6 +622,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
             outputs=outputs,
             renditions=rendered_rungs,
             captions=canonical_captions,
+            trickplay=trick_manifest,
             aliases=aliases,
             log=log,
         )
@@ -374,7 +637,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         if hls_url:
             extra_meta_status["sf_hls_url"] = hls_url
         set_raw_status(
-            payload.in_.container or get("RAW_CONTAINER", "raw-videos"),
+            payload.in_.container or get("RAW_CONTAINER", "raw"),
             payload.in_.key,
             status="complete",
             pipeline=extra_meta.get("pipeline", "transcode"),

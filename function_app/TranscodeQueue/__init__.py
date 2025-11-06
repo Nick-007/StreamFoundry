@@ -406,20 +406,14 @@ def transcode_queue(msg: QueueMessage):
                     )
                 except Exception:
                     pass
+                sl.stop()
+                return
+
+            # Pipeline resolves to the local worker queue; continue processing here.
+            if target_queue == TRANSCODE_Q:
+                log(f"[dispatch] pipeline={pipeline_id} resolved to {TRANSCODE_Q}; continuing locally")
             else:
-                log(f"[dispatch] unsupported pipeline={pipeline_id} for {raw_key}")
-                try:
-                    set_raw_status(
-                        in_cont,
-                        raw_key,
-                        status="ignored",
-                        pipeline=pipeline_id,
-                        reason="transcode_unsupported",
-                    )
-                except Exception:
-                    pass
-            sl.stop()
-            return
+                log(f"[dispatch] pipeline={pipeline_id} no explicit queue; continuing locally")
 
         only_rung = ladder_labels(ingest.only_rung) if ingest.only_rung else None
         raw_captions = payload.get("captions")

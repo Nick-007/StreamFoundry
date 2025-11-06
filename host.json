@@ -32,6 +32,7 @@
       "submit": "Debug",
       "transcode": "Debug",
       "package": "Debug",
+      "blob_ingestor": "Information",
       "Function": "Debug",
       "Host.Results": "Information",
       "Host.Triggers.Queue": "Information",

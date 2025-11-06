@@ -27,7 +27,7 @@ This bundle provides a **queue‑driven** transcoding pipeline that **encodes on
   - If NVENC is unavailable, pipeline falls back to `libx264`
 - **Shaka Packager** available on PATH (`packager`)
 
-> Containers are created on first use: `raw-videos`, `mezzanine`, `dash`, `hls`, `processed`, `logs`, and queue `transcode-jobs`.
+> Containers are created on first use: `raw`, `mezzanine`, `dash`, `hls`, `processed`, `logs`, and queue `transcode-jobs`.
 
 **Run Azurite (Docker):**
 ```bash
@@ -64,7 +64,7 @@ func start
 | Key | Default | Notes |
 |---|---|---|
 | `AzureWebJobsStorage` | `UseDevelopmentStorage=true` | Single storage var for everything |
-| `RAW_CONTAINER` | `raw-videos` | Ingest container (blob trigger enqueues) |
+| `RAW_CONTAINER` | `raw` | Ingest container (blob trigger enqueues) |
 | `MEZZ_CONTAINER` | `mezzanine` | CMAF MP4s (audio + video rungs) |
 | `DASH_CONTAINER` | `dash` | DASH MPD + segments |
 | `HLS_CONTAINER` | `hls` | HLS master + segments + thumbnails |
@@ -114,7 +114,7 @@ curl -s -X POST http://localhost:7071/api/submit \
 
 ### What to expect in Storage
 ```
-raw-videos/
+raw/
   bbb.mp4
 mezzanine/
   v_<fingerprint>/bbb/{audio.mp4, video_240.mp4, ..., video_1080.mp4}
@@ -283,7 +283,7 @@ Tasks should pass **input/output** via environment variables (SAS URLs) and call
   "id": "bbb-1080p",
   "commandLine": "/bin/bash -lc \"echo starting && /usr/local/bin/run_transcode.sh\"",
   "environmentSettings": [
-    { "name": "RAW_URL",           "value": "https://<account>.blob.core.windows.net/raw-videos/bbb.mp4?<SAS>" },
+    { "name": "RAW_URL",           "value": "https://<account>.blob.core.windows.net/raw/bbb.mp4?<SAS>" },
     { "name": "DEST_BASE",         "value": "https://<account>.blob.core.windows.net" },
     { "name": "DEST_SAS",          "value": "<SAS-with-write>" },
     { "name": "STEM",              "value": "bbb" },

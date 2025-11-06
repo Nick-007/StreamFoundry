@@ -3,7 +3,7 @@
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "RAW_CONTAINER": "raw-videos",
+    "RAW_CONTAINER": "raw",
     "MEZZ_CONTAINER": "mezzanine",
     "HLS_CONTAINER": "hls",
     "DASH_CONTAINER": "dash",

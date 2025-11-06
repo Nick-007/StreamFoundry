@@ -7,7 +7,7 @@ Examples:
   python scripts/dev/queues.py peek transcode-jobs --limit 5
   python scripts/dev/queues.py clear transcode-jobs
   python scripts/dev/queues.py pop transcode-jobs
-  python scripts/dev/queues.py push transcode-jobs '{"id":"demo","in":{"container":"raw-videos","key":"demo.mp4"}}'
+  python scripts/dev/queues.py push transcode-jobs '{"id":"demo","in":{"container":"raw","key":"demo.mp4"}}'
 """
 from __future__ import annotations
 
