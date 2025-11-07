@@ -18,8 +18,8 @@ except Exception as e:
 # Known/real resources in your app:
 QUEUE_NAME = "transcode-jobs"
 # List your BlobTrigger containers here; add more if your app uses them.
-# (We saw 'raw-videos' in your logs; do not include any azure-webjobs-* internals.)
-BLOBTRIGGER_CONTAINERS = ["raw-videos"]
+# (We saw 'raw' in your logs; do not include any azure-webjobs-* internals.)
+BLOBTRIGGER_CONTAINERS = ["raw"]
 
 # Seed blob name + content
 SEED_BLOB_NAME = "__seed__.keep"

@@ -27,7 +27,7 @@ This bundle provides a **queue‑driven** transcoding pipeline that **encodes on
   - If NVENC is unavailable, pipeline falls back to `libx264`
 - **Shaka Packager** available on PATH (`packager`)
 
-> Containers are created on first use: `raw-videos`, `mezzanine`, `dash`, `hls`, `processed`, `logs`, and queue `transcode-jobs`.
+> Containers are created on first use: `raw`, `mezzanine`, `dash`, `hls`, `processed`, `logs`, and queue `transcode-jobs`.
 
 **Run Azurite (Docker):**
 ```bash
@@ -64,7 +64,7 @@ func start
 | Key | Default | Notes |
 |---|---|---|
 | `AzureWebJobsStorage` | `UseDevelopmentStorage=true` | Single storage var for everything |
-| `RAW_CONTAINER` | `raw-videos` | Ingest container (blob trigger enqueues) |
+| `RAW_CONTAINER` | `raw` | Ingest container (blob trigger enqueues) |
 | `MEZZ_CONTAINER` | `mezzanine` | CMAF MP4s (audio + video rungs) |
 | `DASH_CONTAINER` | `dash` | DASH MPD + segments |
 | `HLS_CONTAINER` | `hls` | HLS master + segments + thumbnails |
@@ -90,6 +90,22 @@ func start
 | `DRM_PLACEHOLDERS` | `true` | Reserved for future DRM wiring |
 | `PIPELINE_ROUTES` | `` | JSON routes from extension → queue (`{"transcode":{"extensions":[".mp4"],"queue":"transcode-jobs"}}`) |
 
+### Syncing app settings to Azure
+Keep `local.settings.json` for local work and push the same keys to your Azure Function App via the helper script:
+
+```bash
+# log in with az login first
+python scripts/dev/push_appsettings.py \
+  --function-app <my-func-app> \
+  --resource-group <my-rg> \
+  --settings-file local.settings.json
+```
+
+The script reads the `Values` block and runs
+`az functionapp config appsettings set --settings KEY=VALUE ...` for you
+(optionally add `--slot <slot>`). This keeps sensitive settings out of source
+control while ensuring the Azure Configuration blade matches your local config.
+
 **HTTP submit payload**
 ```jsonc
 {
@@ -114,7 +130,7 @@ curl -s -X POST http://localhost:7071/api/submit \
 
 ### What to expect in Storage
 ```
-raw-videos/
+raw/
   bbb.mp4
 mezzanine/
   v_<fingerprint>/bbb/{audio.mp4, video_240.mp4, ..., video_1080.mp4}
@@ -283,7 +299,7 @@ Tasks should pass **input/output** via environment variables (SAS URLs) and call
   "id": "bbb-1080p",
   "commandLine": "/bin/bash -lc \"echo starting && /usr/local/bin/run_transcode.sh\"",
   "environmentSettings": [
-    { "name": "RAW_URL",           "value": "https://<account>.blob.core.windows.net/raw-videos/bbb.mp4?<SAS>" },
+    { "name": "RAW_URL",           "value": "https://<account>.blob.core.windows.net/raw/bbb.mp4?<SAS>" },
     { "name": "DEST_BASE",         "value": "https://<account>.blob.core.windows.net" },
     { "name": "DEST_SAS",          "value": "<SAS-with-write>" },
     { "name": "STEM",              "value": "bbb" },

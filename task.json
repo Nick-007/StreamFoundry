@@ -4,7 +4,7 @@
   "environmentSettings": [
     {
       "name": "RAW_URL",
-      "value": "https://<account>.blob.core.windows.net/raw-videos/bbb.mp4?<SAS>"
+      "value": "https://<account>.blob.core.windows.net/raw/bbb.mp4?<SAS>"
     },
     {
       "name": "DEST_BASE",

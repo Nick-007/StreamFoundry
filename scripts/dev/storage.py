@@ -7,9 +7,9 @@ Helpers for common Azure Storage (Blob) tasks:
 
 Examples:
   python scripts/dev/storage.py containers
-  python scripts/dev/storage.py set-access raw-videos --level container
-  python scripts/dev/storage.py sas raw-videos --permissions rl --minutes 120
-  python scripts/dev/storage.py sas raw-videos --blob demo.mp4 --permissions r --minutes 15 --full-url
+  python scripts/dev/storage.py set-access raw --level container
+  python scripts/dev/storage.py sas raw --permissions rl --minutes 120
+  python scripts/dev/storage.py sas raw --blob demo.mp4 --permissions r --minutes 15 --full-url
 """
 from __future__ import annotations
 

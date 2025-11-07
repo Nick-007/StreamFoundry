@@ -15,12 +15,13 @@ obj/
 .func.log
 
 # Azurite state
-_azurite/
-_azurite.old/
-.azurite/
+azurite*
+.azurite*
+_azurite*
+
 
 # Transcoding pipeline outputs (ephemeral)
-raw-videos/
+raw/
 mezzanine/
 hls/
 dash/

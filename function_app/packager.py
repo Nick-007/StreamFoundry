@@ -192,7 +192,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
     DASH_BASE_URL = get("DASH_BASE_URL", "")
     HLS_BASE_URL  = get("HLS_BASE_URL",  "")
     PROCESSED = get("PROCESSED_CONTAINER", "processed")
-    RAW = get("RAW_CONTAINER", "raw-videos")
+    RAW = get("RAW_CONTAINER", "raw")
 
     paths = job_paths(stem)
     work_dir = paths.work_dir
@@ -374,7 +374,7 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         if hls_url:
             extra_meta_status["sf_hls_url"] = hls_url
         set_raw_status(
-            payload.in_.container or get("RAW_CONTAINER", "raw-videos"),
+            payload.in_.container or get("RAW_CONTAINER", "raw"),
             payload.in_.key,
             status="complete",
             pipeline=extra_meta.get("pipeline", "transcode"),

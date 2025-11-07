@@ -148,7 +148,7 @@ def main() -> None:
     p_hash.set_defaults(func=inspect_hash)
 
     p_raw = sub.add_parser("raw", help="Inspect raw blob metadata status")
-    p_raw.add_argument("raw_path", help="container/blob path (e.g. raw-videos/demo.mp4)")
+    p_raw.add_argument("raw_path", help="container/blob path (e.g. raw/demo.mp4)")
 
     def inspect_raw(args: argparse.Namespace) -> None:
         try:

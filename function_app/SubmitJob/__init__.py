@@ -26,7 +26,7 @@ from ..shared.pipelines import select_pipeline_for_blob
 # ---------------------------
 # Config (env-driven)
 # ---------------------------
-RAW       = get("RAW_CONTAINER", "raw-videos")
+RAW       = get("RAW_CONTAINER", "raw")
 MEZZ      = get("MEZZ_CONTAINER", "mezzanine")
 HLS       = get("HLS_CONTAINER", "hls")
 DASH      = get("DASH_CONTAINER", "dash")
