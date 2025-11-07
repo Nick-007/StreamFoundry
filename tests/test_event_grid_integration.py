@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import subprocess
@@ -81,7 +82,11 @@ class EventGridIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(message, "No message received in transcode queue")
         
         # Parse and validate the message content
-        content = json.loads(message.content)
+        try:
+            decoded = base64.b64decode(message.content)
+            content = json.loads(decoded)
+        except (ValueError, json.JSONDecodeError):
+            content = json.loads(message.content)
         self.assertEqual(content["id"], "test_video")
         self.assertEqual(content["in"]["container"], "raw")
         self.assertEqual(content["in"]["key"], test_blob)
