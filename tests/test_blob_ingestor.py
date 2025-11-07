@@ -1,8 +1,14 @@
 import json
 import os
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Ensure AppSettings can instantiate by loading local.settings.json defaults for tests.
 with open("local.settings.json") as f:

@@ -1,0 +1,86 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Run unit tests
+        run: pytest tests/test_blob_ingestor.py
+
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+          - 10001:10001
+          - 10002:10002
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Node (for Azure Functions Core Tools)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Azure Functions Core Tools
+        run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Wait for Azurite
+        run: timeout 60 bash -c 'until nc -z 127.0.0.1 10000; do sleep 2; done'
+
+      - name: Start Functions host
+        run: |
+          func start --python --port 7071 > func.log 2>&1 &
+          echo $! > func_host.pid
+          timeout 90 bash -c 'until curl -s http://127.0.0.1:7071/admin/host/status >/dev/null; do sleep 3; done'
+
+      - name: Run integration tests
+        run: pytest tests/test_event_grid_integration.py
+
+      - name: Show Function logs
+        if: always()
+        run: |
+          if [ -f func.log ]; then
+            tail -n 200 func.log || true
+          fi
+
+      - name: Stop Functions host
+        if: always()
+        run: |
+          if [ -f func_host.pid ]; then
+            kill $(cat func_host.pid) || true
+          fi
