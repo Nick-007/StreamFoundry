@@ -6,7 +6,7 @@
     "BASE_URL": "http://127.0.0.1:10000/devstoreaccount1",
     "DASH_BASE_URL":"http://127.0.0.1:10000/devstoreaccount1/dash",
     "HLS_BASE_URL":"http://127.0.0.1:10000/devstoreaccount1/hls",
-    "RAW_CONTAINER": "raw-videos",
+    "RAW_CONTAINER": "raw",
     "MEZZ_CONTAINER": "mezzanine",
     "SKIP_TRANSCODE_IF_MEZZ": "true",
     "SKIP_MEZZ_UPLOAD_ON_RESTORE": "true",

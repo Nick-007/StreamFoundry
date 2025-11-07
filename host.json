@@ -34,11 +34,11 @@
       "package": "Debug",
       "Function": "Debug",
       "Host.Results": "Information",
-      "Host.Triggers.Queue": "Information",
+      "Host.Triggers": "Warning",
       "Azure.Storage": "Information",
       "Azure.Storage.Queues": "Information",
       "Azure.Core": "Warning",
-      "Worker": "Warning",
+      "Worker": "Information",
       "Microsoft": "Warning",
       "Default": "Warning"
     },
