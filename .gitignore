@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 
 # VS Code & OS junk
-.vscode/
+
 .DS_Store
 Thumbs.db
 
@@ -32,3 +32,5 @@ logs/
 .tmp/
 dist/
 build/local.settings.json
+
+.python_packages
