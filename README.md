@@ -90,21 +90,34 @@ func start
 | `DRM_PLACEHOLDERS` | `true` | Reserved for future DRM wiring |
 | `PIPELINE_ROUTES` | `` | JSON routes from extension → queue (`{"transcode":{"extensions":[".mp4"],"queue":"transcode-jobs"}}`) |
 
+### Configuration & App Settings Source of Truth
+- `config/appsettings.template.json` is the authoritative list of required keys. It records defaults, descriptions, and which entries must come from Key Vault.
+- Create environment-specific overrides (for example `config/appsettings.prod.json`) to supply non-secret values. These files should **not** be committed—store them as Azure DevOps secure files/variables instead. A checked-in example lives at `config/appsettings.sample.json`.
+- Keep `local.settings.json` for local testing only; it is ignored by CI/CD.
+
 ### Syncing app settings to Azure
-Keep `local.settings.json` for local work and push the same keys to your Azure Function App via the helper script:
+Use the updated helper to merge the template + overrides and emit Key Vault references:
 
 ```bash
-# log in with az login first
+# az login first, then
 python scripts/dev/push_appsettings.py \
-  --function-app <my-func-app> \
-  --resource-group <my-rg> \
-  --settings-file local.settings.json
+  --function-app <func-app> \
+  --resource-group <rg> \
+  --template-file config/appsettings.template.json \
+  --overrides-file config/appsettings.sample.json \
+  --key-vault <kv-name>
 ```
 
-The script reads the `Values` block and runs
-`az functionapp config appsettings set --settings KEY=VALUE ...` for you
-(optionally add `--slot <slot>`). This keeps sensitive settings out of source
-control while ensuring the Azure Configuration blade matches your local config.
+- Keys marked as `type: "keyVault"` become `@Microsoft.KeyVault(...)` references automatically.
+- Overrides can still be sourced from a legacy `local.settings.json` by passing `--overrides-file local.settings.json`.
+- Missing values raise an error, so adding a new entry to the template guarantees the Function App receives it on the next deploy.
+
+### IaC + Azure DevOps pipeline
+- `infra/modules/*.bicep` holds focused modules (Key Vault, Event Grid subscription, etc.) that are orchestrated by `infra/main.bicep`.
+- `infra/azure-pipelines.yml` is a ready-to-import Azure DevOps pipeline that:
+  1. Deploys the Bicep stack (Key Vault, RAW container, Event Grid subscription) via `az deployment group create`.
+  2. Downloads a secure overrides file (e.g., `appsettings.prod.json`) and runs `scripts/dev/push_appsettings.py` so the Function App immediately picks up any new settings.
+- Store sensitive values in Key Vault (the Bicep template can optionally seed secrets through the `keyVaultSecrets` parameter) and grant the Function App managed identity access via the module’s access policies.
 
 **HTTP submit payload**
 ```jsonc

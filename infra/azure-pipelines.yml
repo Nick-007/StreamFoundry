@@ -1,0 +1,70 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - name: AZURE_SUBSCRIPTION
+    value: 'Replace-With-Service-Connection-Name'
+  - name: RESOURCE_GROUP
+    value: 'rg-streamfoundry-dev'
+  - name: LOCATION
+    value: 'eastus'
+  - name: STORAGE_ACCOUNT_NAME
+    value: 'ststreamfoundrydev'
+  - name: FUNCTION_APP_NAME
+    value: 'func-streamfoundry-dev'
+  - name: KEY_VAULT_NAME
+    value: 'kv-streamfoundry-dev'
+  - name: TENANT_ID
+    value: '00000000-0000-0000-0000-000000000000'
+
+stages:
+  - stage: Deploy
+    displayName: Deploy infrastructure + app settings
+    jobs:
+      - job: IaC
+        displayName: Apply Bicep modules and sync settings
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: Deploy Key Vault + Event Grid
+            inputs:
+              azureSubscription: $(AZURE_SUBSCRIPTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az deployment group create \
+                  --resource-group $(RESOURCE_GROUP) \
+                  --template-file infra/main.bicep \
+                  --parameters \
+                    location=$(LOCATION) \
+                    storageAccountName=$(STORAGE_ACCOUNT_NAME) \
+                    functionAppName=$(FUNCTION_APP_NAME) \
+                    keyVaultName=$(KEY_VAULT_NAME) \
+                    tenantId=$(TENANT_ID)
+
+          # Secure file contains environment-specific overrides (no secrets).
+          # Upload e.g. config/appsettings.prod.json to the Azure DevOps Secure Files library.
+          - task: DownloadSecureFile@1
+            name: appsettingsOverrides
+            displayName: Download appsettings overrides
+            inputs:
+              secureFile: appsettings.prod.json
+
+          - task: AzureCLI@2
+            displayName: Push Function App settings (Key Vault references)
+            inputs:
+              azureSubscription: $(AZURE_SUBSCRIPTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                python3 scripts/dev/push_appsettings.py \
+                  --function-app $(FUNCTION_APP_NAME) \
+                  --resource-group $(RESOURCE_GROUP) \
+                  --template-file config/appsettings.template.json \
+                  --overrides-file $(appsettingsOverrides.secureFilePath) \
+                  --key-vault $(KEY_VAULT_NAME)

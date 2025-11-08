@@ -34,3 +34,8 @@ dist/
 build/local.settings.json
 
 .python_packages
+
+# Environment-specific config files (template & sample stay tracked)
+config/appsettings.*.json
+!config/appsettings.template.json
+!config/appsettings.sample.json

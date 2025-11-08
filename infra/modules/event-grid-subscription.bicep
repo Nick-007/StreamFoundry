@@ -81,3 +81,5 @@ resource rawBlobSubscription 'Microsoft.Storage/storageAccounts/providers/eventS
     rawContainer
   ]
 }
+
+output subscriptionId string = rawBlobSubscription.id
