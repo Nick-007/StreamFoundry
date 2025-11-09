@@ -9,9 +9,9 @@ variables:
   - name: RESOURCE_GROUP
     value: 'rg-streamfoundry-dev'
   - name: LOCATION
-    value: 'eastus'
+    value: 'southafricanorth'
   - name: STORAGE_ACCOUNT_NAME
-    value: 'ststreamfoundrydev'
+    value: 'streamfoundrydev'
   - name: FUNCTION_APP_NAME
     value: 'func-streamfoundry-dev'
   - name: KEY_VAULT_NAME

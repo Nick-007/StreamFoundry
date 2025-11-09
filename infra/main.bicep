@@ -26,6 +26,25 @@ param eventSubscriptionName string = 'raw-blob-created'
 @description('Raw container name for Event Grid filtering.')
 param rawContainerName string = 'raw'
 
+@description('Blob containers to provision in the storage account.')
+param blobContainers array = [
+  'raw'
+  'mezzanine'
+  'dash'
+  'hls'
+  'processed'
+  'logs'
+  'locks'
+]
+
+@description('Queue names to provision in the storage account.')
+param queueNames array = [
+  'transcode-jobs'
+  'transcode-jobs-poison'
+  'packaging-jobs'
+  'packaging-jobs-poison'
+]
+
 @description('Event types to route from Event Grid.')
 param includedEventTypes array = [
   'Microsoft.Storage.BlobCreated'
@@ -78,6 +97,15 @@ module keyVault 'modules/key-vault.bicep' = {
     tenantId: tenantId
     accessPolicies: concat(functionAccessPolicies, extraAccessPolicies)
     secretValues: keyVaultSecrets
+  }
+}
+
+module storageInfra 'modules/storage-infra.bicep' = {
+  name: 'storageInfra'
+  params: {
+    storageAccountName: storageAccountName
+    blobContainers: unique(blobContainers)
+    queueNames: unique(queueNames)
   }
 }
 
