@@ -15,13 +15,7 @@ LOGGER = logging.getLogger("package.submit")
 PACKAGING_QUEUE = settings.PACKAGING_QUEUE
 
 
-@app.route(route="package/submit", methods=["POST"])
-@app.queue_output(
-    arg_name="outmsg",
-    queue_name=PACKAGING_QUEUE,
-    connection="AzureWebJobsStorage",
-)
-def package_submit(req: func.HttpRequest, outmsg: func.Out[str]) -> func.HttpResponse:
+def handle_package_submit(req: func.HttpRequest, outmsg: func.Out[str]) -> func.HttpResponse:
     # toggle via query ?mode=sync or header x-run-sync: 1
     mode = (req.params.get("mode") or "").lower()
     sync = mode == "sync" or req.headers.get("x-run-sync") in ("1", "true", "yes")
@@ -63,3 +57,12 @@ def package_submit(req: func.HttpRequest, outmsg: func.Out[str]) -> func.HttpRes
         status_code=202,
         mimetype="application/json",
     )
+
+
+package_submit = app.route(route="package/submit", methods=["POST"])(
+    app.queue_output(
+        arg_name="outmsg",
+        queue_name=PACKAGING_QUEUE,
+        connection="AzureWebJobsStorage",
+    )(handle_package_submit)
+)

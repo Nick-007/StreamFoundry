@@ -31,12 +31,7 @@ from ..shared.status import set_raw_status
 QNAME = settings.PACKAGING_QUEUE
 CONNECTION = "AzureWebJobsStorage"  # per your requirement: only AzureWebJobsStorage
 
-@app.queue_trigger(
-    arg_name="msg",
-    queue_name=QNAME,
-    connection=CONNECTION,
-)
-def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
+def handle_packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
     """
     Packaging worker (Queue Trigger)
     - Reads JSON message
@@ -115,3 +110,10 @@ def packaging_queue(msg: func.QueueMessage, context: func.Context) -> None:
         raise
     finally:
         sl.stop(flush=True)
+
+
+packaging_queue = app.queue_trigger(
+    arg_name="msg",
+    queue_name=QNAME,
+    connection=CONNECTION,
+)(handle_packaging_queue)
