@@ -61,16 +61,15 @@ class AppSettings(BaseSettings):
     DRM_PLACEHOLDERS: str
     PIPELINE_ROUTES: str = Field(default="")
 
-    class Config:
-        case_sensitive = True
-        env_file = None  # disable .env
-        @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
-            return (
-                init_settings,  # values passed directly to AppSettings()
-                env_settings,   # values from os.environ
-                lambda _: _load_local_settings(),  # fallback to local.settings.json
-            )
+    model_config = {
+        "case_sensitive": True,
+        "env_file": None,  # disable .env
+        "customise_sources": lambda init_settings, env_settings, file_secret_settings: (
+            init_settings,  # values passed directly to AppSettings()
+            env_settings,   # values from os.environ
+            lambda _: _load_local_settings(),  # fallback to local.settings.json
+        )
+    }
 
 def get(key: str, default=None):
     return getattr(AppSettings(), key, default)
