@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 #pydantic-settings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from pydantic_settings import BaseSettings
 
 def _load_local_settings() -> dict:
@@ -20,6 +20,11 @@ def _load_local_settings() -> dict:
 
 
 class AppSettings(BaseSettings):
+    model_config = ConfigDict(
+        case_sensitive=True,
+        env_file=None,  # disable .env
+    )
+    
     PACKAGING_QUEUE: str = Field(default="packaging-jobs")
     AzureWebJobsStorage: str
     FUNCTIONS_WORKER_RUNTIME: str
@@ -68,16 +73,21 @@ class AppSettings(BaseSettings):
     DRM_PLACEHOLDERS: str
     PIPELINE_ROUTES: str = Field(default="")
 
-    class Config:
-        case_sensitive = True
-        env_file = None  # disable .env
-        @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
-            return (
-                init_settings,  # values passed directly to AppSettings()
-                env_settings,   # values from os.environ
-                lambda _: _load_local_settings(),  # fallback to local.settings.json
-            )
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        """Custom settings loader: init → env → local.settings.json"""
+        return (
+            init_settings,                      # values passed directly to AppSettings()
+            env_settings,                       # values from os.environ
+            lambda _: _load_local_settings(),  # fallback to local.settings.json
+        )
 
 def get(key: str, default=None):
     return getattr(AppSettings(), key, default)

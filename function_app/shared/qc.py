@@ -42,7 +42,8 @@ def ffprobe_validate(
     log,
     *,
     strict: bool = True,
-    smoke: bool = True
+    smoke: bool = True,
+    seg_dur_sec: float = 4.0
 ) -> Dict:
     """
     One-stop QC:
@@ -54,6 +55,12 @@ def ffprobe_validate(
       meta dict: {duration,width,height,fps,videoCodec,audioCodec,videoBitrate,audioBitrate}
     Raises:
       CmdError on any failure when strict=True (default).
+    Args:
+      inp_path: path to input video file
+      log: logging callable
+      strict: enable strict validation (default True)
+      smoke: enable ffmpeg smoke test (default True)
+      seg_dur_sec: segment duration in seconds (default 4.0s); video must be >= this
     """
     t0 = time.perf_counter()
     p = Path(inp_path)
@@ -86,7 +93,7 @@ def ffprobe_validate(
 
     # Probe + analyze (strict validation inside)
     probe = ffprobe_inspect(inp_path)
-    meta = analyze_media(probe, strict=strict)
+    meta = analyze_media(probe, strict=strict, seg_dur_sec=seg_dur_sec)
 
     dt = time.perf_counter() - t0
     log(f"[qc] ok size={size} bytes, {meta['width']}x{meta['height']}@{meta['fps']:.2f}fps took={dt*1000:.0f}ms")
@@ -141,6 +148,7 @@ def analyze_media(
     *,
     strict: bool = True,
     min_duration: float = 0.5,
+    seg_dur_sec: float = 4.0,
 ) -> Dict:
     """
     Build a complete meta dict from an ffprobe 'probe' and optionally validate it.
@@ -151,6 +159,11 @@ def analyze_media(
         videoBitrate, audioBitrate
       }
     Raises CmdError when strict=True and derived values are invalid.
+    Args:
+      probe: ffprobe JSON output dict
+      strict: if True, validate dimensions/duration/codec
+      min_duration: minimum duration in seconds (default 0.5s)
+      seg_dur_sec: segment duration in seconds (default 4.0s); video must be >= this
     """
     fmt = probe.get("format", {}) or {}
     streams = probe.get("streams", []) or []
@@ -217,4 +230,10 @@ def analyze_media(
     if strict:
         if dur <= 0 or w <= 0 or h <= 0:
             raise CmdError(f"Invalid media metadata (duration/width/height): dur={dur}, w={w}, h={h}")
+        # Explicit check: video duration must be >= segment duration
+        if dur < seg_dur_sec:
+            raise CmdError(
+                f"Video duration ({dur:.2f}s) is less than segment duration ({seg_dur_sec}s). "
+                f"Minimum video length required: {seg_dur_sec}s."
+            )
     return meta

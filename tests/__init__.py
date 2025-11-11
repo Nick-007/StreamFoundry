@@ -1,0 +1,1 @@
+"""StreamFoundry test suite."""

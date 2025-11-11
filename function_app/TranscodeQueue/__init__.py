@@ -554,7 +554,7 @@ def transcode_queue(msg: QueueMessage):
             pass
 
         # QC (tools + smoke + probe + analyze) — strict
-        meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True)
+        meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True, seg_dur_sec=settings.SEG_DUR_SEC)
 
         # captions (optional)
         t0 = time.time()

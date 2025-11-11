@@ -492,6 +492,13 @@ def package_with_shaka_ladder(
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
+    if text_tracks:
+        for t in text_tracks:
+            track_path = t.get("path", "")
+            if track_path and Path(track_path).exists():
+                parts.append(f'in="{track_path}",stream=text,language={t.get("lang","en")}')
+            else:
+                (log or print)(f"[package] WARNING: text track missing {track_path}; skipping")
     _assert_unique_outputs(parts)
 
     dash_cmd = (
@@ -521,13 +528,21 @@ def package_with_shaka_ladder(
         parts.append(
             f'in="{r["video"]}",stream=video,'
             f'init_segment="{base}_init.mp4",'
-            f'segment_template="{base}_$Number$.m4s"'
+            f'segment_template="{base}_$Number$.m4s"' +
+            (f',trick_play_factor={trick_factor}' if trick else '')
         )
     parts.append(
         f'in="{audio_mp4}",stream=audio,'
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
+    if text_tracks:
+        for t in text_tracks:
+            track_path = t.get("path", "")
+            if track_path and Path(track_path).exists():
+                parts.append(f'in="{track_path}",stream=text,language={t.get("lang","en")}')
+            else:
+                (log or print)(f"[package] WARNING: text track missing {track_path}; skipping")
     _assert_unique_outputs(parts)
 
     hls_cmd = (

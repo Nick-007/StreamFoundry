@@ -192,6 +192,65 @@ def _inject_captions_into_master(master_path: Path, captions_map: Dict[str, str]
     log(f"[captions] injected {len(captions_map)} subtitle track(s) into HLS master")
 
 
+def _inject_trickplay_fallback_into_master(
+    master_path: Path,
+    trick_manifest: Dict[str, Any],
+    hls_dir: Path,
+    *,
+    log,
+) -> None:
+    """
+    Inject trickplay thumbnail sprites as HLS fallback for clients that don't support
+    packager trick streams. Adds EXT-X-IMAGE-MEDIA-SEQUENCE variant playlist referencing
+    thumbnails.vtt with sprite coordinates.
+    
+    This provides graceful degradation: clients get trick streams from packager by default,
+    but older clients can still scrub via thumbnail previews.
+    """
+    if not trick_manifest or not trick_manifest.get("vtt"):
+        return
+
+    vtt_relative = trick_manifest["vtt"]
+    sprites = trick_manifest.get("sprites", [])
+    
+    if not sprites:
+        log("[trickplay] fallback: no sprite data; skipping HLS injection")
+        return
+
+    # Validate VTT file exists
+    vtt_file = hls_dir / vtt_relative
+    if not vtt_file.exists():
+        log(f"[trickplay] fallback: VTT missing at {vtt_file}; skipping")
+        return
+
+    lines = master_path.read_text(encoding="utf-8").splitlines()
+    
+    # Find where to insert fallback variant (after regular streams, before any image streams)
+    insert_idx = len(lines)
+    for idx, line in enumerate(lines):
+        if line.startswith("#EXT-X-IMAGE-MEDIA-SEQUENCE"):
+            insert_idx = idx
+            break
+    
+    # Build fallback image stream entry
+    # Use lowest bitrate stream metadata as reference for fallback
+    fallback_entries: List[str] = []
+    
+    # Add marker comment
+    fallback_entries.append("\n# Trickplay Fallback (for clients without packager trick support)")
+    
+    # Add EXT-X-IMAGE-MEDIA-SEQUENCE entry pointing to thumbnails
+    fallback_entries.append(
+        f'#EXT-X-IMAGE-MEDIA-SEQUENCE:URI="{vtt_relative}"'
+    )
+    
+    # Insert into master
+    updated = lines[:insert_idx] + fallback_entries + lines[insert_idx:]
+    
+    master_path.write_text("\n".join(updated) + "\n", encoding="utf-8")
+    log(f"[trickplay] fallback: injected VTT reference into HLS master (sprites={len(sprites)})")
+
+
 def _select_trickplay_source(renditions: Iterable[Dict[str, str]]) -> Optional[Dict[str, str]]:
     best: Optional[Dict[str, str]] = None
     best_height = -1
@@ -502,6 +561,15 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
     staged_captions = _stage_captions_for_hls(caption_tracks, hls_path.parent, log=log)
     if staged_captions:
         _inject_captions_into_master(hls_path, staged_captions, log=log)
+
+    # --- inject trickplay fallback into HLS master ---
+    if trick_manifest:
+        _inject_trickplay_fallback_into_master(
+            hls_path,
+            trick_manifest,
+            hls_path.parent,
+            log=log,
+        )
 
     # --- local integrity (pre-upload) ---
     try:
