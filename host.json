@@ -46,7 +46,6 @@
   },
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.26.2, 4.26.2]",
-    "downloadPath": "$HOME/.azure-functions-extension-bundles"
+    "version": "[4.29.0, 4.30.0)"
   }
 }
