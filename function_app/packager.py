@@ -5,6 +5,8 @@ import time
 import shutil
 import requests
 import re
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Iterable
 
@@ -610,6 +612,21 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
         log=log,
     )
     log("[upload] routed end")
+
+    # --- ensure DASH text AdaptationSets have labels ---
+    labels_script = Path(__file__).resolve().parents[1] / "scripts" / "ops" / "add_missing_dash_labels.py"
+    if labels_script.exists():
+        try:
+            cmd = [sys.executable or "python3", str(labels_script), str(dash_path), str(dash_path)]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            for line in filter(None, (res.stdout or "").splitlines()):
+                log(f"[labels] {line}")
+        except subprocess.CalledProcessError as exc:
+            log(f"[labels] script failed: {exc.stderr or exc.stdout or exc}")
+        except Exception as exc:
+            log(f"[labels] unable to run add_missing_dash_labels: {exc}")
+    else:
+        log(f"[labels] script not found at {labels_script}; skipping")
 
     # --- remote integrity (optional; if bases configured) ---
     base_url = get("BASE_URL", "")

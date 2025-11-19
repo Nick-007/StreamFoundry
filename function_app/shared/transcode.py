@@ -474,6 +474,7 @@ def package_with_shaka_ladder(
     seg_dur = int(get("PACKAGER_SEG_DUR_SEC", "4"))
 
     dash_text_parts: List[str] = []
+    dash_text_labels: List[str] = []
     hls_text_parts: List[str] = []
     if text_tracks:
         counters: Dict[str, int] = {}
@@ -488,13 +489,15 @@ def package_with_shaka_ladder(
             counters[safe_lang] = count
             name = safe_lang if count == 1 else f"{safe_lang}_{count}"
             dash_text_parts.append(
-                f'in="{track_path}",stream=text,language={lang},format=webvtt,'
-                f'init_segment="dash/text/{name}/init.mp4",'
-                f'segment_template="dash/text/{name}/$Number$.m4s",dash_only=1'
+                f'in="{track_path}",stream=text,language={lang},'
+                f'init_segment="dash_text/{name}/init.mp4",'
+                f'segment_template="dash_text/{name}/$Number$.m4s",dash_only=1'
             )
+            dash_text_labels.append(name)
             hls_text_parts.append(
                 f'in="{track_path}",stream=text,language={lang},format=webvtt,'
-                f'segment_template="text_{name}_$Number$.vtt",'
+                f'segment_template="hls_text/{name}/$Number$.vtt",'
+                f'playlist_name="hls_text/{name}/playlist.m3u8",'
                 f'hls_group_id=subs,hls_name={name},hls_only=1'
             )
 
