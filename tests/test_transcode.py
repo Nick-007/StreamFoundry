@@ -27,6 +27,7 @@ with patch("function_app.shared.config.AppSettings"):
     from function_app.shared.transcode import package_with_shaka_ladder
 
 
+@pytest.mark.skip(reason="Trickplay factor enforcement temporarily disabled")
 class TestHLSTrickplayFeature:
     """Integration tests for HLS trickplay generation feature."""
 

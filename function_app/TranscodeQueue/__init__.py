@@ -333,7 +333,7 @@ def transcode_queue(msg: QueueMessage):
     if not raw:
         LOGGER.warning("Queue payload empty; skipping.")
         return
-    LOGGER.info("AzureWebJobsStorage=%s", STORAGE_CONN)
+    LOGGER.debug("AzureWebJobsStorage connection string loaded")
 
     try:
         payload = json.loads(raw)
