@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 import shutil
 import requests
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Iterable
 
@@ -125,10 +126,14 @@ def _stage_captions_for_hls(
         return staged
 
     captions_dir = hls_dir / "captions"
+    # Start from a clean captions dir each packaging run to avoid stale/duplicated VTTs.
+    if captions_dir.exists():
+        shutil.rmtree(captions_dir)
     captions_dir.mkdir(parents=True, exist_ok=True)
 
     for track in caption_tracks:
         lang = (track.get("lang") or "").strip().lower() or f"lang{len(staged)}"
+        lang_key = lang
         src = Path(track.get("path") or "")
         if not src.exists():
             log(f"[captions] skipping missing file {src}")
@@ -137,16 +142,22 @@ def _stage_captions_for_hls(
             log(f"[captions] skipping non-VTT track {src.name}")
             continue
 
-        target_name = f"{lang}.vtt"
+        # ensure unique filename and map key even if multiple tracks share a language code
+        counter = 1
+        while lang_key in staged:
+            lang_key = f"{lang}_{counter}"
+            counter += 1
+
+        target_name = f"{lang_key}.vtt"
         dest = captions_dir / target_name
         counter = 1
         while dest.exists():
-            target_name = f"{lang}_{counter}.vtt"
+            target_name = f"{lang_key}_{counter}.vtt"
             dest = captions_dir / target_name
             counter += 1
 
         shutil.copy2(src, dest)
-        staged[lang] = dest.name
+        staged[lang_key] = dest.name
         log(f"[captions] staged {src.name} → {dest}")
 
     return staged
@@ -157,6 +168,7 @@ def _inject_captions_into_master(master_path: Path, captions_map: Dict[str, str]
         return
 
     lines = master_path.read_text(encoding="utf-8").splitlines()
+    group_id = "subs"
     filtered = [
         line
         for line in lines
@@ -174,7 +186,7 @@ def _inject_captions_into_master(master_path: Path, captions_map: Dict[str, str]
         uri = f"captions/{filename}"
         display = lang.upper()
         media_lines.append(
-            f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{display}",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="{lang}",URI="{uri}"'
+            f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="{group_id}",NAME="{display}",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="{lang}",URI="{uri}"'
         )
 
     updated = filtered[:insert_idx] + media_lines + filtered[insert_idx:]
@@ -182,11 +194,12 @@ def _inject_captions_into_master(master_path: Path, captions_map: Dict[str, str]
     for idx, line in enumerate(updated):
         if line.startswith("#EXT-X-STREAM-INF"):
             if 'SUBTITLES="' in line:
-                continue
-            if 'CLOSED-CAPTIONS=' in line:
-                updated[idx] = line.replace('CLOSED-CAPTIONS=NONE', 'CLOSED-CAPTIONS=NONE,SUBTITLES="subs"')
+                # normalize to our group id if it differs
+                updated[idx] = re.sub(r'SUBTITLES="[^"]+"', f'SUBTITLES="{group_id}"', line)
+            elif 'CLOSED-CAPTIONS=' in line:
+                updated[idx] = line.replace('CLOSED-CAPTIONS=NONE', f'CLOSED-CAPTIONS=NONE,SUBTITLES="{group_id}"')
             else:
-                updated[idx] = line + ',SUBTITLES="subs"'
+                updated[idx] = line + f',SUBTITLES="{group_id}"'
 
     master_path.write_text("\n".join(updated) + "\n", encoding="utf-8")
     log(f"[captions] injected {len(captions_map)} subtitle track(s) into HLS master")
@@ -558,9 +571,8 @@ def _handle_packaging(payload: IngestPayload, *, log) -> None:
     )
     log("[package] shaka end")
 
-    staged_captions = _stage_captions_for_hls(caption_tracks, hls_path.parent, log=log)
-    if staged_captions:
-        _inject_captions_into_master(hls_path, staged_captions, log=log)
+    # Shaka already emits subtitle playlists when text tracks are provided; skip manual staging/injection.
+    staged_captions: Dict[str, str] = {}
 
     # --- inject trickplay fallback into HLS master ---
     if trick_manifest:

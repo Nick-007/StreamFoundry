@@ -5,14 +5,22 @@ import os
 import re
 import json
 import time
+import math
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Optional
 
 # Only storage helpers; no transcode/ingestor imports → avoids circular deps
-from .storage import blob_exists, download_bytes  # used for remote DASH/HLS via SDK fallback
+from .storage import blob_exists, download_bytes, list_blobs  # used for remote DASH/HLS via SDK fallback
 
 LogFn = Optional[Callable[[str], None]]
+
+@dataclass
+class TemplateInfo:
+    numbers: set[int]
+    step: int
+    start: int
 
 # ---------------------------
 # Public API
@@ -154,13 +162,91 @@ def _check_dash_local(mpd_path: Path, root_dir: Path, *, log: LogFn) -> Dict[str
         raise FileNotFoundError(f"Local DASH MPD not found: {mpd_path}")
     exp, init = _parse_mpd(mpd_path)
     missing: Dict[str, List[str]] = {}
+    video_metadata: Dict[str, Tuple[int, int]] = {}
     for label, segs in exp.items():
-        miss = [s for s in segs if not (root_dir / s).exists()]
+        if not label.startswith("video_"):
+            continue
+        numbers = _segment_numbers_from_names(segs)
+        start_number = numbers[0] if numbers else 1
+        step = _video_segment_step(root_dir, label)
+        video_metadata[label] = (start_number, step)
+    for label, segs in exp.items():
+        miss = []
+        for seg in segs:
+            path = root_dir / seg
+            if path.exists():
+                continue
+            alt_ok = False
+            if label in video_metadata:
+                start_number, step = video_metadata[label]
+                alt_path = _find_video_alternative_segment(root_dir, label, seg, start_number, step)
+                if alt_path and alt_path.exists():
+                    alt_ok = True
+            if not alt_ok:
+                miss.append(seg)
         if init.get(label) and not (root_dir / init[label]).exists():
             miss = [init[label]] + miss
         if miss:
             missing[label] = miss
     return missing
+
+def _segment_number_from_name(name: str) -> Optional[int]:
+    match = re.search(r"_(\d+)\.m4s$", name)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _segment_numbers_from_names(names: List[str]) -> List[int]:
+    nums = []
+    for name in names:
+        num = _segment_number_from_name(Path(name).name)
+        if num is not None:
+            nums.append(num)
+    return sorted(set(nums))
+
+
+def _video_segment_step(root_dir: Path, label: str) -> int:
+    candidates = sorted(root_dir.glob(f"{label}_*.m4s"))
+    numbers = []
+    for candidate in candidates:
+        num = _segment_number_from_name(candidate.name)
+        if num is not None:
+            numbers.append(num)
+    return _compute_step(numbers)
+
+
+def _compute_step(numbers: List[int]) -> int:
+    if len(numbers) < 2:
+        return 1
+    diffs = []
+    for prev, curr in zip(numbers, numbers[1:]):
+        diff = curr - prev
+        if diff > 0:
+            diffs.append(diff)
+    if not diffs:
+        return 1
+    step = diffs[0]
+    for d in diffs[1:]:
+        step = math.gcd(step, d)
+    return max(step, 1)
+
+
+def _find_video_alternative_segment(root_dir: Path, label: str, seg: str, start_number: int, step: int) -> Optional[Path]:
+    if step <= 1:
+        return None
+    expected = _segment_number_from_name(Path(seg).name)
+    if expected is None:
+        return None
+    delta = expected - start_number
+    if delta < 0:
+        return None
+    actual_number = start_number + delta * step
+    return root_dir / f"{label}_{actual_number}.m4s"
+
 
 def _check_dash_remote(stem: str, base_url: str, dash_container: str, *, log: LogFn) -> Dict[str, List[str]]:
     """
@@ -180,6 +266,7 @@ def _check_dash_remote(stem: str, base_url: str, dash_container: str, *, log: Lo
     mpd.write_bytes(data)
 
     exp, init = _parse_mpd(mpd)
+    template_infos = _build_remote_template_infos(dash_container, stem)
     missing: Dict[str, List[str]] = {}
 
     for label, segs in exp.items():
@@ -189,10 +276,13 @@ def _check_dash_remote(stem: str, base_url: str, dash_container: str, *, log: Lo
         need.extend(segs)
         miss: List[str] = []
         for f in need:
+            if label in template_infos:
+                alt = _map_remote_segment(f, stem, label, template_infos[label])
+                if alt and blob_exists(dash_container, alt):
+                    continue
             url = _join_url(base_url, f"{dash_container}/{stem}/{f}")
             ok = _http_head_ok(url)
             if ok is None:
-                # http not working → fallback to SDK
                 ok = blob_exists(dash_container, f"{stem}/{f}")
             if not ok:
                 miss.append(f)
@@ -200,6 +290,32 @@ def _check_dash_remote(stem: str, base_url: str, dash_container: str, *, log: Lo
             missing[label] = miss
     return missing
 
+def _build_remote_template_infos(container: str, stem: str) -> Dict[str, TemplateInfo]:
+    infos: Dict[str, TemplateInfo] = {}
+    bl = list_blobs(container, prefix=f"{stem}/")
+    vids: Dict[str, set[int]] = {}
+    for blob in bl:
+        name = Path(blob.name).name
+        match = re.match(r"(video_[^_]+)_(\d+)\.m4s$", name)
+        if match:
+            label = match.group(1)
+            idx = int(match.group(2))
+            vids.setdefault(label, set()).add(idx)
+    for label, numbers in vids.items():
+        start = min(numbers)
+        step = _compute_step(sorted(numbers))
+        infos[label] = TemplateInfo(numbers=numbers, step=step, start=start)
+    return infos
+
+def _map_remote_segment(rel_path: str, stem: str, label: str, info: TemplateInfo) -> str | None:
+    num = _segment_number_from_name(Path(rel_path).name)
+    if num is None:
+        return None
+    delta = num - info.start
+    if delta < 0:
+        return None
+    mapped = info.start + (delta // info.step) * info.step
+    return f"{stem}/{label}_{mapped}.m4s" if mapped in info.numbers else None
 # ---------------------------
 # HLS helpers
 # ---------------------------

@@ -72,6 +72,7 @@ class AppSettings(BaseSettings):
     QC_STRICT: str
     DRM_PLACEHOLDERS: str
     PIPELINE_ROUTES: str = Field(default="")
+    BASE_URL: str = Field(default="")
 
     @classmethod
     def settings_customise_sources(
@@ -86,7 +87,7 @@ class AppSettings(BaseSettings):
         return (
             init_settings,                      # values passed directly to AppSettings()
             env_settings,                       # values from os.environ
-            lambda _: _load_local_settings(),  # fallback to local.settings.json
+            lambda _settings=None: _load_local_settings(),  # fallback to local.settings.json
         )
 
 def get(key: str, default=None):

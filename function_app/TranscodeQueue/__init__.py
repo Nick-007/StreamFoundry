@@ -3,7 +3,7 @@ from __future__ import annotations
 import json, time, threading
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional, Any, Callable
+from typing import Iterable, List, Dict, Optional, Any, Callable
 
 import azure.functions as func
 from azure.functions import QueueMessage
@@ -57,6 +57,12 @@ from ..shared.pipelines import select_pipeline_for_blob
 settings = AppSettings()
 LOGGER = logging.getLogger("transcode")
 
+def _seg_dur_sec() -> float:
+    try:
+        return float(settings.SEG_DUR_SEC)
+    except Exception:
+        return 4.0
+
 #LOGGER.info(f"RAW_CONTAINER: {settings.RAW_CONTAINER}")
 
 # ---------- Config ----------
@@ -65,6 +71,7 @@ MEZZ       = settings.MEZZ_CONTAINER
 DASH       = settings.DASH_CONTAINER
 HLS        = settings.HLS_CONTAINER
 LOGS       = settings.LOGS_CONTAINER
+PROCESSED  = settings.PROCESSED_CONTAINER
 
 TMP_DIR      = settings.TMP_DIR
 LOCK_TTL     = int(settings.LOCK_TTL_SECONDS)
@@ -326,6 +333,7 @@ def transcode_queue(msg: QueueMessage):
     if not raw:
         LOGGER.warning("Queue payload empty; skipping.")
         return
+    LOGGER.info("AzureWebJobsStorage=%s", STORAGE_CONN)
 
     try:
         payload = json.loads(raw)
@@ -554,7 +562,7 @@ def transcode_queue(msg: QueueMessage):
             pass
 
         # QC (tools + smoke + probe + analyze) — strict
-        meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True, seg_dur_sec=settings.SEG_DUR_SEC)
+        meta_in = ffprobe_validate(inp_path, log=log, strict=True, smoke=True, seg_dur_sec=_seg_dur_sec())
 
         # captions (optional)
         t0 = time.time()
