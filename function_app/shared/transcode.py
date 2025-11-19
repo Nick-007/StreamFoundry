@@ -473,7 +473,8 @@ def package_with_shaka_ladder(
 
     seg_dur = int(get("PACKAGER_SEG_DUR_SEC", "4"))
 
-    text_parts: List[str] = []
+    dash_text_parts: List[str] = []
+    hls_text_parts: List[str] = []
     if text_tracks:
         counters: Dict[str, int] = {}
         for track in text_tracks:
@@ -486,10 +487,15 @@ def package_with_shaka_ladder(
             count = counters.get(safe_lang, 0) + 1
             counters[safe_lang] = count
             name = safe_lang if count == 1 else f"{safe_lang}_{count}"
-            text_parts.append(
+            dash_text_parts.append(
+                f'in="{track_path}",stream=text,language={lang},format=webvtt,'
+                f'init_segment="dash/text/{name}/init.mp4",'
+                f'segment_template="dash/text/{name}/$Number$.m4s",dash_only=1'
+            )
+            hls_text_parts.append(
                 f'in="{track_path}",stream=text,language={lang},format=webvtt,'
                 f'segment_template="text_{name}_$Number$.vtt",'
-                f'hls_group_id=subs,hls_name={name}'
+                f'hls_group_id=subs,hls_name={name},hls_only=1'
             )
 
     # ---- DASH ----
@@ -508,7 +514,7 @@ def package_with_shaka_ladder(
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
-    parts.extend(text_parts)
+    parts.extend(dash_text_parts)
     _assert_unique_outputs(parts)
 
     dash_cmd = (
@@ -545,7 +551,7 @@ def package_with_shaka_ladder(
         f'init_segment="audio_init.m4a",'
         f'segment_template="audio_$Number$.m4s"'
     )
-    parts.extend(text_parts)
+    parts.extend(hls_text_parts)
     _assert_unique_outputs(parts)
 
     hls_cmd = (
