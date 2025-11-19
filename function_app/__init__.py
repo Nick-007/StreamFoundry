@@ -2,4 +2,4 @@ import azure.functions as func
 
 app = func.FunctionApp()
 
-from . import BlobIngestor, TranscodeQueue, PackageQueue, PackageSubmit, SubmitJob
+from . import BlobEnqueuer, TranscodeQueue, PackageQueue, PackageSubmit, SubmitJob

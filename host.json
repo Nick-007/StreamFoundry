@@ -35,11 +35,11 @@
       "blob_ingestor": "Information",
       "Function": "Debug",
       "Host.Results": "Information",
-      "Host.Triggers.Queue": "Information",
+      "Host.Triggers": "Warning",
       "Azure.Storage": "Information",
       "Azure.Storage.Queues": "Information",
       "Azure.Core": "Warning",
-      "Worker": "Warning",
+      "Worker": "Information",
       "Microsoft": "Warning",
       "Default": "Warning"
     },
@@ -47,7 +47,6 @@
   },
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.26.2, 4.26.2]",
-    "downloadPath": "$HOME/.azure-functions-extension-bundles"
+    "version": "[4.29.0, 4.30.0)"
   }
 }

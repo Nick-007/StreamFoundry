@@ -1,0 +1,49 @@
+name: Mirror to Azure DevOps
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Azure DevOps
+        env:
+          PRIVURL: ${{ secrets.PRIVURL }}
+          PRIVPAT: ${{ secrets.PRIVPAT }}
+        run: |
+          if [ -z "$PRIVURL" ]; then
+            echo "GitHub secret PRIVURL is not configured." >&2
+            exit 1
+          fi
+
+          if [ -z "$PRIVPAT" ]; then
+            echo "GitHub secret PRIVPAT is not configured." >&2
+            exit 1
+          fi
+
+          if [[ "$PRIVURL" != https://* ]]; then
+            echo "PRIVURL must start with https://" >&2
+            exit 1
+          fi
+
+          URL_BODY="${PRIVURL#https://}"
+          URL_HOST_PATH="${URL_BODY#*@}"
+          if [ "$URL_HOST_PATH" = "$URL_BODY" ]; then
+            URL_HOST_PATH="$URL_BODY"
+          fi
+
+          REMOTE_WITH_CREDS="https://azdo:${PRIVPAT}@${URL_HOST_PATH}"
+
+          git remote add azure-devops "$REMOTE_WITH_CREDS" 2>/dev/null || \
+            git remote set-url azure-devops "$REMOTE_WITH_CREDS"
+
+          git push azure-devops main:main

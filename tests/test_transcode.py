@@ -14,17 +14,9 @@ Will be merged into existing test suite on main branch later.
 import sys
 import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-# Mock app settings before importing function_app modules
-sys.modules["function_app.BlobIngestor"] = MagicMock()
-sys.modules["function_app.TranscodeQueue"] = MagicMock()
-sys.modules["function_app.PackageQueue"] = MagicMock()
-sys.modules["function_app.PackageSubmit"] = MagicMock()
-sys.modules["function_app.SubmitJob"] = MagicMock()
-
-with patch("function_app.shared.config.AppSettings"):
-    from function_app.shared.transcode import package_with_shaka_ladder
+from function_app.shared.transcode import package_with_shaka_ladder
 
 
 @pytest.mark.skip(reason="Trickplay factor enforcement temporarily disabled")
@@ -332,12 +324,6 @@ class TestTrickplayFallback:
         Ensures clients without packager trick support can still scrub via thumbnails.
         """
         # Import the injection function
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.packager import _inject_trickplay_fallback_into_master
         
@@ -414,12 +400,6 @@ class TestTrickplayFallback:
         """
         ROBUSTNESS TEST: Verify fallback injection skips gracefully when VTT is missing.
         """
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.packager import _inject_trickplay_fallback_into_master
         
@@ -464,12 +444,6 @@ class TestVideoMinimumDurationCheck:
         """
         VALIDATION TEST: Verify analyze_media() explicitly fails when video duration < seg_dur_sec.
         """
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.shared.qc import analyze_media
             from function_app.shared.errors import CmdError
@@ -496,12 +470,6 @@ class TestVideoMinimumDurationCheck:
         """
         VALIDATION TEST: Verify analyze_media() passes when video duration == seg_dur_sec.
         """
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.shared.qc import analyze_media
         
@@ -525,12 +493,6 @@ class TestVideoMinimumDurationCheck:
         """
         VALIDATION TEST: Verify analyze_media() passes when video duration > seg_dur_sec.
         """
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.shared.qc import analyze_media
         
@@ -553,12 +515,6 @@ class TestVideoMinimumDurationCheck:
         """
         ROBUSTNESS TEST: Verify analyze_media() skips duration check when strict=False.
         """
-        sys.modules["function_app.BlobIngestor"] = MagicMock()
-        sys.modules["function_app.TranscodeQueue"] = MagicMock()
-        sys.modules["function_app.PackageQueue"] = MagicMock()
-        sys.modules["function_app.PackageSubmit"] = MagicMock()
-        sys.modules["function_app.SubmitJob"] = MagicMock()
-        
         with patch("function_app.shared.config.AppSettings"):
             from function_app.shared.qc import analyze_media
         

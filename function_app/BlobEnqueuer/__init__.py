@@ -7,13 +7,13 @@ import azure.functions as func
 
 from .. import app
 from ..shared.config import get
-from ..shared.logger import log_exception, log_job
+from ..shared.logger import log_job, log_exception
 from ..shared.pipelines import select_pipeline_for_blob
 from ..shared.queueing import enqueue
 from ..shared.status import set_raw_status
 from ..shared.storage import ensure_containers, blob_exists
 
-LOGGER = logging.getLogger("blob_ingestor")
+LOGGER = logging.getLogger("blob.ingestor")
 
 RAW = get("RAW_CONTAINER", "raw")
 MEZZ = get("MEZZ_CONTAINER", "mezzanine")
@@ -45,7 +45,8 @@ def _extract_blob_ref(event: func.EventGridEvent) -> tuple[str | None, str | Non
 
 def _handle_event_grid_notification(event: func.EventGridEvent) -> bool:
     """
-    Returns True when work is enqueued, False when the event is ignored.
+    Core handler extracted for ease of testing. Returns True when we enqueue work,
+    False when the event is ignored.
     """
     if event.event_type != "Microsoft.Storage.BlobCreated":
         return False

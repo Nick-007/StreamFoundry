@@ -166,8 +166,7 @@ def _download_url_to_temp(url: str, *, max_mb: int, chunk_bytes: int, timeout: i
 
 
 
-@app.route(route="submit", methods=["POST", "OPTIONS"])
-def submit_job(req: func.HttpRequest) -> func.HttpResponse:
+def handle_submit_job(req: func.HttpRequest) -> func.HttpResponse:
     if req.method.upper() == "OPTIONS":
         return _json_resp({"ok": True}, status=204)
 
@@ -413,3 +412,6 @@ def submit_job(req: func.HttpRequest) -> func.HttpResponse:
                 sl.stop()
             except Exception:
                 pass
+
+
+submit_job = app.route(route="submit", methods=["POST", "OPTIONS"])(handle_submit_job)

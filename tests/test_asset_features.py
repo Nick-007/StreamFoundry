@@ -16,13 +16,6 @@ from PIL import Image
 
 os.environ.setdefault("TRANSCODE_VISIBILITY_EXTENSION_SEC", "300")
 
-# Prevent azure.function FunctionApp import side effects during shared-module tests.
-sys.modules.setdefault("function_app.BlobIngestor", MagicMock())
-sys.modules.setdefault("function_app.TranscodeQueue", MagicMock())
-sys.modules.setdefault("function_app.PackageQueue", MagicMock())
-sys.modules.setdefault("function_app.PackageSubmit", MagicMock())
-sys.modules.setdefault("function_app.SubmitJob", MagicMock())
-
 from function_app.shared.errors import CmdError
 from function_app.shared.trickplay import generate_trickplay_assets
 from function_app.shared.urls import build_asset_urls
