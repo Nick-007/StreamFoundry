@@ -1,0 +1,24 @@
+FROM mcr.microsoft.com/azure-functions/python:4-python3.12
+
+# Copy the app into the default Azure Functions location
+COPY . /home/site/wwwroot
+WORKDIR /home/site/wwwroot
+
+# Install OS-level deps (ffmpeg + curl for Shaka download)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Shaka Packager
+RUN curl -sSL https://github.com/shaka-project/shaka-packager/releases/download/v2.6.1/packager-linux-x64 \
+    -o /usr/local/bin/packager && \
+    chmod +x /usr/local/bin/packager
+
+# Python dependencies
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+ENV FUNCTIONS_WORKER_RUNTIME=python
+ENV SHAKA_PACKAGER_PATH=/usr/local/bin/packager
+
+# Default command mirrors local func start
+CMD ["func", "start", "--verbose"]
