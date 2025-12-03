@@ -53,9 +53,28 @@ bash infra/local/seeder.sh
 func start
 ```
 
-> Need a full reset? `bash scripts/dev/reset-azurite.sh` wipes local queues/containers.
+> Need a full reset? `bash scripts/dev/reset-azurite.sh` wipes local queues/containers (optionally reseed with `--seed`).
 
 > Tip: `POST /api/submit?mode=status` returns the current processing status without enqueuing a job. Add `includeStatus=true` to the normal submit to receive status info alongside the receipt.
+
+---
+
+### Docker (controller/worker split)
+
+For a local setup that mirrors production separation, use the split Compose file to run a lean controller (HTTP + Event Grid) and a dedicated worker (queue triggers with ffmpeg/Shaka):
+```bash
+docker compose -f docker/docker-compose.split.yml up --build --scale worker=2
+```
+Controller exposes port 7071; workers stay internal and can be scaled independently.
+
+### Per-job worker dispatch (one container per transcode)
+
+To mimic ACA/Batch “one job = one container” flow locally, enable dispatch mode with the dedicated transcode image:
+```bash
+# builds controller + transcode image; transcode queue launches a fresh container per job
+docker compose -f docker/docker-compose.dispatch.yml up --build
+```
+`TRANSCODE_DISPATCH_MODE=docker` makes the transcode queue trigger call `scripts/dev/run_worker_local.sh`, which spins up `streamfoundry-transcoder:local` with a per-job env file and cleans up after exit.
 
 ---
 

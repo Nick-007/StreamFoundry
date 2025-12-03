@@ -49,7 +49,7 @@ class AppSettings(BaseSettings):
     LADDER_PROFILE: str
     LOCKS_CONTAINER: str
     LOCK_TTL_SECONDS: str
-    TRANSCODE_VISIBILITY_EXTENSION_SEC: str 
+    TRANSCODE_VISIBILITY_EXTENSION_SEC: int
     VIDEO_CODEC: str
     NVENC_PRESET: str
     NVENC_RC: str
@@ -73,6 +73,9 @@ class AppSettings(BaseSettings):
     DRM_PLACEHOLDERS: str
     PIPELINE_ROUTES: str = Field(default="")
     BASE_URL: str = Field(default="")
+    # Dispatch options for the transcode queue trigger
+    TRANSCODE_DISPATCH_MODE: str = Field(default="inline")
+    TRANSCODE_DISPATCH_RUNNER: str = Field(default="scripts/dev/run_worker_local.sh")
 
     @classmethod
     def settings_customise_sources(

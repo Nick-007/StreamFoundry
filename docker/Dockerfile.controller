@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/azure-functions/python:4-python3.12
+
+# Controller host runs HTTP + Event Grid only; no heavy toolchain needed
+COPY . /home/site/wwwroot
+WORKDIR /home/site/wwwroot
+
+# Python deps + docker CLI (needed to launch worker containers)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends docker.io && \
+    rm -rf /var/lib/apt/lists/* && \
+    python -m pip install --no-cache-dir -r requirements.txt
+
+ENV FUNCTIONS_WORKER_RUNTIME=python
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot
+
+# Use the built-in Functions host binary (no func CLI dependency)
+CMD ["/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost"]

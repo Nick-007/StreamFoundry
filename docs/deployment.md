@@ -27,7 +27,9 @@ StreamFoundry runs as Azure Functions with Azurite for local emulation and can b
 
 The worker image bundles ffmpeg, Shaka Packager, and the Functions app. Files:
 - `docker/Dockerfile.worker`
+- `docker/Dockerfile.controller` (lightweight orchestrator)
 - `docker/docker-compose.yml`
+- `docker/docker-compose.split.yml` (controller/worker overlay)
 
 ### Build & Run (Compose)
 
@@ -38,6 +40,27 @@ docker compose -f docker/docker-compose.yml up --build
 Services:
 - `azurite`: storage emulator (ports 10000/10001/10002)
 - `worker`: Functions host container connected to Azurite with ffmpeg/Shaka installed.
+
+### Controller/worker split (local ACA mimic)
+
+Run a lean controller (HTTP + EventGrid) and a dedicated worker (queue triggers with ffmpeg/Shaka):
+```bash
+docker compose -f docker/docker-compose.split.yml up --build
+```
+Controller exposes port 7071 and runs `submit_job`, `package_submit`, and `blob_enqueuer`. Worker runs `transcode_queue` and `packaging_queue` only. Scale workers to simulate ACA/Batch replicas:
+```bash
+docker compose -f docker/docker-compose.split.yml up --build --scale worker=2
+```
+
+### Per-job worker dispatch (one container per transcode)
+
+To mimic ACA/Batch jobs where each transcode runs in its own container, use the dispatch overlay + dispatcher flag:
+```bash
+# build controller (light) + transcode image, and enable dispatch mode
+docker compose -f docker/docker-compose.dispatch.yml up --build
+# Transcode queue will launch a fresh transcode container per job (via scripts/dev/run_worker_local.sh)
+```
+Set `TRANSCODE_DISPATCH_MODE=docker` (default in the dispatch compose) to have the transcode queue trigger spin up a one-off worker container, pass the payload via env file, and shut it down after completion. Configure `TRANSCODE_WORKER_IMAGE` if you push the transcode image to a registry.
 
 ### Standalone Build
 

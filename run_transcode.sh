@@ -51,10 +51,15 @@ echo "[INFO] FPS=$FPS SEG=$SEG GOP=$GOP"
 # fingerprint = sha256(input bytes + knobs)
 KSTR="seg=${SEG}|ladder=${LADDER}|codec=${VIDEO_CODEC}|preset=${NV_PRESET}|rc=${NV_RC}"
 INPUT_SHA="$(sha256sum in.mp4 | awk '{print $1}')"
+export INPUT_SHA KSTR
+echo "[INFO] INPUT_SHA=${INPUT_SHA} KSTR=${KSTR}"
 FINGERPRINT="$(python3 - <<PY
-import hashlib, os
-h=hashlib.sha256()
-h.update(os.environ["INPUT_SHA"].encode()); h.update(os.environ["KSTR"].encode())
+import hashlib
+INPUT_SHA = "${INPUT_SHA}"
+KSTR = "${KSTR}"
+h = hashlib.sha256()
+h.update(INPUT_SHA.encode())
+h.update(KSTR.encode())
 print(h.hexdigest())
 PY
 )"

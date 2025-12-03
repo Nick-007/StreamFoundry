@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    restart: unless-stopped
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite-data:/data
+
+  controller:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.controller
+    container_name: streamfoundry-controller
+    depends_on:
+      - azurite
+    environment:
+      AzureWebJobsStorage: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1"
+      FUNCTIONS_WORKER_RUNTIME: "python"
+      # limit to HTTP + EventGrid endpoints
+      AzureFunctionsJobHost__functions__0: "submit_job"
+      AzureFunctionsJobHost__functions__1: "package_submit"
+      AzureFunctionsJobHost__functions__2: "blob_enqueuer"
+    ports:
+      - "7071:7071"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: streamfoundry-worker
+    depends_on:
+      - azurite
+    environment:
+      AzureWebJobsStorage: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1"
+      FUNCTIONS_WORKER_RUNTIME: "python"
+      # limit to queue workers
+      AzureFunctionsJobHost__functions__0: "transcode_queue"
+      AzureFunctionsJobHost__functions__1: "packaging_queue"
+
+volumes:
+  azurite-data:

@@ -1,17 +1,28 @@
 # function_app/TranscodeQueue/__init__.py
 from __future__ import annotations
-import json, time, threading
+import json, time, threading, os
 import logging
 from pathlib import Path
 from typing import Iterable, List, Dict, Optional, Any, Callable
+from urllib.parse import urlparse
 
 import azure.functions as func
+from azure.storage.blob import (
+    generate_blob_sas,
+    generate_account_sas,
+    BlobSasPermissions,
+    ResourceTypes,
+    AccountSasPermissions,
+)
+from datetime import datetime, timedelta
+import tempfile
+import subprocess
 from azure.functions import QueueMessage
 from pydantic import ValidationError
 from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
 
 # --- shared modules from your repo ---
-from ..shared.config import AppSettings
+from ..shared.config import AppSettings, get
 from ..shared.logger import StreamLogger, bridge_logger, make_slogger
 
 # transcode_queue_normalize.py (example co-located helper)
@@ -76,6 +87,8 @@ PROCESSED  = settings.PROCESSED_CONTAINER
 TMP_DIR      = settings.TMP_DIR
 LOCK_TTL     = int(settings.LOCK_TTL_SECONDS)
 VISIBILITY_EXTENSION_SEC = int(settings.TRANSCODE_VISIBILITY_EXTENSION_SEC or "0")
+DISPATCH_MODE = (get("TRANSCODE_DISPATCH_MODE", "inline") or "inline").strip().lower()
+DISPATCH_RUNNER = get("TRANSCODE_DISPATCH_RUNNER", "scripts/dev/run_worker_local.sh")
 
 # File size limits (similar to SubmitJob)
 MAX_DOWNLOAD_MB = 2048  # 2 GB default
@@ -114,6 +127,96 @@ def _ladder_for_selection(only_rung: Optional[List[str]]) -> List[Dict[str, str]
         allowed = {str(r).lower() for r in only_rung}
         ladder = [r for r in ladder if r["name"].lower() in allowed]
     return ladder
+
+
+def _parse_conn_string(conn: str) -> Dict[str, str]:
+    parts = {}
+    for segment in conn.split(";"):
+        if "=" in segment:
+            k, v = segment.split("=", 1)
+            parts[k.strip()] = v.strip()
+    return parts
+
+
+def _build_worker_env(raw_container: str, raw_key: str, stem: str, log) -> Dict[str, str]:
+    """
+    Build env vars for an external worker container.
+    """
+    pieces = _parse_conn_string(STORAGE_CONN)
+    account = pieces.get("AccountName")
+    key = pieces.get("AccountKey")
+    blob_endpoint = pieces.get("BlobEndpoint")
+    base_url = (settings.BASE_URL or "").rstrip("/")
+    if not base_url:
+        base_url = (blob_endpoint or "").rstrip("/")
+    else:
+        try:
+            host = urlparse(base_url).hostname
+            if host in ("127.0.0.1", "localhost") and blob_endpoint:
+                # Do not hand a loopback URL to a container; use the blob endpoint instead.
+                base_url = (blob_endpoint or "").rstrip("/")
+        except Exception:
+            pass
+
+    expiry = datetime.utcnow() + timedelta(hours=4)
+    raw_sas = generate_blob_sas(
+        account_name=account,
+        container_name=raw_container,
+        blob_name=raw_key,
+        account_key=key,
+        permission=BlobSasPermissions(read=True),
+        expiry=expiry,
+    )
+    account_sas = generate_account_sas(
+        account_name=account,
+        account_key=key,
+        resource_types=ResourceTypes(service=True, container=True, object=True),
+        permission=AccountSasPermissions(read=True, write=True, delete=True, list=True, add=True, create=True),
+        expiry=expiry,
+    )
+
+    seg = _seg_dur_sec()
+    env = {
+        "RAW_URL": f"{base_url}/{raw_container}/{raw_key}?{raw_sas}",
+        "DEST_BASE": base_url,
+        "DEST_SAS": f"?{account_sas}",
+        "STEM": stem,
+        "SEG_DUR_SEC": str(int(seg)) if float(seg).is_integer() else str(seg),
+        "AUDIO_MAIN_KBPS": str(settings.AUDIO_MAIN_KBPS),
+        "VIDEO_CODEC": settings.VIDEO_CODEC,
+        "NVENC_PRESET": settings.NVENC_PRESET,
+        "NVENC_RC": settings.NVENC_RC,
+        "NVENC_LOOKAHEAD": settings.NVENC_LOOKAHEAD,
+        "NVENC_AQ": settings.NVENC_AQ,
+        "BT709_TAGS": settings.SET_BT709_TAGS,
+        "ENABLE_CAPTIONS": settings.ENABLE_CAPTIONS,
+        "ENABLE_TRICKPLAY": settings.ENABLE_TRICKPLAY,
+        "TRICKPLAY_FACTOR": str(settings.TRICKPLAY_FACTOR),
+        "THUMB_INTERVAL_SEC": str(settings.THUMB_INTERVAL_SEC),
+    }
+    log(f"[dispatch] raw_url={env['RAW_URL']}")
+    return env
+
+
+def _run_external_worker(env: Dict[str, str], log) -> int:
+    fd, path = tempfile.mkstemp(prefix="payload_", suffix=".env")
+    with os.fdopen(fd, "w") as f:
+        for k, v in env.items():
+            f.write(f"{k}={v}\n")
+    try:
+        cmd = [DISPATCH_RUNNER, path]
+        log(f"[dispatch] launching worker via {cmd}")
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.stdout:
+            log(proc.stdout.strip())
+        if proc.stderr:
+            log(proc.stderr.strip())
+        return proc.returncode
+    finally:
+        try:
+            os.remove(path)
+        except Exception:
+            pass
 
 
 def _ladder_signature(ladder_cfg: Iterable[Dict[str, str]]) -> str:
@@ -433,6 +536,31 @@ def transcode_queue(msg: QueueMessage):
         work_dir = paths.work_dir
         inp_path = str(inp_dir / Path(raw_key).name)
 
+        if DISPATCH_MODE == "docker":
+            env = _build_worker_env(in_cont, raw_key, stem, log)
+            rc = _run_external_worker(env, log)
+            if rc != 0:
+                reason = f"external_worker_failed rc={rc}"
+                log(f"[dispatch] worker failed: {reason}")
+                send_to_poison(payload, reason, log)
+                try:
+                    set_raw_status(in_cont, raw_key, status="failed", pipeline=pipeline_id, reason="transcode_failed")
+                except Exception:
+                    pass
+                raise CmdError(reason)
+            try:
+                set_raw_status(
+                    in_cont,
+                    raw_key,
+                    status="complete",
+                    pipeline=pipeline_id,
+                    reason="transcode_dispatched_complete",
+                )
+            except Exception:
+                pass
+            log("[dispatch] external worker finished; skipping inline transcode")
+            return
+
         # ensure input exists
         if not blob_exists(in_cont, raw_key):
             raise FileNotFoundError(f"Input blob not found: {in_cont}/{raw_key}")
@@ -569,7 +697,8 @@ def transcode_queue(msg: QueueMessage):
         text_tracks: List[Dict] = []
         for item in (captions or []):
             c = _pull_caption(item, str(work_dir), log)
-            if c: text_tracks.append(c)
+            if c:
+                text_tracks.append(c)
         log(f"[captions] count={len(text_tracks)} took={int(time.time()-t0)}s")
 
         # mezz restore first if allowed
@@ -579,7 +708,7 @@ def transcode_queue(msg: QueueMessage):
         missing = [p for p in expected if not Path(p).exists()]
 
         restored = False
-        if settings.SKIP_TRANSCODE_IF_MEZZ.lower() in ("1","true","yes") and missing:
+        if settings.SKIP_TRANSCODE_IF_MEZZ.lower() in ("1", "true", "yes") and missing:
             log("[mezz] attempting restore of intermediates")
             if ensure_intermediates_from_mezz(
                 stem=version,
