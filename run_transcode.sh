@@ -69,6 +69,52 @@ PY
 export FINGERPRINT
 VERSION="v_${FINGERPRINT}"
 echo "[INFO] VERSION=$VERSION"
+export VERSION STEM
+export DASH_CONT HLS_CONT
+
+# --------- captions (optional) ---------
+CAPTION_ENTRIES=()
+if [[ "${ENABLE_CAPTIONS,,}" == "true" && -n "${CAPTIONS_JSON:-}" ]]; then
+  mkdir -p captions
+  python3 - <<'PY' > captions/_tracks.tsv
+import json, os, pathlib, sys, urllib.request
+raw = os.environ.get("CAPTIONS_JSON", "")
+try:
+    caps = json.loads(raw) if raw else []
+except Exception as exc:
+    sys.exit(0)
+lines = []
+for idx, spec in enumerate(caps):
+    if not isinstance(spec, dict):
+        continue
+    lang = (spec.get("lang") or "und").strip() or "und"
+    url = spec.get("url") or spec.get("source")
+    if not url:
+        continue
+    name = pathlib.Path(url).name or f"caption_{idx}.vtt"
+    dest = pathlib.Path("captions") / name
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp, open(dest, "wb") as fh:
+            fh.write(resp.read())
+        lines.append(f"{lang}\t{dest}")
+    except Exception:
+        continue
+print("\n".join(lines))
+PY
+
+  if [[ -s captions/_tracks.tsv ]]; then
+    while IFS=$'\t' read -r LANG CPATH; do
+      [[ -z "$LANG" || -z "$CPATH" ]] && continue
+      ext="${CPATH##*.}"
+      if [[ "${ext,,}" == "srt" ]]; then
+        vtt="captions/$(basename "${CPATH%.*}").vtt"
+        ffmpeg -y -i "$CPATH" "$vtt" >/dev/null 2>&1 || true
+        CPATH="$vtt"
+      fi
+      CAPTION_ENTRIES+=("${LANG}|${CPATH}")
+    done < captions/_tracks.tsv
+  fi
+fi
 
 # --------- captions (optional) ---------
 CAPTION_ENTRIES=()

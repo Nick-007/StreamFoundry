@@ -17,6 +17,11 @@ RUN curl -sSL https://github.com/shaka-project/shaka-packager/releases/download/
     -o /usr/local/bin/packager && \
     chmod +x /usr/local/bin/packager
 
+# Install AzCopy (used for uploading segments)
+RUN curl -sSL https://aka.ms/downloadazcopy-v10-linux -o /tmp/azcopy.tgz && \
+    tar -xzf /tmp/azcopy.tgz --strip-components=1 --wildcards -C /usr/local/bin 'azcopy_linux_amd64*/azcopy' && \
+    rm /tmp/azcopy.tgz
+
 # Python dependencies
 RUN python -m pip install --no-cache-dir -r requirements.txt
 

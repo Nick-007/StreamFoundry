@@ -96,6 +96,25 @@ def set_blob_metadata(container: str, blob: str, metadata: Dict[str, str], *, me
     client.set_blob_metadata(metadata=new_metadata)
 
 
+def list_blobs(container: str, prefix: Optional[str] = None) -> None:
+    """List blobs in a container, optionally filtered by prefix."""
+    svc = load_service()
+    client = svc.get_container_client(container)
+    blobs = client.list_blobs(name_starts_with=prefix) if prefix else client.list_blobs()
+    for blob in blobs:
+        print(blob.name)
+
+
+def delete_blobs(container: str, prefix: Optional[str] = None) -> None:
+    """Delete blobs in a container, optionally filtered by prefix."""
+    svc = load_service()
+    client = svc.get_container_client(container)
+    blobs = client.list_blobs(name_starts_with=prefix) if prefix else client.list_blobs()
+    for blob in blobs:
+        client.delete_blob(blob.name)
+    print(f"[storage] deleted blobs from {container}/{prefix or '*'}")
+
+
 def cmd_containers(_: argparse.Namespace) -> None:
     svc = load_service()
     print("[storage] Containers and public access:")
@@ -209,6 +228,13 @@ def cmd_cors(args: argparse.Namespace) -> None:
             print(f"  [{idx}] {json.dumps(data)}")
 
 
+def cmd_blobs(args: argparse.Namespace) -> None:
+    if args.delete:
+        delete_blobs(args.container, args.prefix)
+    else:
+        list_blobs(args.container, args.prefix)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Azure Storage (Blob) utilities for StreamFoundry.")
     sub = parser.add_subparsers(dest="command")
@@ -238,6 +264,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_cors.add_argument("--max-age", type=int, default=3600, help="Max age in seconds (default: 3600)")
     p_cors.add_argument("--reset", action="store_true", help="Remove all CORS rules")
     p_cors.set_defaults(func=cmd_cors)
+
+    p_blobs = sub.add_parser("blobs", help="List or delete blobs in a container")
+    p_blobs.add_argument("container", help="Container name")
+    p_blobs.add_argument("--prefix", help="Optional prefix filter")
+    p_blobs.add_argument("--delete", action="store_true", help="Delete matching blobs instead of listing")
+    p_blobs.set_defaults(func=cmd_blobs)
 
     return parser
 
