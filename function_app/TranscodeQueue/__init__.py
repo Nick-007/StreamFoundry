@@ -138,7 +138,7 @@ def _parse_conn_string(conn: str) -> Dict[str, str]:
     return parts
 
 
-def _build_worker_env(raw_container: str, raw_key: str, stem: str, log) -> Dict[str, str]:
+def _build_worker_env(raw_container: str, raw_key: str, stem: str, log, captions: Optional[list[dict[str, str]]] = None) -> Dict[str, str]:
     """
     Build env vars for an external worker container.
     """
@@ -176,6 +176,32 @@ def _build_worker_env(raw_container: str, raw_key: str, stem: str, log) -> Dict[
     )
 
     seg = _seg_dur_sec()
+    caption_specs = captions or []
+
+    def _caption_url(src: str) -> Optional[str]:
+        if not src:
+            return None
+        if "://" in src:
+            return src
+        path = src.lstrip("/")
+        if not path:
+            return None
+        suffix = account_sas or ""
+        if suffix and not suffix.startswith("?"):
+            suffix = f"?{suffix}"
+        return f"{base_url}/{path}{suffix}"
+
+    caption_urls: list[dict[str, str]] = []
+    for c in caption_specs:
+        if not isinstance(c, dict):
+            continue
+        lang = (c.get("lang") or "").strip() or "und"
+        src = c.get("source") or c.get("url") or ""
+        url = _caption_url(src)
+        if not url:
+            continue
+        caption_urls.append({"lang": lang, "url": url})
+
     env = {
         "RAW_URL": f"{base_url}/{raw_container}/{raw_key}?{raw_sas}",
         "DEST_BASE": base_url,
@@ -193,6 +219,7 @@ def _build_worker_env(raw_container: str, raw_key: str, stem: str, log) -> Dict[
         "ENABLE_TRICKPLAY": settings.ENABLE_TRICKPLAY,
         "TRICKPLAY_FACTOR": str(settings.TRICKPLAY_FACTOR),
         "THUMB_INTERVAL_SEC": str(settings.THUMB_INTERVAL_SEC),
+        "CAPTIONS_JSON": json.dumps(caption_urls),
     }
     log(f"[dispatch] raw_url={env['RAW_URL']}")
     return env
@@ -529,6 +556,7 @@ def transcode_queue(msg: QueueMessage):
         only_rung = ladder_labels(ingest.only_rung) if ingest.only_rung else None
         raw_captions = payload.get("captions")
         captions = raw_captions if raw_captions else [c.model_dump() for c in (ingest.captions or [])]
+        canon_caps = _canonical_captions_list(captions)
         extra = payload.get("extra") or ingest.extra or {}
 
         paths = job_paths(stem)
@@ -537,7 +565,7 @@ def transcode_queue(msg: QueueMessage):
         inp_path = str(inp_dir / Path(raw_key).name)
 
         if DISPATCH_MODE == "docker":
-            env = _build_worker_env(in_cont, raw_key, stem, log)
+            env = _build_worker_env(in_cont, raw_key, stem, log, captions=canon_caps)
             rc = _run_external_worker(env, log)
             if rc != 0:
                 reason = f"external_worker_failed rc={rc}"
